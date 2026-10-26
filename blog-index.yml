@@ -1,0 +1,58 @@
+name: Build and deploy blog
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'blog/**'
+      - 'index.html'
+      - 'config.json'
+      - 'scripts/build_index.py'
+      - '.github/workflows/blog-index.yml'
+  workflow_dispatch:
+
+# Publish the site and its freshly generated manifest in the SAME deployment.
+# No GitHub API calls in the visitor browser; no bot commit or race condition.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout full git history
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Build index from article files and git history
+        run: python3 scripts/build_index.py
+      - name: Prepare static website output
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          cp index.html config.json _site/
+          # Always create .nojekyll: GitHub web uploads may omit hidden files.
+          touch _site/.nojekyll
+          cp -R blog _site/blog
+          test -f _site/index.html
+          test -f _site/blog/index.json
+          python3 -m json.tool _site/blog/index.json > /dev/null
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload website and fresh index in one artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Publish GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
