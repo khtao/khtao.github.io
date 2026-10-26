@@ -684,6 +684,71 @@ html{scroll-behavior:auto}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.toast{transition:none}}
 
+/* Khtao Blog 3.0 · Mobile Markdown reading layout hotfix
+ * Place this after the existing CSS overrides, at the end of the stylesheet.
+ * Earlier .post-layout desktop rules appeared after the old 1080px media query,
+ * unintentionally restoring the 216px TOC column on phones.
+ */
+@media (max-width: 1080px) {
+  .post-layout:not(.raw) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .post-layout:not(.raw) > .post-main {
+    width: 100%;
+    min-width: 0;
+    max-width: 718px;
+    margin-inline: auto;
+  }
+  .post-layout:not(.raw) > .toc {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .post-layout:not(.raw) {
+    padding: 28px 18px 56px;
+  }
+  .post-layout:not(.raw) > .post-main {
+    max-width: 100%;
+  }
+  .post-head h1 {
+    font-size: clamp(27px, 7.4vw, 32px);
+    line-height: 1.38;
+    letter-spacing: -.035em;
+    overflow-wrap: anywhere;
+  }
+  .post-meta {
+    gap: 6px 10px;
+    margin-top: 15px;
+    font-size: 12px;
+    line-height: 1.65;
+  }
+  .post-meta > .dot { display: none; }
+  .post-meta > .tag-mini {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+  .post-cover { margin-top: 22px; }
+  .post-cover img { max-width: 100%; height: auto; }
+  .post-divider { margin-top: 26px; }
+  .reading-tools { flex-wrap: wrap; }
+  .reading-actions { min-width: 0; flex-wrap: wrap; justify-content: flex-end; }
+  .md { min-width: 0; overflow-wrap: anywhere; }
+  .md h1 { font-size: 25px; }
+  .md h2 { font-size: 21px; }
+  .md h3 { font-size: 18px; }
+  .md img, .md video, .md iframe, .md svg { max-width: 100%; height: auto; }
+  .md pre, .md table {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .md pre code { white-space: pre; }
+  .post-related { grid-template-columns: minmax(0, 1fr); }
+  .post-related a:last-child { text-align: left; }
+}
+
 </style>
 </head>
 <body>
