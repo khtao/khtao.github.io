@@ -34,7 +34,9 @@ jobs:
         with:
           fetch-depth: 0
       - name: Build index from article files and git history
-        run: python3 scripts/build_index.py
+        run: |
+          mkdir -p blog
+          python3 scripts/build_index.py
       - name: Prepare static website output
         shell: bash
         run: |
