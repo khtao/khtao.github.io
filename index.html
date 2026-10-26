@@ -386,6 +386,198 @@ body{letter-spacing:.004em;}
 @media(prefers-reduced-motion:reduce){
  .post-item{transition:none;}.post-item:hover{transform:none;}
 }
+
+
+/* ============ v4 · editorial + Butterfly-inspired information architecture ============ */
+:root{--paper:#fff;--tint:rgba(91,91,214,.045);}
+[data-theme="dark"]{--paper:#171c29;--tint:rgba(166,173,255,.07);}
+body{background:var(--bg);}
+.nav{max-width:1216px;gap:16px;}
+.brand{flex-shrink:0;}
+.nav-links{display:flex;align-items:center;gap:3px;white-space:nowrap;}
+.nav-link{font-size:13.5px;color:var(--fg-mid);padding:9px 12px;border-radius:10px;position:relative;transition:background .18s,color .18s;font-weight:560;}
+.nav-link:hover{color:var(--accent);background:var(--accent-soft);}
+.nav-link.active{color:var(--accent);background:var(--accent-soft);font-weight:700;}
+.nav-link.active::after{content:"";position:absolute;bottom:3px;left:calc(50% - 3px);width:6px;height:2px;background:var(--accent);border-radius:2px;}
+.nav .search{flex:0 1 214px;}
+.wrap{max-width:1200px;}
+.site-shell{display:grid;grid-template-columns:minmax(0,1fr) 278px;column-gap:42px;align-items:start;}
+.primary-column{min-width:0;}
+.hero{padding:74px 0 46px;}
+.hero::after{right:0;top:12px;width:240px;height:240px;background:radial-gradient(circle,rgba(91,91,214,.10),transparent 72%);}
+[data-theme="dark"] .hero::after{background:radial-gradient(circle,rgba(166,173,255,.11),transparent 72%);}
+.hero h1{font-size:clamp(32px,4.3vw,49px);letter-spacing:-.045em;max-width:700px;}
+.hero p{max-width:630px;}
+.hero-bottom{color:var(--fg-soft);}
+.home-sidebar{display:flex;flex-direction:column;gap:19px;padding-top:58px;min-width:0;}
+.side-card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 7px 22px rgba(28,35,65,.025);}
+[data-theme="dark"] .side-card{box-shadow:0 8px 24px rgba(0,0,0,.13);}
+.profile-card{text-align:center;padding:0 20px 19px;overflow:hidden;}
+.profile-halo{height:102px;position:relative;display:flex;align-items:end;justify-content:center;margin:0 -20px 33px;
+ background:radial-gradient(circle at 78% -10%,rgba(91,91,214,.16),transparent 58%),linear-gradient(120deg,var(--bg-soft),var(--accent-soft));}
+.profile-halo::before{content:"";width:180px;height:180px;border:1px solid rgba(91,91,214,.09);border-radius:50%;position:absolute;top:-118px;right:-66px;}
+.profile-avatar{width:78px;height:78px;display:grid;place-items:center;transform:translateY(35px);border-radius:24px;
+ background:linear-gradient(138deg,#454dc6,#8f90f7);color:white;font-family:Georgia,serif;font-weight:700;font-size:40px;box-shadow:0 11px 26px rgba(58,67,181,.22);border:5px solid var(--paper);}
+.profile-name{font-size:21px;font-weight:750;letter-spacing:-.04em;}
+.profile-desc{font-size:12.5px;line-height:1.8;color:var(--fg-soft);margin:5px 0 20px;}
+.profile-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0 0 16px;padding:13px 0;border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);}
+.profile-stats a{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--fg-soft);font-size:11px;}
+.profile-stats strong{font:700 19px/1.3 var(--mono);color:var(--fg);letter-spacing:-.055em;}
+.profile-stats a:hover strong{color:var(--accent);}
+.profile-follow{height:39px;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:10px;background:var(--accent);color:white;font-size:12.5px;font-weight:650;transition:transform .18s,filter .18s;}
+[data-theme="dark"] .profile-follow{color:#0e1117;}
+.profile-follow:hover{transform:translateY(-1px);filter:brightness(1.08);}
+.profile-follow span{font-size:17px;}
+.side-title{font-size:13px;font-weight:750;margin-bottom:13px;display:flex;align-items:center;gap:8px;}
+.side-title a{margin-left:auto;font-size:11px;color:var(--fg-soft);font-weight:500;}
+.side-title a:hover{color:var(--accent);}
+.side-title-icon{color:var(--accent);font-size:17px;}
+.note-card{background:linear-gradient(120deg,var(--accent-soft),transparent 96%),var(--paper);}
+.note-card p{font-size:12.5px;line-height:1.85;color:var(--fg-mid);margin:0;}
+.side-recent{display:grid;gap:1px;}
+.side-recent a{padding:9px 0;border-top:1px solid var(--line-soft);display:flex;flex-direction:column;gap:3px;}
+.side-recent a span{color:var(--fg-mid);font-size:12.5px;line-height:1.56;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.side-recent a:hover span{color:var(--accent);}
+.side-recent small{color:var(--fg-soft);font:10px var(--mono);}
+.side-tags{display:flex;gap:7px;flex-wrap:wrap;}
+.side-tags a{background:var(--bg-soft);border:1px solid var(--line-soft);border-radius:8px;padding:5px 8px;font-size:11.5px;color:var(--fg-mid);}
+.side-tags a:hover{border-color:var(--accent);color:var(--accent);}
+.side-tags span{font:10px var(--mono);color:var(--fg-soft);margin-left:3px;}
+.side-sign{font:11px var(--mono);text-align:center;color:var(--fg-soft);letter-spacing:.03em;padding:0 0 15px;}
+.featured-card{display:grid;grid-template-columns:minmax(0,1fr) 190px;min-height:248px;overflow:hidden;border-radius:19px;border:1px solid var(--line);background:var(--paper);box-shadow:0 9px 28px rgba(36,49,98,.045);transition:box-shadow .2s,transform .2s,border-color .2s;}
+.featured-card:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 35%,var(--line));box-shadow:0 16px 38px rgba(36,49,98,.09);}
+.featured-copy{display:flex;flex-direction:column;min-width:0;padding:29px 26px 25px;}
+.feature-kicker{font:650 10px/1.4 var(--mono);letter-spacing:.08em;color:var(--accent);display:flex;align-items:center;gap:9px;}
+.featured-copy h2{font-size:clamp(21px,2.2vw,28px);font-weight:760;letter-spacing:-.042em;line-height:1.43;margin:20px 0 9px;}
+.featured-copy p{font-size:13px;line-height:1.8;color:var(--fg-soft);margin:0 0 20px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.feature-foot{margin-top:auto;display:flex;gap:11px;align-items:center;color:var(--fg-soft);font-size:11px;}
+.featured-arrow{margin-left:auto;font-size:18px;color:var(--accent);}
+.featured-art{position:relative;overflow:hidden;background:linear-gradient(150deg,#e7e9ff,#d5ddff 58%,#c8d3fd);display:flex;align-items:center;justify-content:center;}
+[data-theme="dark"] .featured-art{background:linear-gradient(155deg,#272b5f,#232e60,#111b3d);}
+.featured-art.has-cover{background:var(--bg-soft);}
+.featured-art img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
+.featured-card:hover .featured-art img{transform:scale(1.04);}
+.art-symbol{font-size:100px;position:relative;color:#6a6dd6;transform:rotate(-13deg);filter:drop-shadow(0 12px 28px rgba(65,66,160,.23));}
+.art-orbit{position:absolute;border-radius:50%;border:1px solid rgba(95,97,192,.28);}
+.art-orbit-one{width:260px;height:260px;transform:translate(65px,38px);}
+.art-orbit-two{width:130px;height:130px;transform:translate(-80px,-73px);}
+.feed-heading{display:flex;align-items:end;justify-content:space-between;gap:14px;padding-top:55px;margin-bottom:8px;}
+.feed-kicker{font:650 10px/1.5 var(--mono);color:var(--accent);letter-spacing:.15em;}
+.feed-heading h2{font-size:23px;letter-spacing:-.04em;margin:5px 0 0;}
+.feed-heading h2 span{font:500 11px var(--mono);color:var(--fg-soft);vertical-align:middle;margin-left:6px;}
+.feed-heading>a{font-size:12px;color:var(--fg-soft);padding-bottom:4px;white-space:nowrap;}
+.feed-heading>a:hover{color:var(--accent);}
+.post-list{border-top:1px solid var(--line);}
+.post-item{grid-template-columns:95px minmax(0,1fr);gap:21px;padding:27px 12px;margin:0 -12px;}
+.post-date{font-size:11px;}
+.post-kicker{font:550 11px var(--mono);color:var(--accent);margin:0 0 8px;letter-spacing:.02em;}
+.post-kicker span{color:var(--line);padding:0 6px;}
+.post-title{font-size:20px;}
+.post-sum{margin-top:8px;}
+.read-time{margin-left:auto;}
+.feed-placeholder{font-size:13px;color:var(--fg-soft);padding:22px 0;}
+.page-heading{padding:75px 0 34px;border-bottom:1px solid var(--line);margin-bottom:25px;}
+.page-heading h1{font-size:clamp(34px,4.5vw,48px);font-weight:800;line-height:1.25;letter-spacing:-.055em;margin:0;}
+.page-heading p{font-size:14px;color:var(--fg-soft);margin:10px 0 0;}
+.archive-total{margin:24px 0 28px;color:var(--fg-soft);font-size:13px;}
+.archive-total strong{color:var(--accent);}
+.archive-year{margin:0 0 38px;}
+.archive-year>h2{margin:0 0 18px;font-size:27px;letter-spacing:-.05em;display:flex;align-items:baseline;gap:12px;}
+.archive-year>h2 span{font:12px var(--mono);color:var(--fg-soft);}
+.archive-items{border-left:2px solid var(--line);margin-left:4px;padding-left:22px;}
+.archive-items>a{position:relative;display:grid;grid-template-columns:67px minmax(0,1fr) 75px;gap:12px;align-items:baseline;padding:14px 6px;border-bottom:1px solid var(--line-soft);}
+.archive-items>a::before{content:"";position:absolute;left:-29px;top:23px;width:9px;height:9px;background:var(--bg);border:2px solid var(--accent);border-radius:50%;}
+.archive-items>a:hover .archive-name{color:var(--accent);}
+.archive-day{font:12px var(--mono);color:var(--fg-soft);}
+.archive-name{font-size:14px;font-weight:630;line-height:1.55;transition:color .16s;}
+.archive-cat{text-align:right;font-size:11px;color:var(--fg-soft);}
+.tag-wall{display:flex;gap:12px;flex-wrap:wrap;margin:28px 0 40px;}
+.tag-wall>a{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:11px 14px;font-size:14px;font-weight:560;transition:.18s;}
+.tag-wall>a>span{color:var(--accent);}
+.tag-wall>a>small{font:11px var(--mono);margin-left:9px;color:var(--fg-soft);}
+.tag-wall>a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px);}
+.category-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:28px 0 44px;}
+.category-card{position:relative;min-height:170px;padding:24px;background:var(--paper);border:1px solid var(--line);border-radius:16px;display:flex;flex-direction:column;gap:8px;transition:.18s;}
+.category-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow);}
+.category-glyph{color:var(--accent);font-size:26px;line-height:1;}
+.category-label{font-size:20px;font-weight:700;letter-spacing:-.03em;margin-top:auto;}
+.category-card small{color:var(--fg-soft);font-size:12px;}
+.category-card b{position:absolute;top:20px;right:22px;color:var(--fg-soft);}
+.filter-info{display:flex;align-items:baseline;flex-wrap:wrap;gap:11px;border-bottom:1px solid var(--line);padding:0 0 16px;}
+.filter-info strong{font-size:17px;letter-spacing:-.02em;}
+.filter-info span{font-size:12px;color:var(--fg-soft);}
+.filter-info>a{font-size:12px;margin-left:auto;color:var(--accent);}
+.page-tip{font-size:13px;color:var(--fg-soft);padding:20px 0;}
+.page-tip a{color:var(--accent);}
+.about-panel{border-radius:18px;border:1px solid var(--line);background:var(--paper);padding:32px;margin:29px 0 40px;}
+.about-identity{display:flex;align-items:center;gap:15px;padding-bottom:23px;border-bottom:1px solid var(--line);margin-bottom:24px;}
+.about-avatar{width:55px;height:55px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(140deg,#515cce,#a0a6fa);color:white;font:700 30px Georgia,serif;}
+.about-identity>div{display:flex;flex-direction:column;}
+.about-identity strong{font-size:19px;}
+.about-identity div span{font-size:12px;color:var(--fg-soft);}
+.about-panel h2{font-size:22px;letter-spacing:-.04em;margin:0 0 14px;}
+.about-panel h3{font-size:17px;margin:27px 0 8px;}
+.about-panel p{font-size:14px;color:var(--fg-mid);line-height:1.95;}
+.about-panel code{font-family:var(--mono);font-size:.9em;border:1px solid var(--line);background:var(--bg-soft);border-radius:5px;padding:2px 5px;}
+.about-link{color:var(--accent);font-weight:600;}
+.about-quote{margin-top:34px;border-left:3px solid var(--accent);background:var(--accent-soft);padding:15px 19px;color:var(--fg-mid);border-radius:0 8px 8px 0;font-size:14px;}
+.post-layout{max-width:1080px;padding-top:56px;gap:56px;grid-template-columns:minmax(0,1fr) 216px;}
+.post-head h1{font-size:clamp(31px,3.6vw,43px);}
+.post-related{border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;gap:15px;padding-top:23px;margin-top:50px;}
+.post-related a{border:1px solid var(--line);border-radius:12px;padding:13px 15px;min-width:0;display:flex;flex-direction:column;gap:5px;}
+.post-related a:last-child{text-align:right;}
+.post-related a:hover{border-color:var(--accent);background:var(--accent-soft);}
+.post-related small{color:var(--fg-soft);font-size:11px;}
+.post-related strong{font-size:13px;font-weight:660;line-height:1.55;overflow:hidden;text-overflow:ellipsis;}
+.md{font-size:16px;}
+@media(max-width:1080px){
+ .nav{gap:9px;}.nav-link{padding:8px 9px;}.nav .search{flex-basis:180px;}
+ .site-shell{gap:28px;grid-template-columns:minmax(0,1fr) 245px;}
+ .home-sidebar{padding-top:52px;}.side-card{padding:17px;}
+ .profile-card{padding:0 17px 17px;}.profile-halo{margin-left:-17px;margin-right:-17px;}
+ .featured-card{grid-template-columns:minmax(0,1fr) 140px;}
+}
+@media(max-width:850px){
+ .nav{height:auto;min-height:60px;padding:9px 20px;flex-wrap:wrap;row-gap:3px;}
+ .nav-links{order:9;width:100%;overflow-x:auto;justify-content:flex-start;gap:10px;scrollbar-width:none;}
+ .nav-links::-webkit-scrollbar{display:none;}.nav-link{padding:7px 9px;}
+ .nav .nav-spacer{flex:1;}.nav .search{flex:0 1 220px;}
+ .site-shell{display:block;}
+ .home-sidebar{padding:38px 0 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;}
+ .home-sidebar .profile-card{grid-row:span 2;}
+ .side-sign{grid-column:1/-1;}
+ .hero{padding:58px 0 40px;}.page-heading{padding-top:57px;}
+}
+@media(max-width:560px){
+ .nav{padding:8px 15px;gap:6px;}.brand{font-size:15px;}.brand small{display:none;}
+ .nav .search{flex:0 1 145px;}.nav .search input{height:34px;}
+ .nav-links{gap:6px;}.nav-link{font-size:12.5px;}
+ .site-shell{padding-left:16px;padding-right:16px;}
+ .hero{padding:51px 0 32px;}.hero h1{font-size:clamp(30px,8.7vw,42px);}
+ .hero .eyebrow{font-size:9px;letter-spacing:.10em;}
+ .featured-card{grid-template-columns:1fr;}
+ .featured-copy{padding:24px 21px 23px;}.featured-copy h2{font-size:23px;margin-top:15px;}
+ .featured-art{height:138px;grid-row:1;}.featured-art img{height:138px;}
+ .art-symbol{font-size:65px;}
+ .feed-heading{padding-top:37px;}.feed-heading h2{font-size:21px;}
+ .feed-heading>a{font-size:11px;}
+ .post-item{padding:22px 10px;margin:0 -10px;gap:7px;}
+ .post-kicker{font-size:10px;}.post-title{font-size:19px;}
+ .post-tags{gap:5px;}.read-time{font-size:10px;}
+ .home-sidebar{grid-template-columns:1fr;gap:13px;padding-top:22px;}
+ .home-sidebar .profile-card{grid-row:auto;}.side-card{padding:19px;}
+ .profile-card{padding:0 19px 19px;}.profile-halo{margin-left:-19px;margin-right:-19px;}
+ .side-sign{grid-column:auto;}
+ .page-heading{padding:49px 0 23px;}.page-heading h1{font-size:37px;}
+ .category-grid{grid-template-columns:1fr;}.category-card{min-height:137px;}
+ .archive-items>a{grid-template-columns:45px minmax(0,1fr);gap:9px;}.archive-cat{display:none;}
+ .archive-items{padding-left:17px;}.archive-items>a::before{left:-24px;}
+ .about-panel{padding:23px;}
+ .post-related{gap:9px;}.post-related a{padding:11px;}
+ .post-layout{padding-top:29px;}.post-meta{gap:7px;}.post-head h1{font-size:29px;}
+}
+@media(prefers-reduced-motion:reduce){.featured-card,.featured-art img,.category-card,.tag-wall>a{transition:none;}.featured-card:hover,.category-card:hover,.tag-wall>a:hover{transform:none;}}
+
 </style>
 </head>
 <body>
@@ -395,6 +587,13 @@ body{letter-spacing:.004em;}
 <header class="site-header">
   <div class="nav">
     <a class="brand" href="#/">Khtao<small>Blog</small></a>
+    <nav class="nav-links" aria-label="主要导航">
+      <a class="nav-link" data-section="home" href="#/">首页</a>
+      <a class="nav-link" data-section="archive" href="#/archive">归档</a>
+      <a class="nav-link" data-section="tags" href="#/tags">标签</a>
+      <a class="nav-link" data-section="categories" href="#/categories">分类</a>
+      <a class="nav-link" data-section="about" href="#/about">关于</a>
+    </nav>
     <div class="nav-spacer"></div>
     <div class="search" id="searchWrap">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
@@ -424,7 +623,7 @@ body{letter-spacing:.004em;}
 
 <script>
 /* =======================================================================
-   静态索引博客 · v3
+   静态索引博客 · v4
    - 文章清单和提交日期来自同域 blog/index.json（Actions 自动生成）
    - 浏览器不再请求 GitHub API / 第三方镜像 / Personal Access Token
    - 对零文章、删除、离线缓存做独立处理
@@ -433,12 +632,12 @@ body{letter-spacing:.004em;}
 const DEFAULT_CFG = {
   title:"Khtao", subtitle:"记录技术、产品与生活", description:"一个用文字对抗遗忘的地方。",
   author:"khtao", owner:"khtao", repo:"khtao.github.io", branch:"main",
-  blogDir:"blog", pageSize:50, footer:"© 2026 khtao · Built with GitHub Pages"
+  blogDir:"blog", pageSize:50, notice:"欢迎来访。这里会持续更新笔记和思考。", footer:"© 2026 khtao · Built with GitHub Pages"
 };
 let cfg = Object.assign({}, DEFAULT_CFG);
 const CACHE_KEY = "khtao_blog_cache_v3";
 const state = {
-  posts:[], q:"", tag:"", loading:true, error:"", offline:false,
+  posts:[], q:"", tag:"", category:"", loading:true, error:"", offline:false,
   syncedAt:0, generated:"", hasList:false, refreshing:false
 };
 let syncSequence = 0;
@@ -617,9 +816,11 @@ function parseFrontMatter(raw){
     if(!match) return;
     const k = match[1].trim().toLowerCase();
     let v = match[2].trim().replace(/^['\"]|['\"]$/g, "");
-    if(["tags", "tag", "categories", "category"].includes(k)){
+    if(["tags", "tag"].includes(k)){
       if(!v){ fm.tags = []; listTags = true; }
       else fm.tags = v.replace(/^\[|\]$/g, "").split(/[,，、]/).map(s => s.trim().replace(/^['\"]|['\"]$/g, "")).filter(Boolean);
+    } else if(k === "category" || k === "categories") {
+      fm.category = v.replace(/^\[|\]$/g, "").split(/[,，、]/)[0].trim();
     } else fm[k] = v;
   });
   return {fm, body: raw.slice(m[0].length)};
@@ -702,7 +903,7 @@ function parsePost(name, raw, extra){
 
   if(isHtml){
     const c = raw.match(/<!--([\s\S]*?)-->/);
-    if(c && /(?:^|\|)\s*(?:title|date|created|updated|summary|tags|tag|cover|draft)\s*:/i.test(c[1])){
+    if(c && /(?:^|\|)\s*(?:title|date|created|updated|summary|tags|tag|category|categories|cover|draft)\s*:/i.test(c[1])){
       c[1].split("|").forEach(seg => {
         const i = seg.indexOf(":");
         if(i < 0) return;
@@ -710,7 +911,8 @@ function parsePost(name, raw, extra){
         let v = seg.slice(i+1).trim();
         if(k === "tags" || k === "tag"){
           meta.tags = v.replace(/^\[|\]$/g,"").split(/[,，、]/).map(s => s.trim()).filter(Boolean);
-        } else meta[k] = v;
+        } else if(k === "category" || k === "categories") meta.category = v;
+        else meta[k] = v;
       });
       body = raw.replace(c[0], "");
     }
@@ -756,6 +958,7 @@ function parsePost(name, raw, extra){
     name, base, isHtml, styles, cssLinks, rawHtml,
     scripts: String(meta.scripts||"").toLowerCase() === "true",
     title: (meta.title || base).trim(),
+    category: String(meta.category || extra.category || "未分类").trim() || "未分类",
     created, updated,
     date: created,                                  // 兼容旧字段：列表排序用
     tags,
@@ -872,7 +1075,7 @@ function writeCache(){
     posts:state.posts.map(p => ({
       name:p.name, sha:p.sha, path:p.path,
       meta:{title:p.title,created:p.created,updated:p.updated,tags:p.tags,summary:p.summary,
-        cover:p.cover,draft:p.draft,isHtml:p.isHtml,words:p.words,
+        cover:p.cover,category:p.category,draft:p.draft,isHtml:p.isHtml,words:p.words,
         autoTitle:p.autoTitle,autoSummary:p.autoSummary,styles:p.styles,
         cssLinks:p.cssLinks,scripts:p.scripts,rawHtml:p.rawHtml},
       raw:p.body
@@ -912,6 +1115,7 @@ async function refresh(force=false){
       // 从最新索引更新日期，确保已更改的提交日期能够同步。
       if(m.created) prev.created = m.created;
       if(m.updated) prev.updated = m.updated;
+      if(m.category) prev.category = m.category;
       if(m.summary && prev.autoSummary) prev.summary = m.summary;
       prev.date = prev.created;
       out.push(prev);
@@ -964,6 +1168,7 @@ function filtered(){
   const q = state.q.trim().toLowerCase();
   return state.posts.filter(p => {
     if(state.tag && !p.tags.includes(state.tag)) return false;
+    if(state.category && p.category !== state.category) return false;
     if(!q) return true;
     return (p.title + " " + p.summary + " " + p.plain + " " + p.tags.join(" ")).toLowerCase().includes(q);
   });
@@ -993,56 +1198,170 @@ function statusHTML(){
   return "";
 }
 
+/* 信息架构：保留原文章阅读器，增加 Butterfly 风格的侧栏、归档、分类与标签页 */
+function countsBy(items){
+  const m=new Map(); items.forEach(t => m.set(t, (m.get(t)||0)+1));
+  return [...m.entries()].sort((a,b)=>b[1]-a[1] || a[0].localeCompare(b[0],"zh-CN"));
+}
+function allTags(){ return countsBy(state.posts.flatMap(p=>p.tags)); }
+function allCategories(){ return countsBy(state.posts.map(p=>p.category||"未分类")); }
+function postURL(p){ return "#/p/"+encodeURIComponent(p.name); }
+function sidebarHTML(){
+  const tags=allTags().slice(0,12);
+  const latest=state.posts.slice(0,4);
+  return `<aside class="home-sidebar" aria-label="站点侧栏">
+    <section class="side-card profile-card">
+      <div class="profile-halo"><div class="profile-avatar" aria-hidden="true">${esc((cfg.author||cfg.title||'K').slice(0,1).toUpperCase())}</div></div>
+      <div class="profile-name">${esc(cfg.author||cfg.title)}</div>
+      <p class="profile-desc">${esc(cfg.description)}</p>
+      <div class="profile-stats">
+        <a href="#/archive"><strong>${state.posts.length}</strong><span>文章</span></a>
+        <a href="#/tags"><strong>${allTags().length}</strong><span>标签</span></a>
+        <a href="#/categories"><strong>${allCategories().length}</strong><span>分类</span></a>
+      </div>
+      <a class="profile-follow" href="https://github.com/${encodeURIComponent(cfg.owner)}" target="_blank" rel="noopener noreferrer">GitHub · Follow me <span aria-hidden="true">↗</span></a>
+    </section>
+    <section class="side-card note-card">
+      <div class="side-title"><span class="side-title-icon" aria-hidden="true">✳</span> 一句话</div>
+      <p>${esc(cfg.notice||cfg.description)}</p>
+    </section>
+    ${latest.length ? `<section class="side-card">
+      <div class="side-title">最近更新 <a href="#/archive">全部 ↗</a></div>
+      <div class="side-recent">${latest.map(p=>`<a href="${postURL(p)}"><span>${esc(p.title)}</span><small>${esc(fmtDate(p.updated||p.created))}</small></a>`).join("")}</div>
+    </section>` : ''}
+    ${tags.length ? `<section class="side-card">
+      <div class="side-title">热门标签 <a href="#/tags">更多 ↗</a></div>
+      <div class="side-tags">${tags.map(([t,n])=>`<a href="#/tag/${encodeURIComponent(t)}">${esc(t)} <span>${n}</span></a>`).join("")}</div>
+    </section>` : ''}
+    <div class="side-sign">Keep learning. Keep writing. ✦</div>
+  </aside>`;
+}
+function shellHTML(main){ return `<div class="wrap site-shell"><div class="primary-column">${main}</div>${sidebarHTML()}</div>`; }
+function postCard(p,q=""){
+  return `<a class="post-item" href="${postURL(p)}">
+    <div class="post-date">${esc(fmtDate(p.created)||"—")}${p.updated && p.updated!==p.created ? `<em>修订 ${esc(fmtDate(p.updated))}</em>` : ""}</div>
+    <div><div class="post-kicker">${esc(p.category||"未分类")} <span aria-hidden="true">/</span> ${p.isHtml?'HTML':'Markdown'}</div>
+      <h2 class="post-title">${highlight(p.title,q)}</h2>
+      ${p.summary ? `<p class="post-sum">${highlight(p.summary.slice(0,140),q)}</p>` : ""}
+      <div class="post-tags">${p.tags.slice(0,3).map(t=>`<span class="tag-mini">${esc(t)}</span>`).join("")}
+       <span class="read-time">${Math.max(1,Math.ceil(p.words/400))} 分钟阅读 <span aria-hidden="true">↗</span></span></div>
+    </div>
+  </a>`;
+}
+function featuredHTML(p){
+  return `<a class="featured-card" href="${postURL(p)}">
+    <div class="featured-copy"><div class="feature-kicker"><span class="eyebrow-dot"></span> FEATURED / 最新发布</div>
+      <h2>${esc(p.title)}</h2>
+      <p>${esc((p.summary||'打开阅读这篇文章').slice(0,115))}</p>
+      <div class="feature-foot"><span>${esc(fmtDate(p.created)||'最近更新')}</span><span class="dot"></span>
+        <span>${Math.max(1,Math.ceil(p.words/400))} 分钟阅读</span><span class="featured-arrow" aria-hidden="true">↗</span></div>
+    </div>
+    <div class="featured-art ${p.cover?'has-cover':''}">${p.cover?`<img src="${esc(resolveMedia(p.cover))}" alt="">`:
+      `<span class="art-orbit art-orbit-one"></span><span class="art-orbit art-orbit-two"></span><span class="art-symbol">✳</span>`}</div>
+  </a>`;
+}
+function headingHTML(kicker,title,subtitle=''){
+  return `<div class="page-heading"><div class="eyebrow"><span class="eyebrow-dot"></span>${esc(kicker)}</div><h1>${esc(title)}</h1>${subtitle?`<p>${esc(subtitle)}</p>`:''}</div>`;
+}
 function homeHTML(){
-  const all = filtered();
-  const tags = {};
-  state.posts.forEach(p => p.tags.forEach(t => tags[t] = (tags[t]||0)+1));
-  const tagList = Object.entries(tags).sort((a,b) => b[1]-a[1]);
-  const q = state.q.trim().toLowerCase();
-  const shown = all.slice(0, cfg.pageSize);
-
-  let h = `<section class="hero">
-    <div class="eyebrow"><span class="eyebrow-dot"></span> DIGITAL GARDEN · EST. 2026</div>
-    <h1>${esc(cfg.subtitle || cfg.title)}<span class="hero-star" aria-hidden="true">✳</span></h1>
+  const all=filtered();
+  const tags=allTags();
+  const q=state.q.trim().toLowerCase();
+  const shown=all.slice(0, cfg.pageSize);
+  const normal=!state.tag && !state.category && !q;
+  let h=`<section class="hero">
+    <div class="eyebrow"><span class="eyebrow-dot"></span>DIGITAL GARDEN · NOTES & IDEAS</div>
+    <h1>${esc(cfg.subtitle||cfg.title)}<span class="hero-star" aria-hidden="true">✳</span></h1>
     <p>${esc(cfg.description)}</p>
-    <div class="hero-bottom"><span class="hero-rule" aria-hidden="true"></span><span>${state.posts.length} 篇文章</span><span class="dot"></span><span>${tagList.length} 个标签</span></div>
+    <div class="hero-bottom"><span class="hero-rule" aria-hidden="true"></span><span>持续记录，慢慢生长</span><span class="dot"></span><span>${state.posts.length} 篇文章</span></div>
   </section>`;
-
-  h += statusHTML();
-
-  if(tagList.length){
-    h += `<div class="toolbar">
-      <button class="chip ${state.tag?"":"on"}" onclick="setTag('')">全部<span class="n">${state.posts.length}</span></button>` +
-      tagList.map(([t,n]) => `<button class="chip ${state.tag===t?"on":""}" onclick="setTag(${esc(JSON.stringify(t))})">${esc(t)}<span class="n">${n}</span></button>`).join("") +
-    `</div>`;
-  }
-
+  h+=statusHTML();
   if(state.loading){
-    h += [0,1,2].map(() => `<div class="skel"><i style="width:26%"></i><div style="height:9px"></div><i style="width:62%;height:20px"></i><div style="height:9px"></div><i style="width:88%"></i></div>`).join("");
-  } else if(!shown.length){
-    h += `<div class="empty"><div class="big" aria-hidden="true">✦</div><h2>${state.posts.length ? "没有找到匹配的文章" : "这里还是一片空白"}</h2><p>${state.posts.length ? "尝试其他关键词或取消标签筛选。" : "下一篇文章，正在路上。"}</p></div>`;
+    h+=[0,1,2].map(()=>`<div class="skel"><i style="width:28%"></i><div style="height:10px"></div><i style="width:75%;height:20px"></i></div>`).join("");
+  } else if(normal && shown.length){
+    h+=featuredHTML(shown[0]);
+    h+=`<div class="feed-heading"><div><div class="feed-kicker">THE JOURNAL</div><h2>最近文章 <span>${Math.max(0,shown.length-1)}</span></h2></div><a href="#/archive">浏览全部归档 ↗</a></div>`;
+    if(shown.length>1) h+=`<div class="post-list">${shown.slice(1).map(p=>postCard(p)).join("")}</div>`;
+    else h+=`<p class="feed-placeholder">新的故事正在慢慢写下。</p>`;
   } else {
-    h += `<div class="list-title">${state.tag ? "标签：" + esc(state.tag) : ""}${q ? (state.tag?" · ":"") + "搜索：" + esc(state.q) : ""}${!state.tag && !q ? "最新" : ""} · ${all.length} 篇</div>`;
-    h += shown.map(p => `
-      <a class="post-item" href="#/p/${encodeURIComponent(p.name)}">
-        <div class="post-date">${esc(fmtDate(p.created) || "—")}${p.updated && p.updated !== p.created ? `<em>修订 ${esc(fmtDate(p.updated))}</em>` : ""}</div>
-        <div>
-          <h2 class="post-title">${highlight(p.title, q)}</h2>
-          ${p.summary ? `<p class="post-sum">${highlight(p.summary.slice(0,140), q)}</p>` : ""}
-          <div class="post-tags">${p.tags.map(t=>`<span class="tag-mini">${esc(t)}</span>`).join("")}<span class="read-time">${Math.max(1,Math.ceil(p.words/400))} min read</span></div>
-        </div>
-      </a>`).join("");
+    if(state.tag || state.category || q){
+      const active = state.tag ? `标签 · ${state.tag}` : state.category ? `分类 · ${state.category}` : `搜索 · ${state.q}`;
+      h+=`<div class="filter-info"><strong>${esc(active)}</strong><span>${all.length} 篇结果</span><a href="#/">清除筛选 ×</a></div>`;
+    }
+    if(!shown.length){
+      h+=`<div class="empty"><div class="big" aria-hidden="true">✦</div><h2>${state.loading?'正在加载':state.posts.length?'暂时没有符合条件的文章':'这里还是一片空白'}</h2><p>${state.posts.length?'尝试新的关键词，或查看其他标签。':'下一篇文章，正在路上。'}</p></div>`;
+    }else h+=`<div class="post-list">${shown.map(p=>postCard(p,q)).join('')}</div>`;
   }
-  return `<div class="wrap">${h}</div>`;
+  if(all.length>cfg.pageSize) h+=`<p class="page-tip">当前显示前 ${cfg.pageSize} 篇，<a href="#/archive">在归档页查看全部文章 ↗</a></p>`;
+  return shellHTML(h);
+}
+function archiveHTML(){
+  let h=headingHTML('ALL WRITING / ARCHIVE','文章归档','按时间整理每一次记录与思考。');
+  h+=statusHTML();
+  if(state.loading) h+='<div class="skel"><i style="width:75%"></i></div>';
+  else if(!state.posts.length) h+='<div class="empty"><div class="big">✦</div><h2>暂无文章归档</h2></div>';
+  else{
+    const group=new Map();
+    state.posts.forEach(p=>{const year=(p.created||'未标注日期').slice(0,4);if(!group.has(year))group.set(year,[]);group.get(year).push(p);});
+    h+=`<div class="archive-total">共收录 <strong>${state.posts.length}</strong> 篇文章</div>`;
+    for(const [year,posts] of group){
+      h+=`<section class="archive-year"><h2>${esc(year)} <span>${posts.length} 篇</span></h2><div class="archive-items">`;
+      h+=posts.map(p=>`<a href="${postURL(p)}"><span class="archive-day">${esc((p.created||'').slice(5).replace('-','/'))||'—'}</span><span class="archive-name">${esc(p.title)}</span><span class="archive-cat">${esc(p.category||'未分类')}</span></a>`).join('');
+      h+='</div></section>';
+    }
+  }
+  return shellHTML(h);
+}
+function tagsHTML(){
+  const tags=allTags();
+  let h=headingHTML('DISCOVER / TAGS','文章标签','沿着关键词，找到感兴趣的内容。')+statusHTML();
+  if(tags.length)h+=`<div class="tag-wall">${tags.map(([t,n])=>`<a href="#/tag/${encodeURIComponent(t)}"><span>#</span> ${esc(t)}<small>${n}</small></a>`).join('')}</div>`;
+  else h+='<div class="empty"><div class="big">#</div><h2>暂无标签</h2></div>';
+  return shellHTML(h);
+}
+function categoriesHTML(){
+  const cs=allCategories();
+  let h=headingHTML('EXPLORE / CATEGORIES','文章分类','按照主题，把知识整理成章节。')+statusHTML();
+  if(cs.length)h+=`<div class="category-grid">${cs.map(([c,n],i)=>`<a class="category-card" href="#/category/${encodeURIComponent(c)}"><span class="category-glyph">${['✳','◇','⌘','✦'][i%4]}</span><span class="category-label">${esc(c)}</span><small>${n} 篇文章</small><b aria-hidden="true">↗</b></a>`).join('')}</div>`;
+  else h+='<div class="empty"><h2>暂无分类</h2></div>';
+  return shellHTML(h);
+}
+function aboutHTML(){
+  const gh=`https://github.com/${encodeURIComponent(cfg.owner)}`;
+  let h=headingHTML('HELLO / ABOUT','关于这个博客','在这里，技术与日常都值得被认真记录。');
+  h+=`<div class="about-panel">
+    <div class="about-identity"><span class="about-avatar">${esc((cfg.author||'K').slice(0,1).toUpperCase())}</span><div><strong>${esc(cfg.author||cfg.title)}</strong><span>写作者 · 学习者 · 记录者</span></div></div>
+    <h2>你好，欢迎来到 ${esc(cfg.title)}。</h2>
+    <p>${esc(cfg.about||cfg.description)}</p>
+    <h3>关于写作</h3>
+    <p>文章支持 Markdown 和独立 HTML。只需将文件放进 <code>blog/</code> 目录，GitHub Actions 会生成文章索引并通过 GitHub Pages 自动发布。</p>
+    <h3>找到我</h3><p><a class="about-link" href="${gh}" target="_blank" rel="noopener noreferrer">在 GitHub 继续交流 ↗</a></p>
+    <div class="about-quote">“${esc(cfg.description)}”</div>
+  </div>`;
+  return shellHTML(h);
+}
+function updateActiveNav(section){
+  document.querySelectorAll('.nav-link').forEach(a=>{
+    const active=a.dataset.section===section;
+    a.classList.toggle('active',active);
+    if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
+  });
 }
 
 /* ---------- 渲染：文章页 ---------- */
+function relatedHTML(p){
+  const i=state.posts.findIndex(x=>x.name===p.name);
+  const newer=i>0?state.posts[i-1]:null, older=i>=0?state.posts[i+1]:null;
+  if(!newer && !older)return '';
+  return `<nav class="post-related" aria-label="相邻文章">${newer?`<a href="${postURL(newer)}"><small>← 较新文章</small><strong>${esc(newer.title)}</strong></a>`:'<span></span>'}${older?`<a href="${postURL(older)}"><small>较早文章 →</small><strong>${esc(older.title)}</strong></a>`:'<span></span>'}</nav>`;
+}
 function postHTML(p, r){
   const mins = Math.max(1, Math.round(p.words / 400));
   const metaLine = `<div class="post-meta">
           ${p.created ? `<span>上传于 ${esc(fmtDate(p.created))}</span>` : ""}
           ${p.updated && p.updated !== p.created ? `<span class="dot"></span><span>修订于 ${esc(fmtDate(p.updated))}</span>` : ""}
           <span class="dot"></span><span>约 ${mins} 分钟 · ${p.words} 字</span>
+          ${p.category && p.category!=="未分类" ? `<span class="dot"></span><a class="tag-mini" href="#/category/${encodeURIComponent(p.category)}">${esc(p.category)}</a>` : ""}
           ${p.tags.length ? `<span class="dot"></span>${p.tags.map(t => `<a class="tag-mini" href="#/tag/${encodeURIComponent(t)}">${esc(t)}</a>`).join(" ")}` : ""}
         </div>`;
   const foot = `<div class="post-foot">
@@ -1080,6 +1399,7 @@ function postHTML(p, r){
       <div class="post-divider"></div>
       <details class="toc-mobile" id="tocMobile"><summary>本文目录</summary><div class="toc-mobile-links"></div></details>
       <div class="md" id="mdBody">${renderBody(p, r)}</div>
+      ${relatedHTML(p)}
       ${foot}
     </div>
     <aside class="toc" id="toc"></aside>
@@ -1147,16 +1467,24 @@ function render(){
     document.body.classList.toggle("raw-mode", !!p.isHtml);
     document.documentElement.classList.toggle("raw-mode", !!p.isHtml);
     document.title = p.title + " · " + cfg.title;
+    updateActiveNav("");
     afterPost(p);
   } else {
     document.body.classList.remove("raw-mode");
     document.documentElement.classList.remove("raw-mode");
-    if(h.startsWith("/tag/")) state.tag = decodeURIComponent(h.slice(5));
-    else if(h === "" || h === "/") state.tag = "";
-    app.innerHTML = homeHTML();
-    document.title = cfg.title + " · Blog";
-    $("#q").value = state.q;
-    $("#searchWrap").classList.toggle("has", !!state.q);
+    state.tag=""; state.category="";
+    let section="home";
+    if(h.startsWith("/tag/")) state.tag=decodeURIComponent(h.slice(5));
+    if(h.startsWith("/category/")) state.category=decodeURIComponent(h.slice(10));
+    if(h==="/archive")section="archive";
+    else if(h==="/tags")section="tags";
+    else if(h==="/categories")section="categories";
+    else if(h==="/about")section="about";
+    app.innerHTML= section==="archive"?archiveHTML():section==="tags"?tagsHTML():section==="categories"?categoriesHTML():section==="about"?aboutHTML():homeHTML();
+    document.title=(section==="home"?cfg.title:{archive:"归档",tags:"标签",categories:"分类",about:"关于"}[section]+" · "+cfg.title);
+    $("#q").value=state.q;
+    $("#searchWrap").classList.toggle("has",!!state.q);
+    updateActiveNav(section);
   }
 }
 function setTag(t){
@@ -1341,7 +1669,9 @@ function initUI(){
     $("#searchWrap").classList.toggle("has", !!v);
     timer = setTimeout(() => {
       state.q = v;
-      if(!location.hash.startsWith("/p")) render(); else { state.q = v; location.hash = "#/"; render(); }
+      if(location.hash.startsWith("#/p/") || location.hash==="#/archive" || location.hash==="#/tags" || location.hash==="#/categories" || location.hash==="#/about"){
+        location.hash="#/";
+      }else render();
     }, 180);
   });
   $("#clearQ").onclick = () => {
@@ -1352,7 +1682,7 @@ function initUI(){
   $("#refresh").onclick = () => refresh(true);
   $("#lb").onclick = () => $("#lb").classList.remove("on");
   document.addEventListener("keydown", e => {
-    if(e.key === "/" && document.activeElement !== $("#q")){ e.preventDefault(); $("#q").focus(); }
+    if(e.key === "/" && document.activeElement !== $("#q") && !/input|textarea/i.test(document.activeElement?.tagName||"")){ e.preventDefault(); $("#q").focus(); }
     if(e.key === "Escape") $("#lb").classList.remove("on");
   });
   window.addEventListener("scroll", onScroll, {passive:true});

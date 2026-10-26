@@ -71,9 +71,11 @@ def frontmatter(raw: str) -> tuple[dict, str]:
         key, value = m2.groups()
         key = key.lower()
         value = value.strip().strip('"\'')
-        in_tags = key in ('tags', 'tag', 'categories', 'category') and not value
-        if key in ('tags', 'tag', 'categories', 'category'):
+        in_tags = key in ('tags', 'tag') and not value
+        if key in ('tags', 'tag'):
             meta['tags'] = tags_value(value)
+        elif key in ('category', 'categories'):
+            meta['category'] = (tags_value(value) or [''])[0]
         else:
             meta[key] = value
     return meta, raw[m.end():]
@@ -200,12 +202,13 @@ def build(root: Path, blogdir: str = 'blog') -> dict:
         if is_html:
             # The optional old HTML convention is: <!-- title: … | tags: … -->
             m = re.search(r'<!--\s*(.*?)\s*-->', raw, re.S)
-            if m and re.search(r'(?:^|\|)\s*(?:title|date|created|updated|summary|tags|tag|cover|draft)\s*:', m.group(1), re.I):
+            if m and re.search(r'(?:^|\|)\s*(?:title|date|created|updated|summary|tags|tag|category|categories|cover|draft)\s*:', m.group(1), re.I):
                 for bit in m.group(1).split('|'):
                     k, sep, v = bit.partition(':')
                     if sep:
                         k, v = k.strip().lower(), v.strip()
                         if k in ('tags', 'tag'): meta['tags'] = tags_value(v)
+                        elif k in ('category', 'categories'): meta['category'] = (tags_value(v) or [''])[0]
                         else: meta[k] = v
                 body = raw.replace(m.group(0), '', 1)
             picked_title, picked_summary, plain = html_pick(body)
@@ -225,10 +228,11 @@ def build(root: Path, blogdir: str = 'blog') -> dict:
             'sha':hashlib.sha256(path.read_bytes()).hexdigest(),
             'title':str(title).strip(), 'created':created, 'updated':updated,
             'summary':str(summary).strip(), 'tags':meta.get('tags') or [],
+            'category':str(meta.get('category') or '未分类').strip(),
             'cover':meta.get('cover') or '', 'words':len(re.sub(r'\s+', '', plain)),
         })
     files.sort(key=lambda p:(p['created'],p['name']), reverse=True)
-    return {'version':3,'generated':datetime.now(timezone.utc).isoformat(timespec='seconds'),
+    return {'version':4,'generated':datetime.now(timezone.utc).isoformat(timespec='seconds'),
             'count':len(files),'files':files}
 
 
