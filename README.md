@@ -44,6 +44,8 @@ cover: https://…/cover.jpg   # 可选，文章顶部大图
 ```
 
 - `title`、`date`、`tags`、`summary` 都可以省略：标题退化为文件名的第一个 `#` 标题或文件名，摘要自动截取正文前 140 字
+- `cover` 是文章顶部大图，同样支持相对路径（如 `images/cover.svg`）
+- `scripts: true` 仅对 HTML 文章有效，表示允许执行文章内的 `<script>`
 - 不想发布的草稿：文件名以 `_` 开头（如 `_草稿.md`），或在 frontmatter 写 `draft: true`
 - 排序按 `date` 倒序
 
@@ -57,7 +59,42 @@ cover: https://…/cover.jpg   # 可选，文章顶部大图
 <p>可以用任意 HTML 标签，样式与 Markdown 文章一致。</p>
 ```
 
-## 四、功能
+## 四、相对路径：一律以 `blog/` 为根目录
+
+文章里引用图片、附件时**不用写完整网址**，相对路径会按 `blog/` 为根自动解析。
+
+| 你写的 | 实际解析为 |
+| --- | --- |
+| `images/cover.svg` | `…/main/blog/images/cover.svg` |
+| `./images/cover.svg` | 同上（`./` 可省略） |
+| `files/报告.pdf` | `…/main/blog/files/报告.pdf` |
+| `https://…/a.png` | 原样使用，不改写 |
+
+- 中文文件名、空格会自动做 URL 编码
+- 主源取不到时自动回退镜像与 jsDelivr，图片不会裂
+- 相对路径**指向另一篇文章**（如 `[链接](你好世界.md)`）会自动转成站内跳转，无需刷新页面
+- 目录建议：`blog/images/` 放图片、`blog/files/` 放附件
+
+## 五、HTML 文章：保留你自己的样式
+
+写 `.html` 上传时，文章内的 `<style>` 会被**原样保留**并生效：
+
+```html
+<style>
+  .card { border: 2px dashed #4a5bd6; border-radius: 16px; padding: 22px; }
+  h2 { color: #4a5bd6; }
+</style>
+
+<div class="card">…</div>
+```
+
+- 站点只提供最基础的默认排版（字号、行高、图片自适应），**特异性为 0**，你的样式一律优先
+- 你的样式会被自动加上 `#mdBody` 作用域，**不会污染**首页和其他文章
+- 上传完整 HTML 文档也可以，会自动取 `<body>` 里的内容
+- `<link rel="stylesheet" href="style.css">` 的相对路径同样会被解析加载
+- 文章内脚本默认不执行，需要时在元信息里加 `scripts: true`
+
+## 六、功能
 
 | 功能 | 说明 |
 | --- | --- |
@@ -70,7 +107,7 @@ cover: https://…/cover.jpg   # 可选，文章顶部大图
 | 代码高亮 | 代码块自动高亮 + 一键复制 |
 | 图片灯箱 | 点击正文图片放大查看 |
 
-## 五、配置（可选）
+## 七、配置（可选）
 
 根目录 `config.json`：
 
@@ -89,7 +126,7 @@ cover: https://…/cover.jpg   # 可选，文章顶部大图
 
 改完 Commit 即可生效。若分支是 `master`，把 `branch` 改成 `master`（不写也会自动探测）。
 
-## 六、可能遇到的问题
+## 八、可能遇到的问题
 
 **Q：新文章没出现？**
 A：GitHub API 有缓存/CDN 延迟，通常几十秒内可见。点右下角 ↻ 按钮强制刷新；若仍没有，确认文件确实在 `blog/` 目录下且后缀是 `.md`/`.html`。

@@ -208,6 +208,27 @@ mark{background:var(--accent-soft);color:var(--accent);border-radius:3px;padding
 [data-theme="dark"] .hljs-attr,[data-theme="dark"] .hljs-params,[data-theme="dark"] .hljs-symbol{color:#e5c07b;}
 [data-theme="dark"] .hljs-built_in,[data-theme="dark"] .hljs-name,[data-theme="dark"] .hljs-tag{color:#e06c75;}
 
+/* ============ 原始 HTML 文章容器（尽量保留作者自带样式） ============ */
+/* 这里的规则全部用 :where() 包裹 → 特异性为 0，作者自带的 <style> 永远优先 */
+.raw-html{font-size:16.5px;line-height:1.86;word-wrap:break-word;}
+:where(.raw-html) :is(h1,h2,h3,h4,h5,h6){line-height:1.4;font-weight:700;scroll-margin-top:84px;}
+:where(.raw-html) h1{font-size:28px;margin:.9em 0 .6em;}
+:where(.raw-html) h2{font-size:23px;margin:.9em 0 .6em;}
+:where(.raw-html) h3{font-size:19px;margin:.9em 0 .6em;}
+:where(.raw-html) p{margin:1em 0;}
+:where(.raw-html) ul,:where(.raw-html) ol{padding-left:1.5em;}
+:where(.raw-html) img{max-width:100%;height:auto;cursor:zoom-in;}
+:where(.raw-html) pre{max-width:100%;overflow-x:auto;background:var(--code-bg);border:1px solid var(--line-soft);border-radius:12px;padding:16px 18px;}
+:where(.raw-html) pre code{font-family:var(--mono);font-size:13.5px;background:none;border:none;padding:0;}
+:where(.raw-html) code{font-family:var(--mono);font-size:.88em;}
+:where(.raw-html) table{border-collapse:collapse;max-width:100%;display:block;overflow-x:auto;}
+:where(.raw-html) th,:where(.raw-html) td{border:1px solid var(--line);padding:9px 14px;text-align:left;}
+:where(.raw-html) blockquote{margin:1.2em 0;padding-left:16px;border-left:3px solid var(--accent);color:var(--fg-mid);}
+:where(.raw-html) a:not([class]){color:var(--accent);}
+:where(.raw-html) hr{border:none;height:1px;background:var(--line);margin:2em 0;}
+/* 作者没写任何样式时，给标题一个合理的默认字号 */
+:where(.raw-html) :is(h1,h2,h3,h4,h5,h6):first-child{margin-top:8px;}
+
 /* TOC */
 .toc{position:sticky;top:88px;font-size:13.5px;max-height:calc(100vh - 130px);overflow-y:auto;}
 .toc .t{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-soft);margin-bottom:12px;}
@@ -397,6 +418,67 @@ function rawURLs(path){
   ];
 }
 
+/* ---------- 相对路径解析：以 blog/ 为根目录 ---------- */
+function relToRepoPath(rel){
+  rel = String(rel).trim().split(/[?#]/)[0];
+  if(!rel || /^(https?:)?\/\//i.test(rel) || /^(data|blob|mailto|tel|javascript|file):/i.test(rel)) return null;
+  const base = String(cfg.blogDir || "blog").replace(/^\/+|\/+$/g, "");
+  const parts = ((base ? base + "/" : "") + rel).split("/");
+  const st = [];
+  for(const seg of parts){
+    if(seg === "" || seg === ".") continue;
+    if(seg === ".."){ if(st.length > 1) st.pop(); }
+    else st.push(seg);
+  }
+  const clean = st.join("/");
+  return (!clean || clean === base) ? null : clean;
+}
+function assetURLs(repoPath){
+  const {owner,repo,branch} = cfg;
+  const p = repoPath.split("/").map(encodeURIComponent).join("/");
+  return [
+    `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${p}`,
+    `https://raw.gitmirror.com/${owner}/${repo}/${branch}/${p}`,
+    `https://gh-proxy.com/https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${p}`,
+    `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${p}`,
+    `https://fastly.jsdelivr.net/gh/${owner}/${repo}@${branch}/${p}`
+  ];
+}
+/* 给作者自带的 CSS 加作用域前缀，避免污染整站；用 #id 抬高特异性，保证作者样式优先 */
+function scopeCSS(css, scope){
+  css = String(css).replace(/\/\*[\s\S]*?\*\//g, "");
+  let out = "", buf = "", i = 0;
+  while(i < css.length){
+    const ch = css[i];
+    if(ch === "{"){
+      const sel = buf.trim(); buf = "";
+      let depth = 1, j = i + 1;
+      while(j < css.length && depth > 0){
+        if(css[j] === "{") depth++; else if(css[j] === "}") depth--;
+        j++;
+      }
+      const inner = css.slice(i + 1, j - 1);
+      if(sel.startsWith("@")){
+        out += sel + "{" + scopeCSS(inner, scope) + "}";
+      } else if(sel){
+        const scoped = sel.split(",").map(s => {
+          s = s.trim();
+          if(!s) return scope;
+          if(/^(html|body|:root)\b/i.test(s)){
+            const rest = s.replace(/^(html|body|:root)\s*/i, "").trim();
+            return rest ? scope + " " + rest : scope;
+          }
+          if(/^\*(.*)$/.test(s)) return s.startsWith("*") ? scope + " " + s : scope + " " + s;
+          return scope + " " + s;
+        }).join(", ");
+        out += scoped + "{" + inner + "}";
+      }
+      i = j;
+    } else { buf += ch; i++; }
+  }
+  return out + buf.trim();
+}
+
 /* ---------- 元信息解析 ---------- */
 function parseFrontMatter(raw){
   const fm = {};
@@ -429,6 +511,8 @@ function parsePost(name, raw){
   const base = name.replace(/\.(md|markdown|html?)$/i,"");
   let meta = {}, body = raw;
 
+  const styles = [], cssLinks = [], postPath = (arguments[2] || "");
+
   if(isHtml){
     const c = raw.match(/<!--([\s\S]*?)-->/);
     if(c && /title\s*:/i.test(c[1])){
@@ -451,6 +535,19 @@ function parsePost(name, raw){
       const p = body.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
       meta.summary = p ? stripMarkup(p[1]).slice(0,140) : "";
     }
+    // ① 抽出作者自带的 <style>（稍后加作用域注入，避免污染整站）
+    body = body.replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gi, (m, css) => { styles.push(css); return ""; });
+    // ② 抽出外链 CSS（相对路径会在渲染时解析成仓库绝对地址再加载）
+    body = body.replace(/<link\b[^>]*>/gi, m => {
+      const href = (m.match(/href\s*=\s*["']([^"']+)["']/i) || [])[1] || "";
+      const relAttr = (m.match(/rel\s*=\s*["']([^"']+)["']/i) || [])[1] || "";
+      if(/stylesheet/i.test(relAttr) || /\.css$/i.test(href)){ cssLinks.push(href); return ""; }
+      return m;
+    });
+    // ③ 若上传的是完整 HTML 文档，只取 <body> 内容
+    const bm = body.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    if(bm) body = bm[1];
+    body = body.replace(/<\/?(html|head|body|!doctype)[^>]*>/gi, "").trim();
   } else {
     const r = parseFrontMatter(raw);
     meta = r.fm; body = r.body;
@@ -464,7 +561,8 @@ function parsePost(name, raw){
   const tags = (meta.tags||[]).filter(Boolean);
   const plain = stripMarkup(body);
   return {
-    name, base, isHtml,
+    name, base, isHtml, styles, cssLinks,
+    scripts: String(meta.scripts||"").toLowerCase() === "true",
     title: meta.title || base,
     date: (meta.date||"").slice(0,10),
     tags,
@@ -575,7 +673,8 @@ function writeCache(){
       ts: Date.now(),
       posts: state.posts.map(p => ({name:p.name, sha:p.sha, meta:{
         title:p.title, date:p.date, tags:p.tags, summary:p.summary, cover:p.cover,
-        draft:p.draft, isHtml:p.isHtml, words:p.words
+        draft:p.draft, isHtml:p.isHtml, words:p.words,
+        styles:p.styles, cssLinks:p.cssLinks, scripts:p.scripts
       }, raw:p.body}))
     }));
   }catch(e){}
@@ -699,9 +798,9 @@ function postHTML(p, r){
           ${p.tags.length ? `<span class="dot"></span>${p.tags.map(t => `<a class="tag-mini" href="#/tag/${encodeURIComponent(t)}">${esc(t)}</a>`).join(" ")}` : ""}
         </div>
       </div>
-      ${p.cover ? `<div class="post-cover"><img src="${esc(p.cover)}" alt=""></div>` : ""}
+      ${p.cover ? `<div class="post-cover"><img src="${esc(resolveMedia(p.cover))}" alt=""></div>` : ""}
       <div class="post-divider"></div>
-      <div class="md" id="mdBody">${renderBody(p, r)}</div>
+      <div class="${p.isHtml ? "raw-html" : "md"}" id="mdBody">${renderBody(p, r)}</div>
       <div class="post-foot">
         <a href="#/">← 返回全部文章</a>
         <a href="https://github.com/${cfg.owner}/${cfg.repo}/tree/${cfg.branch}/${cfg.blogDir}" target="_blank" rel="noopener">在 GitHub 上查看源文件 ↗</a>
@@ -724,6 +823,7 @@ function render(){
         <div style="margin-top:18px"><a class="chip" href="#/">返回首页</a></div></div></div>`;
       return;
     }
+    clearInjected();
     app.innerHTML = postHTML(p, renderers);
     document.title = p.title + " · " + cfg.title;
     afterPost(p);
@@ -744,8 +844,69 @@ function setTag(t){
 window.setTag = setTag;
 window.refresh = refresh;
 
+/* 注入作者自带样式（带作用域） */
+let styleSeq = 0;
+function injectStyle(css){
+  if(!css || !css.trim()) return;
+  const s = document.createElement("style");
+  s.id = "raw-style-" + (++styleSeq);
+  s.textContent = css;
+  document.head.appendChild(s);
+}
+function clearInjected(){
+  document.querySelectorAll("style[id^=raw-style-]").forEach(s => s.remove());
+}
+/* 解析单个媒体地址：相对路径 → 仓库绝对地址 */
+function resolveMedia(url){
+  if(!url) return "";
+  const rp = relToRepoPath(url);
+  return rp ? assetURLs(rp)[0] : url;
+}
+/* 把正文里所有相对路径资源改写到 blog/ 为根的仓库地址 */
+function rewriteAssets(root){
+  root.querySelectorAll("[src],[href],[poster],[data-src]").forEach(el => {
+    ["src","href","poster","data-src"].forEach(attr => {
+      if(!el.hasAttribute(attr)) return;
+      const v = el.getAttribute(attr);
+      const rp = relToRepoPath(v);
+      if(!rp) return;
+      const urls = assetURLs(rp);
+      // 指向另一篇文章的相对链接 → 转成站内路由
+      if(el.tagName === "A" && /\.(md|markdown|html?)$/i.test(rp)){
+        const fname = rp.split("/").pop();
+        const target = state.posts.find(x => x.name === fname);
+        if(target){ el.setAttribute(attr, "#/p/" + encodeURIComponent(target.name)); return; }
+      }
+      el.setAttribute(attr, urls[0]);
+      if(el.tagName === "IMG" || el.tagName === "SOURCE"){
+        let k = 0;
+        el.onerror = () => { k++; if(k < urls.length) el.setAttribute(attr, urls[k]); };
+      }
+    });
+  });
+}
+
 function afterPost(p){
   const body = $("#mdBody");
+  // ① 作者自带的 <style>：加 #mdBody 作用域后注入（特异性高于站点样式，原样保留）
+  (p.styles || []).forEach(css => injectStyle(scopeCSS(css, "#mdBody")));
+  // ② 外链 CSS：相对路径按 blog/ 为根解析后拉取注入
+  (p.cssLinks || []).forEach(href => {
+    const rp = relToRepoPath(href);
+    if(!rp){ injectStyle('@import url("' + href + '");'); return; }
+    tryHosts(assetURLs(rp)).then(css => injectStyle(scopeCSS(css, "#mdBody"))).catch(() => {});
+  });
+  // ③ 相对路径资源（图片/附件/文章互链）统一以 blog/ 为根解析
+  rewriteAssets(body);
+  // ④ 可选：执行文章内脚本（需在元信息里写 scripts: true）
+  if(p.scripts){
+    body.querySelectorAll("script").forEach(old => {
+      const s = document.createElement("script");
+      [...old.attributes].forEach(a => s.setAttribute(a.name, a.value));
+      s.textContent = old.textContent;
+      old.parentNode.replaceChild(s, old);
+    });
+  }
   // 代码块：高亮 + 复制
   body.querySelectorAll("pre").forEach(pre => {
     const code = pre.querySelector("code") || pre;
