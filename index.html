@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Khtao · Blog</title>
 <meta name="description" content="一个用文字对抗遗忘的地方。">
+<meta name="theme-color" content="#fcfcfe">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Khtao · Blog">
+<meta property="og:description" content="一个用文字对抗遗忘的地方。">
+<link rel="alternate" type="application/rss+xml" title="Khtao Blog RSS" href="./feed.xml">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%234a5bd6'/%3E%3Ctext x='50' y='68' font-size='56' font-family='sans-serif' font-weight='700' fill='white' text-anchor='middle'%3EK%3C/text%3E%3C/svg%3E">
 <style>
 /* ============ 设计变量 ============ */
@@ -578,9 +583,111 @@ body{background:var(--bg);}
 }
 @media(prefers-reduced-motion:reduce){.featured-card,.featured-art img,.category-card,.tag-wall>a{transition:none;}.featured-card:hover,.category-card:hover,.tag-wall>a:hover{transform:none;}}
 
+
+/* ============ v5 · GitHub Pages editorial upgrade ============ */
+:root{--reading-size:16px;--soft-shadow:0 18px 55px rgba(57,69,114,.055)}
+[data-theme="dark"]{--soft-shadow:0 18px 55px rgba(0,0,0,.17)}
+html{scroll-behavior:auto}
+.skip-link{position:fixed;z-index:200;top:-80px;left:20px;background:var(--accent);color:white;padding:11px 17px;border-radius:0 0 10px 10px;font-size:13px}
+.skip-link:focus{top:0}
+.site-header{border-bottom:1px solid var(--line-soft)}
+.brand{letter-spacing:-.055em;font-size:19px}
+.brand small{border-left:1px solid var(--line);padding-left:12px;margin-left:13px;letter-spacing:.045em;text-transform:uppercase;font:10px var(--mono)}
+.nav-link{font-weight:600}
+.nav .search input{background:var(--bg-soft);border-color:transparent;padding-right:57px;font-size:12.5px}
+.nav .search input:focus{border-color:var(--accent)}
+.search-key{position:absolute;top:50%;right:13px;transform:translateY(-50%);font:10px var(--mono);color:var(--fg-soft);border:1px solid var(--line);border-radius:5px;padding:1px 4px;pointer-events:none}
+.search.has .search-key,.search:focus-within .search-key{display:none}
+.hero{padding-top:77px;padding-bottom:37px}
+.hero h1{font-size:clamp(34px,4.15vw,52px);line-height:1.34;letter-spacing:-.062em;font-weight:790}
+.hero .eyebrow{font-size:10px;letter-spacing:.13em}
+.hero p{font-size:16px;max-width:38em}
+.hero::after{opacity:.55}
+.hero-bottom{margin-top:27px}
+.home-sidebar{padding-top:52px;gap:16px}
+.side-card{border-radius:18px;box-shadow:var(--soft-shadow)}
+.profile-card{border-color:var(--line);box-shadow:var(--soft-shadow)}
+.profile-halo{background:radial-gradient(ellipse at 24% 120%,rgba(132,118,225,.18),transparent 59%),radial-gradient(ellipse at 90% -10%,rgba(101,142,237,.19),transparent 55%),var(--bg-soft)}
+.profile-avatar{border-radius:23px;background:linear-gradient(145deg,#4b4cb8,#8587ee 85%);font-size:35px}
+.profile-follow{background:var(--accent);box-shadow:0 8px 19px rgba(89,91,212,.15)}
+.quick-discover{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:0 0 20px;margin-top:4px}
+.quick-label{font-size:12px;font-weight:700;color:var(--fg-mid);margin-right:5px;white-space:nowrap}
+.quick-label span{color:var(--accent);padding-left:5px}
+.quick-discover a{padding:6px 11px;border:1px solid var(--line);background:var(--paper);color:var(--fg-mid);border-radius:999px;font-size:12px;transition:.18s}
+.quick-discover a small{color:var(--fg-soft);margin-left:4px;font:10px var(--mono)}
+.quick-discover a:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.quick-discover .quick-all{margin-left:auto;border-color:transparent;background:transparent;color:var(--accent)}
+.featured-card{border-radius:20px;grid-template-columns:minmax(0,1fr) 230px;min-height:287px;box-shadow:var(--soft-shadow);border-color:var(--line)}
+.featured-copy{padding:30px 31px 27px}
+.featured-copy h2{font-size:clamp(23px,2.35vw,30px);line-height:1.4;margin-top:28px;margin-bottom:12px}
+.featured-copy p{font-size:13.5px;line-height:1.85;max-width:50ch}
+.feature-foot{gap:13px}
+.featured-art{background:radial-gradient(circle at 20% 80%,rgba(116,111,228,.30),transparent 48%),linear-gradient(140deg,#f0efff,#dfe4ff 67%,#d4dbfd)}
+[data-theme="dark"] .featured-art{background:radial-gradient(circle at 20% 85%,rgba(112,111,228,.24),transparent 49%),linear-gradient(135deg,#272b54,#1c254e 72%,#12192f)}
+.art-symbol{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:113px;letter-spacing:-.09em;transform:rotate(-8deg);color:#6463c5;text-shadow:5px 5px 0 rgba(255,255,255,.4);filter:none}
+[data-theme="dark"] .art-symbol{color:#9ea7ff;text-shadow:none}
+.art-mini{font:650 10px var(--mono);letter-spacing:.14em;position:absolute;bottom:4px;left:84px;width:80px;transform:rotate(8deg)}
+.art-paper-line{position:absolute;background:rgba(104,95,191,.14);height:1px;transform:rotate(-42deg);width:250px}
+.art-line-1{left:-45px;top:40px}.art-line-2{right:-120px;bottom:56px}
+.feed-heading{padding-top:55px;align-items:end}
+.feed-heading h2{font-size:24px}
+.feed-toolbar{display:flex;align-items:center;background:var(--bg-soft);padding:3px;border-radius:10px;gap:2px}
+.feed-toolbar button{font-size:11.5px;color:var(--fg-soft);padding:7px 10px;border-radius:8px;white-space:nowrap}
+.feed-toolbar button.selected{background:var(--paper);box-shadow:0 1px 6px rgba(43,48,99,.08);color:var(--accent);font-weight:700}
+.feed-toolbar button:hover:not(.selected){color:var(--fg)}
+.post-item{grid-template-columns:104px minmax(0,1fr);padding:28px 12px;gap:18px;transform:none}
+.post-item:hover{transform:translateX(2px)}
+.post-title{font-size:20.5px;letter-spacing:-.027em}
+.post-kicker{letter-spacing:.02em}
+.read-time{white-space:nowrap}
+.loadmore-area{text-align:center;margin:24px auto 3px}
+.loadmore{border:1px solid var(--line);padding:12px 20px;border-radius:12px;background:var(--paper);color:var(--fg-mid);font-size:12.5px;transition:.18s}
+.loadmore span{font:10px var(--mono);color:var(--fg-soft);margin:0 10px}
+.loadmore:hover{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.subscription-card{background:linear-gradient(135deg,var(--accent-soft),transparent 95%),var(--paper)}
+.subscription-card p{font-size:12px;line-height:1.85;color:var(--fg-soft);margin:0 0 15px}
+.subscribe-link{display:inline-flex;font-size:12px;font-weight:700;color:var(--accent);gap:10px;align-items:center}
+.subscribe-link:hover{text-decoration:underline}
+.clear-filters{font-size:12px;margin-left:auto;color:var(--accent)}
+.clear-filters:hover{text-decoration:underline}
+.footer-actions{display:flex;gap:20px;flex-wrap:wrap}
+.footer-actions a:hover{color:var(--accent)}
+.reading-tools{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0 20px;margin-bottom:10px;border-bottom:1px solid var(--line-soft)}
+.reading-label{display:flex;align-items:center;gap:7px;color:var(--fg-soft);font-size:11px;letter-spacing:.08em}
+.reading-dot{width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.reading-actions{display:flex;gap:5px;align-items:center}
+.reading-help{font-size:11px;color:var(--fg-soft);margin-right:4px}
+.reading-actions button{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:4px 10px;font-size:12px;color:var(--fg-mid);min-height:30px}
+.reading-actions button:hover{border-color:var(--accent);color:var(--accent)}
+.reading-separator{width:1px;height:18px;background:var(--line);margin:0 5px}
+.md{font-size:var(--reading-size);line-height:1.87}
+.md p,.md li{line-height:1.87}
+.md h2,.md h3{scroll-margin-top:90px}
+.toc a{transition:color .12s,background .12s}
+.toast{position:fixed;left:50%;bottom:35px;z-index:150;transform:translate(-50%,12px);opacity:0;pointer-events:none;transition:.22s;background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:12px;box-shadow:var(--shadow);white-space:nowrap}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media(max-width:1080px){.featured-card{grid-template-columns:minmax(0,1fr) 170px}}
+@media(max-width:850px){.featured-card{grid-template-columns:minmax(0,1fr) 200px}.home-sidebar{padding-top:26px}.nav{height:auto}.nav .search-key{display:none}}
+@media(max-width:560px){
+  .hero{padding:43px 0 32px}.hero h1{font-size:clamp(31px,8.4vw,41px);line-height:1.36}
+  .hero p{font-size:14px}.hero::after{opacity:.4}
+  .quick-discover{gap:6px;margin-bottom:4px}.quick-discover a{padding:5px 9px;font-size:11px}.quick-discover .quick-all{margin-left:0}
+  .featured-card{grid-template-columns:1fr}.featured-copy{padding:23px 22px 24px}
+  .featured-copy h2{font-size:24px;margin-top:20px}.featured-art{height:152px}
+  .art-symbol{font-size:70px}.art-mini{bottom:0;left:55px;font-size:8px}
+  .feed-heading{gap:9px;align-items:center}.feed-heading h2{font-size:22px}
+  .feed-toolbar button{font-size:10px;padding:6px 7px}
+  .post-item{grid-template-columns:1fr;gap:5px;padding:22px 10px}
+  .reading-label{display:none}.reading-tools{justify-content:flex-end}
+  .reading-actions button{padding:4px 9px}
+  .search-key{display:none}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.toast{transition:none}}
+
 </style>
 </head>
 <body>
+<a class="skip-link" href="#app">跳到主要内容</a>
 
 <div class="progress"><i id="bar"></i></div>
 
@@ -597,7 +704,8 @@ body{background:var(--bg);}
     <div class="nav-spacer"></div>
     <div class="search" id="searchWrap">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      <input id="q" type="search" placeholder="搜索文章…" autocomplete="off">
+      <input id="q" type="search" placeholder="搜索文章…" aria-label="搜索文章内容" autocomplete="off">
+      <kbd class="search-key" aria-hidden="true">⌘K</kbd>
       <button class="clear" id="clearQ" aria-label="清空">×</button>
     </div>
     <button class="icon-btn" id="theme" aria-label="切换主题">
@@ -611,7 +719,7 @@ body{background:var(--bg);}
 
 <footer><div class="foot">
   <span id="footText">© 2026 khtao · Built with GitHub Pages</span>
-  <a id="footGithub" href="https://github.com/khtao/khtao.github.io" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+  <div class="footer-actions"><a href="./feed.xml" title="订阅博客 RSS">RSS 订阅 ↗</a><a id="footGithub" href="https://github.com/khtao/khtao.github.io" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div>
 </div></footer>
 
 <div class="float">
@@ -620,10 +728,11 @@ body{background:var(--bg);}
 </div>
 
 <div class="lightbox" id="lb"><img alt=""></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 /* =======================================================================
-   静态索引博客 · v4
+   静态索引博客 · v5
    - 文章清单和提交日期来自同域 blog/index.json（Actions 自动生成）
    - 浏览器不再请求 GitHub API / 第三方镜像 / Personal Access Token
    - 对零文章、删除、离线缓存做独立处理
@@ -638,7 +747,7 @@ let cfg = Object.assign({}, DEFAULT_CFG);
 const CACHE_KEY = "khtao_blog_cache_v3";
 const state = {
   posts:[], q:"", tag:"", category:"", loading:true, error:"", offline:false,
-  syncedAt:0, generated:"", hasList:false, refreshing:false
+  syncedAt:0, generated:"", hasList:false, refreshing:false, sort:"new", visible:6
 };
 let syncSequence = 0;
 const $ = s => document.querySelector(s);
@@ -674,6 +783,8 @@ async function loadConfig(){
   document.title = cfg.title + " · Blog";
   const md = document.querySelector('meta[name=description]');
   if(md) md.content = cfg.description;
+  const ogTitle=document.querySelector('meta[property="og:title"]'); if(ogTitle)ogTitle.content=cfg.title + ' · Blog';
+  const ogDesc=document.querySelector('meta[property="og:description"]'); if(ogDesc)ogDesc.content=cfg.description;
   const b = $(".brand");
   if(b) b.innerHTML = `<span class="brand-icon" aria-hidden="true">✦</span>${esc(cfg.title)}<small>Notes</small>`;
   $("#footText").textContent = cfg.footer;
@@ -1170,8 +1281,10 @@ function filtered(){
     if(state.tag && !p.tags.includes(state.tag)) return false;
     if(state.category && p.category !== state.category) return false;
     if(!q) return true;
-    return (p.title + " " + p.summary + " " + p.plain + " " + p.tags.join(" ")).toLowerCase().includes(q);
-  });
+    return (p.title + " " + p.summary + " " + p.plain + " " + p.tags.join(" ") + " " + p.category).toLowerCase().includes(q);
+  }).sort((a,b)=>state.sort === "updated"
+    ? (b.updated||b.created||"").localeCompare(a.updated||a.created||"") || (b.created||"").localeCompare(a.created||"")
+    : (b.created||"").localeCompare(a.created||"") || b.name.localeCompare(a.name));
 }
 function fmtDate(d){
   if(!d) return "";
@@ -1208,7 +1321,7 @@ function allCategories(){ return countsBy(state.posts.map(p=>p.category||"未分
 function postURL(p){ return "#/p/"+encodeURIComponent(p.name); }
 function sidebarHTML(){
   const tags=allTags().slice(0,12);
-  const latest=state.posts.slice(0,4);
+  const latest=[...state.posts].sort((a,b)=>(b.updated||b.created||"").localeCompare(a.updated||a.created||"")).slice(0,4);
   return `<aside class="home-sidebar" aria-label="站点侧栏">
     <section class="side-card profile-card">
       <div class="profile-halo"><div class="profile-avatar" aria-hidden="true">${esc((cfg.author||cfg.title||'K').slice(0,1).toUpperCase())}</div></div>
@@ -1233,6 +1346,10 @@ function sidebarHTML(){
       <div class="side-title">热门标签 <a href="#/tags">更多 ↗</a></div>
       <div class="side-tags">${tags.map(([t,n])=>`<a href="#/tag/${encodeURIComponent(t)}">${esc(t)} <span>${n}</span></a>`).join("")}</div>
     </section>` : ''}
+    <div class="side-card subscription-card"><div class="side-title"><span class="side-title-icon">↗</span> 保持联系</div>
+      <p>文章更新时，使用 RSS 第一时间阅读。无需注册，也不需要邮件订阅。</p>
+      <a href="./feed.xml" class="subscribe-link">订阅 RSS <span aria-hidden="true">↗</span></a>
+    </div>
     <div class="side-sign">Keep learning. Keep writing. ✦</div>
   </aside>`;
 }
@@ -1250,14 +1367,14 @@ function postCard(p,q=""){
 }
 function featuredHTML(p){
   return `<a class="featured-card" href="${postURL(p)}">
-    <div class="featured-copy"><div class="feature-kicker"><span class="eyebrow-dot"></span> FEATURED / 最新发布</div>
+    <div class="featured-copy"><div class="feature-kicker"><span class="eyebrow-dot"></span> FEATURED STORY · ${esc(p.category||"文章")}</div>
       <h2>${esc(p.title)}</h2>
       <p>${esc((p.summary||'打开阅读这篇文章').slice(0,115))}</p>
       <div class="feature-foot"><span>${esc(fmtDate(p.created)||'最近更新')}</span><span class="dot"></span>
         <span>${Math.max(1,Math.ceil(p.words/400))} 分钟阅读</span><span class="featured-arrow" aria-hidden="true">↗</span></div>
     </div>
     <div class="featured-art ${p.cover?'has-cover':''}">${p.cover?`<img src="${esc(resolveMedia(p.cover))}" alt="">`:
-      `<span class="art-orbit art-orbit-one"></span><span class="art-orbit art-orbit-two"></span><span class="art-symbol">✳</span>`}</div>
+      `<span class="art-paper-line art-line-1"></span><span class="art-paper-line art-line-2"></span><span class="art-orbit art-orbit-one"></span><span class="art-orbit art-orbit-two"></span><span class="art-symbol">K<span class="art-mini">/ NOTES</span></span>`}</div>
   </a>`;
 }
 function headingHTML(kicker,title,subtitle=''){
@@ -1267,7 +1384,7 @@ function homeHTML(){
   const all=filtered();
   const tags=allTags();
   const q=state.q.trim().toLowerCase();
-  const shown=all.slice(0, cfg.pageSize);
+  const shown=all.slice(0, Math.min(all.length, state.visible + (!state.tag && !state.category && !state.q.trim() ? 1 : 0)));
   const normal=!state.tag && !state.category && !q;
   let h=`<section class="hero">
     <div class="eyebrow"><span class="eyebrow-dot"></span>DIGITAL GARDEN · NOTES & IDEAS</div>
@@ -1279,20 +1396,26 @@ function homeHTML(){
   if(state.loading){
     h+=[0,1,2].map(()=>`<div class="skel"><i style="width:28%"></i><div style="height:10px"></div><i style="width:75%;height:20px"></i></div>`).join("");
   } else if(normal && shown.length){
+    h+=`<nav class="quick-discover" aria-label="探索分类">
+      <span class="quick-label">探索话题 <span aria-hidden="true">/</span></span>
+      ${allCategories().slice(0,4).map(([c,n])=>`<a href="#/category/${encodeURIComponent(c)}">${esc(c)} <small>${n}</small></a>`).join('')}
+      <a class="quick-all" href="#/categories">查看分类 ↗</a>
+    </nav>`;
     h+=featuredHTML(shown[0]);
-    h+=`<div class="feed-heading"><div><div class="feed-kicker">THE JOURNAL</div><h2>最近文章 <span>${Math.max(0,shown.length-1)}</span></h2></div><a href="#/archive">浏览全部归档 ↗</a></div>`;
+    h+=`<div class="feed-heading"><div><div class="feed-kicker">THE JOURNAL / ALL NOTES</div><h2>最近文章 <span>${Math.max(0,all.length-1)}</span></h2></div>
+      <div class="feed-toolbar" aria-label="文章排序"><button data-sort="new" class="${state.sort==='new'?'selected':''}" aria-pressed="${state.sort==='new'}">最新发布</button><button data-sort="updated" class="${state.sort==='updated'?'selected':''}" aria-pressed="${state.sort==='updated'}">最近修订</button></div></div>`;
     if(shown.length>1) h+=`<div class="post-list">${shown.slice(1).map(p=>postCard(p)).join("")}</div>`;
     else h+=`<p class="feed-placeholder">新的故事正在慢慢写下。</p>`;
   } else {
     if(state.tag || state.category || q){
       const active = state.tag ? `标签 · ${state.tag}` : state.category ? `分类 · ${state.category}` : `搜索 · ${state.q}`;
-      h+=`<div class="filter-info"><strong>${esc(active)}</strong><span>${all.length} 篇结果</span><a href="#/">清除筛选 ×</a></div>`;
+      h+=`<div class="filter-info"><strong>${esc(active)}</strong><span>${all.length} 篇结果</span><button type="button" class="clear-filters" data-clear="true">清除筛选 ×</button></div>`;
     }
     if(!shown.length){
       h+=`<div class="empty"><div class="big" aria-hidden="true">✦</div><h2>${state.loading?'正在加载':state.posts.length?'暂时没有符合条件的文章':'这里还是一片空白'}</h2><p>${state.posts.length?'尝试新的关键词，或查看其他标签。':'下一篇文章，正在路上。'}</p></div>`;
     }else h+=`<div class="post-list">${shown.map(p=>postCard(p,q)).join('')}</div>`;
   }
-  if(all.length>cfg.pageSize) h+=`<p class="page-tip">当前显示前 ${cfg.pageSize} 篇，<a href="#/archive">在归档页查看全部文章 ↗</a></p>`;
+  if(all.length>shown.length) h+=`<div class="loadmore-area"><button class="loadmore" data-more="true">继续阅读更多文章 <span>${shown.length} / ${all.length}</span> ↘</button></div>`;
   return shellHTML(h);
 }
 function archiveHTML(){
@@ -1397,6 +1520,15 @@ function postHTML(p, r){
       </div>
       ${p.cover ? `<div class="post-cover"><img src="${esc(resolveMedia(p.cover))}" alt=""></div>` : ""}
       <div class="post-divider"></div>
+      <div class="reading-tools" aria-label="阅读工具">
+        <div class="reading-label"><span class="reading-dot" aria-hidden="true"></span> 沉浸阅读</div>
+        <div class="reading-actions"><span class="reading-help">字号</span>
+          <button data-font="-1" aria-label="缩小正文字号" title="缩小正文字号">A−</button>
+          <button data-font="1" aria-label="放大正文字号" title="放大正文字号">A+</button>
+          <span class="reading-separator"></span>
+          <button data-share="true" aria-label="复制文章链接" title="复制文章链接">↗ 分享文章</button>
+        </div>
+      </div>
       <details class="toc-mobile" id="tocMobile"><summary>本文目录</summary><div class="toc-mobile-links"></div></details>
       <div class="md" id="mdBody">${renderBody(p, r)}</div>
       ${relatedHTML(p)}
@@ -1467,6 +1599,9 @@ function render(){
     document.body.classList.toggle("raw-mode", !!p.isHtml);
     document.documentElement.classList.toggle("raw-mode", !!p.isHtml);
     document.title = p.title + " · " + cfg.title;
+    const md=document.querySelector('meta[name="description"]'); if(md)md.content=p.summary||cfg.description;
+    const og=document.querySelector('meta[property="og:title"]'); if(og)og.content=p.title+" · "+cfg.title;
+    const ogd=document.querySelector('meta[property="og:description"]'); if(ogd)ogd.content=p.summary||cfg.description;
     updateActiveNav("");
     afterPost(p);
   } else {
@@ -1482,6 +1617,9 @@ function render(){
     else if(h==="/about")section="about";
     app.innerHTML= section==="archive"?archiveHTML():section==="tags"?tagsHTML():section==="categories"?categoriesHTML():section==="about"?aboutHTML():homeHTML();
     document.title=(section==="home"?cfg.title:{archive:"归档",tags:"标签",categories:"分类",about:"关于"}[section]+" · "+cfg.title);
+    const md=document.querySelector('meta[name="description"]'); if(md)md.content=cfg.description;
+    const og=document.querySelector('meta[property="og:title"]'); if(og)og.content=document.title;
+    const ogd=document.querySelector('meta[property="og:description"]'); if(ogd)ogd.content=cfg.description;
     $("#q").value=state.q;
     $("#searchWrap").classList.toggle("has",!!state.q);
     updateActiveNav(section);
@@ -1652,7 +1790,45 @@ function onScroll(){
   $("#bar").style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + "%";
   $("#totop").classList.toggle("show", h.scrollTop > 420);
 }
+let toastTimer;
+function showToast(message){
+  const el=$("#toast"); if(!el)return;
+  el.textContent=message; el.classList.add("on");
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("on"),2400);
+}
+let readingSize=16;
+function applyReadingSize(next){
+  const source=next===undefined ? (safeStore.get('khtao_reading_size') || readingSize) : next;
+  const n=Math.max(14,Math.min(22,Number(source)||16));
+  readingSize=n;
+  document.documentElement.style.setProperty('--reading-size',n+'px');
+  return n;
+}
 function initUI(){
+  applyReadingSize();
+  $("#app").addEventListener('click',e=>{
+    const clear=e.target.closest('[data-clear]');
+    if(clear){
+      state.q='';state.tag='';state.category='';state.visible=6;
+      $('#q').value='';$('#searchWrap').classList.remove('has');
+      if(location.hash!=='#/')location.hash='#/';else render();return;
+    }
+    const sort=e.target.closest('[data-sort]');
+    if(sort){state.sort=sort.dataset.sort; state.visible=6;render();return;}
+    const more=e.target.closest('[data-more]');
+    if(more){state.visible+=6;render();return;}
+    const font=e.target.closest('[data-font]');
+    if(font){
+      const n=Math.max(14,Math.min(22,applyReadingSize()+Number(font.dataset.font)));
+      safeStore.set('khtao_reading_size',String(n));applyReadingSize(n);showToast('正文字号 '+n+'px');return;
+    }
+    if(e.target.closest('[data-share]')){
+      const text=window.location.href;
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(()=>showToast('文章链接已复制')).catch(()=>showToast('复制失败，请使用浏览器地址栏复制'));
+      }else showToast('可从浏览器地址栏复制文章链接');
+    }
+  });
   const saved = safeStore.get("khtao_theme");
   const dark = saved ? saved === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
   document.documentElement.dataset.theme = dark ? "dark" : "light";
@@ -1668,7 +1844,7 @@ function initUI(){
     const v = e.target.value;
     $("#searchWrap").classList.toggle("has", !!v);
     timer = setTimeout(() => {
-      state.q = v;
+      state.q = v; state.visible=6;
       if(location.hash.startsWith("#/p/") || location.hash==="#/archive" || location.hash==="#/tags" || location.hash==="#/categories" || location.hash==="#/about"){
         location.hash="#/";
       }else render();
@@ -1682,11 +1858,13 @@ function initUI(){
   $("#refresh").onclick = () => refresh(true);
   $("#lb").onclick = () => $("#lb").classList.remove("on");
   document.addEventListener("keydown", e => {
-    if(e.key === "/" && document.activeElement !== $("#q") && !/input|textarea/i.test(document.activeElement?.tagName||"")){ e.preventDefault(); $("#q").focus(); }
+    const typing=/input|textarea/i.test(document.activeElement?.tagName||"") || document.activeElement?.isContentEditable;
+    if(((e.key.toLowerCase()==='k' && (e.ctrlKey||e.metaKey)) || e.key === '/') && !typing){ e.preventDefault(); $("#q").focus(); }
+    if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k' && typing){e.preventDefault(); $("#q").focus();}
     if(e.key === "Escape") $("#lb").classList.remove("on");
   });
   window.addEventListener("scroll", onScroll, {passive:true});
-  window.addEventListener("hashchange", () => { window.scrollTo(0,0); render(); onScroll(); });
+  window.addEventListener("hashchange", () => { state.visible=6; window.scrollTo(0,0); render(); onScroll(); });
 }
 
 /* ---------- 启动：先渲染缓存（秒开），再静默同步 ---------- */

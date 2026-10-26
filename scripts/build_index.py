@@ -14,7 +14,10 @@ import json
 from pathlib import Path
 import re
 import subprocess
-from datetime import datetime, timezone
+from datetime import datetime, timezone, time
+from email.utils import format_datetime
+from urllib.parse import quote
+from xml.etree import ElementTree as ET
 
 EXT = {'.md', '.markdown', '.htm', '.html'}
 SUMMARY_LIMIT = 160
@@ -236,6 +239,67 @@ def build(root: Path, blogdir: str = 'blog') -> dict:
             'count':len(files),'files':files}
 
 
+def site_url(root: Path) -> str:
+    """Infer this GitHub Pages site's public URL without external API calls."""
+    try:
+        cfg = json.loads((root / 'config.json').read_text(encoding='utf-8'))
+    except (FileNotFoundError, json.JSONDecodeError):
+        cfg = {}
+    explicit = str(cfg.get('siteUrl') or '').strip()
+    if re.fullmatch(r'https?://[^\s]+', explicit):
+        return explicit.rstrip('/') + '/'
+    owner = str(cfg.get('owner') or 'khtao').strip()
+    repo = str(cfg.get('repo') or f'{owner}.github.io').strip()
+    if not re.fullmatch(r'[A-Za-z0-9-]+', owner) or not re.fullmatch(r'[A-Za-z0-9._-]+', repo):
+        raise ValueError('Invalid GitHub Pages owner or repository in config.json')
+    base = f'https://{owner}.github.io/'
+    return base if repo.lower() == f'{owner}.github.io'.lower() else base + quote(repo, safe='') + '/'
+
+
+def build_feeds(root: Path, manifest: dict) -> None:
+    """Generate RSS + sitemap for the hash-routed, dependency-free blog.
+
+    Hash fragments are client routes, so only the real root URL belongs in a
+    sitemap; RSS item links retain the working in-browser hash routes.
+    """
+    base = site_url(root)
+    try:
+        cfg = json.loads((root / 'config.json').read_text(encoding='utf-8'))
+    except (FileNotFoundError, json.JSONDecodeError):
+        cfg = {}
+    site_name = str(cfg.get('title') or 'Khtao Blog')
+    description = str(cfg.get('description') or '文章、笔记与思考')
+    rss = ET.Element('rss', {'version':'2.0'})
+    channel = ET.SubElement(rss, 'channel')
+    for key, value in [('title', site_name), ('link', base), ('description', description),
+                       ('language', 'zh-CN'), ('generator', 'Khtao static index')]:
+        ET.SubElement(channel, key).text = value
+    for post in manifest['files']:
+        item = ET.SubElement(channel, 'item')
+        link = base + '#/p/' + quote(post['name'], safe='')
+        for key,value in [('title',post['title']), ('link',link),
+                          ('description',post['summary']),('guid',link)]:
+            node=ET.SubElement(item,key)
+            node.text=str(value)
+            if key=='guid': node.set('isPermaLink', 'false')
+        date = text_date(post.get('created') or post.get('updated') or '')
+        if date:
+            stamp=datetime.combine(datetime.strptime(date,'%Y-%m-%d').date(), time(0,0), tzinfo=timezone.utc)
+            ET.SubElement(item,'pubDate').text=format_datetime(stamp, usegmt=True)
+        for tag in post.get('tags', []):
+            ET.SubElement(item,'category').text=str(tag)
+    ET.indent(rss, space='  ')
+    (root/'feed.xml').write_bytes(ET.tostring(rss,encoding='utf-8',xml_declaration=True))
+    ns='http://www.sitemaps.org/schemas/sitemap/0.9'
+    urlset=ET.Element('urlset',{'xmlns':ns})
+    url=ET.SubElement(urlset,'url')
+    ET.SubElement(url,'loc').text=base
+    # Articles are hash-routed (not separate crawlable URLs).
+    ET.indent(urlset,space='  ')
+    (root/'sitemap.xml').write_bytes(ET.tostring(urlset,encoding='utf-8',xml_declaration=True))
+    (root/'robots.txt').write_text('User-agent: *\nAllow: /\n\nSitemap: '+base+'sitemap.xml\n',encoding='utf-8')
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument('--root',type=Path,default=Path(__file__).resolve().parent.parent)
@@ -245,6 +309,7 @@ def main() -> None:
     data=build(root,args.blog_dir)
     out=root / args.blog_dir / 'index.json'
     out.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
-    print(f'Created {out}: {len(data["files"])} posts')
+    build_feeds(root, data)
+    print(f'Created {out}: {len(data["files"])} posts; feed.xml and sitemap.xml generated')
 
 if __name__=='__main__': main()
