@@ -42,13 +42,18 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p _site
-          cp index.html config.json _site/
+          cp index.html config.json feed.xml sitemap.xml robots.txt _site/
           # Always create .nojekyll: GitHub web uploads may omit hidden files.
           touch _site/.nojekyll
           cp -R blog _site/blog
           test -f _site/index.html
           test -f _site/blog/index.json
           python3 -m json.tool _site/blog/index.json > /dev/null
+          python3 - <<'PYXML'
+          import xml.etree.ElementTree as ET
+          ET.parse("_site/feed.xml")
+          ET.parse("_site/sitemap.xml")
+          PYXML
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload website and fresh index in one artifact
