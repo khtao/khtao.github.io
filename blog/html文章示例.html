@@ -1,0 +1,30 @@
+<!-- title: HTML 文章示例 | date: 2026-10-25 | tags: [教程, HTML] | summary: 除了 Markdown，你也可以直接写 HTML 片段上传，样式自由度更高。 -->
+
+<h2>直接写 HTML 也可以</h2>
+
+<p>把文件保存成 <code>.html</code> 上传，站点会原样嵌入正文区域，样式与 Markdown 文章完全一致。</p>
+
+<blockquote>
+  文件的第一行用 <code>&lt;!-- title: ... | date: ... | tags: ... | summary: ... --&gt;</code>
+  注释声明元信息；不写也能发布，标题会退化为文件名。
+</blockquote>
+
+<h3>好用的排版元素</h3>
+
+<ul>
+  <li><strong>加粗</strong>、<em>强调</em>、<code>代码</code></li>
+  <li>表格、图片、pre 代码块都能正常渲染</li>
+</ul>
+
+<pre><code>&lt;!-- 纯 HTML 片段，不需要 &lt;html&gt; 或 &lt;body&gt; 标签 --&gt;
+&lt;p&gt;Hello, GitHub Pages!&lt;/p&gt;</code></pre>
+
+<table>
+  <thead><tr><th>格式</th><th>扩展名</th></tr></thead>
+  <tbody>
+    <tr><td>Markdown</td><td>.md</td></tr>
+    <tr><td>HTML</td><td>.html</td></tr>
+  </tbody>
+</table>
+
+<p>如果你熟悉前端，这种方式能做出排版更自由的文章。</p>

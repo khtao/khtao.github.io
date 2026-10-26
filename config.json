@@ -1,0 +1,12 @@
+{
+  "title": "Khtao",
+  "subtitle": "记录技术、产品与生活",
+  "description": "一个用文字对抗遗忘的地方。",
+  "author": "khtao",
+  "owner": "khtao",
+  "repo": "khtao.github.io",
+  "branch": "main",
+  "blogDir": "blog",
+  "pageSize": 50,
+  "footer": "© 2026 khtao · Built with GitHub Pages"
+}

@@ -1,146 +1,104 @@
-# 自动化 GitHub Pages 博客脚手架
+# khtao.github.io — 上传即发布的极简博客
 
-一个"**写完即发布**"的博客系统：在线编辑器写完文章点保存 → 自动生成 Git 提交 → GitHub Actions 自动构建 → 博客上线。
-全程不需要安装 Node、不需要敲 git 命令，手机浏览器也能写。
+一套零构建的 GitHub Pages 博客：**往 `blog/` 文件夹丢一个文件，博客就更新了。**
+不用 git、不用本地环境、不用重新部署。
 
-```
-┌──────────────┐   写入 .md    ┌──────────────┐   自动构建    ┌─────────────────┐
-│ /admin/ 编辑器 │ ───────────► │ 仓库 main 分支 │ ───────────► │ xxx.github.io   │
-│  (浏览器)     │   一次 commit │  (唯一数据源)  │  Actions     │  (静态站点)      │
-└──────────────┘               └──────────────┘               └─────────────────┘
-```
+## 一、首次部署（只需做一次）
 
-## 目录结构
+1. 打开仓库 https://github.com/khtao/khtao.github.io
+2. 把本目录下的 `index.html` 和 `config.json` 上传到仓库**根目录**
+   （Add file → Upload files，直接拖拽即可）
+3. 新建 `blog/` 文件夹，把示例文章 `你好世界.md`、`html文章示例.html` 放进去
+4. 确认 Settings → Pages → Source 为分支根目录（默认 `main` / `/root`）
+5. 访问 https://khtao.github.io/ —— 完成
 
-```
-├── _config.yml                 # 站点主配置（★必改：url / root）
-├── _config.fluid.yml           # 主题配置（导航、头图、评论等）
-├── package.json                # 依赖清单
-├── scaffolds/post.md           # 新文章模板
-├── source/
-│   ├── _posts/                 # 文章都在这里（.md）
-│   ├── about/index.md          # 关于页
-│   ├── images/                 # 编辑器上传的图片存这里
-│   └── admin/
-│       ├── index.html          # ★ 内置 Markdown 编辑器（纯静态 SPA）
-│       └── vendor/             # 编辑器依赖（Vditor + js-yaml，已本地化）
-└── .github/workflows/
-    ├── deploy.yml              # 推送即构建部署 + 手动 + 被定时调用
-    └── rebuild.yml             # 每周一定时全量重建（维护用）
-```
+> 仓库名 `khtao.github.io` 固定对应域名 `https://khtao.github.io/`，无需额外配置 CNAME。
 
-## 一、上线步骤（约 10 分钟）
+## 二、日常发文章（这才是重点）
 
-### 1. 建仓库并上传代码
+1. 进入仓库的 `blog/` 目录
+2. 点 **Add file → Upload files**，把你电脑上写好的 `.md` 或 `.html` 拖进去
+3. 页面底部填一句 Commit message，点 **Commit changes**
+4. 打开 https://khtao.github.io/ ，新文章已经在首页了，目录、标签、搜索自动更新
 
-在 GitHub 新建仓库（例如 `my-blog`），把本目录所有文件推到 `main` 分支：
+也可以直接在 GitHub 网页上点 `blog/` → **Create new file** 在线写完提交，连本地文件都不用。
 
-```bash
-git init && git add . && git commit -m "init blog"
-git branch -M main
-git remote add origin https://github.com/你的用户名/my-blog.git
-git push -u origin main
-```
+## 三、文章格式
 
-### 2. 开启 GitHub Pages
+### Markdown（推荐）
 
-仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**（不要选"Deploy from a branch"）。
+文件名就是 URL 的一部分，建议用中文或英文标题命名，后缀 `.md`。
 
-### 3. 改两处必改配置
+在文章**开头**写一段 frontmatter 来声明标题、日期、标签、摘要：
 
-`_config.yml` 顶部：
+```markdown
+---
+title: 文章的标题
+date: 2026-10-26
+tags: [技术, 随笔]
+summary: 显示在首页列表的一句话摘要
+cover: https://…/cover.jpg   # 可选，文章顶部大图
+---
 
-| 配置项 | 说明 |
-|---|---|
-| `url` | `https://你的用户名.github.io/my-blog`（仓库名带后缀时）/ `https://你的用户名.github.io`（仓库名就是 `用户名.github.io`） |
-| `root` | 对应填 `/my-blog/` 或 `/`（**末尾斜杠不能少**） |
-| `title` / `author` / `description` | 站点信息 |
-
-改完提交推送，Actions 会自动跑第一次构建。成功后访问上面的 `url` 即可看到博客。
-
-### 4. 开始写文章
-
-打开 `https://你的用户名.github.io/my-blog/admin/`，点「⚙️ 仓库设置」填入：
-
-| 字段 | 示例 |
-|---|---|
-| Owner | `你的用户名` |
-| Repo | `my-blog` |
-| Branch | `main` |
-| Token | 下面一步申请的 PAT |
-
-**申请 Token**：GitHub 右上角头像 → Settings → Developer settings → Personal access tokens → **Fine-grained tokens** → Generate new token
-→ 只选这个仓库 → Repository permissions 里把 **Contents** 设为 **Read and write** → 生成后复制（只显示一次）。
-
-> Token 只保存在你自己浏览器的 localStorage，不会发送到任何第三方服务器；换电脑需重新填写。
-> 建议给 Token 设 90 天有效期，到期重新生成一个即可。
-
-## 二、编辑器功能
-
-- **新建 / 打开 / 删除**文章，自动读写 `source/_posts/*.md`
-- **所见即所得** Markdown 编辑（Vditor，支持即时渲染 / 分屏预览 / 大纲）
-- **图片直接粘贴或拖拽**，自动上传到 `source/images/年/月/` 并插入 CDN 链接
-- 表单化管理 front-matter：标题、日期、分类、标签、摘要、置顶权重
-- `Ctrl / ⌘ + S` 保存；保存后提示跳转到 Actions 看构建进度
-- 图片 CDN 默认 jsDelivr，国内访问慢可在设置里换成 raw.githubusercontent.com 或自己的图床
-
-保存 = 一次 Git commit = 触发 Actions ≈ 30～90 秒后博客更新。
-
-## 三、"自动维护"是怎么做到的
-
-| 场景 | 机制 |
-|---|---|
-| 编辑器保存 / 删除文章 | push 事件触发 `deploy.yml` |
-| 本地 `git push` 提交文章 | 同上 |
-| 很久没更新也要刷新 | `rebuild.yml` 每周一 11:17（北京时间）定时重建 |
-| 想立刻重建 | Actions 页面选中流程 → Run workflow |
-| 每次构建 | 自动刷新 `sitemap.xml`、`atom.xml`（RSS）、搜索索引 |
-
-想改定时间：编辑 `rebuild.yml` 里的 `cron`（UTC 时间，默认 `17 3 * * 1`）。
-想关掉定时维护：删掉 `rebuild.yml` 即可。
-
-## 四、可选：本地预览
-
-装了 Node.js 的话，可以本地起服务看效果（改主题配置时很方便）：
-
-```bash
-npm install
-npm run server     # 打开 http://localhost:4000
+正文从这开始，支持全部标准 Markdown 语法。
 ```
 
-## 五、常见问题
+- `title`、`date`、`tags`、`summary` 都可以省略：标题退化为文件名的第一个 `#` 标题或文件名，摘要自动截取正文前 140 字
+- 不想发布的草稿：文件名以 `_` 开头（如 `_草稿.md`），或在 frontmatter 写 `draft: true`
+- 排序按 `date` 倒序
 
-**页面 404 / 样式全丢**
-`_config.yml` 的 `root` 填错了。仓库名 `用户名.github.io` → `root: /`；其他仓库名 → `root: /仓库名/`。
+### HTML
 
-**编辑器点保存报错 404**
-文章目录设置不对，确认是 `source/_posts`（区分大小写）；或 Token 权限不足（需要 Contents 读写）。
+后缀 `.html`，只写正文片段（不需要 `<html>`/`<body>`）。元信息写在第一行注释里：
 
-**报错 409 Conflict**
-这篇文件在别处被改过（比如本地 git 推过一次），刷新列表重新打开再保存即可。
+```html
+<!-- title: 文章标题 | date: 2026-10-25 | tags: [教程, HTML] | summary: 一句话摘要 -->
+<h2>正文</h2>
+<p>可以用任意 HTML 标签，样式与 Markdown 文章一致。</p>
+```
 
-**构建时报 `Cannot find module 'moment'` 等**
-主题脚本依赖未提升到顶层，执行一次 `npm i moment hexo-util hexo-pagination @adobe/css-tools` 后重新推送。
+## 四、功能
 
-**想要自定义域名**
-在 `source/` 下新建文件 `CNAME`，内容写你的域名（如 `blog.example.com`），并在域名服务商处添加一条 CNAME 记录指向 `用户名.github.io`。Pages 里填同域名即可，Actions 会自动签发 HTTPS 证书。
+| 功能 | 说明 |
+| --- | --- |
+| 自动目录 | 每次访问实时读取 `blog/` 目录，新文章立刻出现在首页 |
+| 标签筛选 | 由 frontmatter 的 `tags` 自动生成顶部标签栏 |
+| 全文搜索 | 顶栏搜索框，标题 + 正文 + 标签即时过滤；按 `/` 快速聚焦 |
+| 亮/暗主题 | 右上角一键切换，记忆选择，首次访问跟随系统 |
+| 阅读进度条 | 页面顶部随滚动推进 |
+| 文章大纲 | 文章右侧自动生成 h2/h3 目录，滚动高亮当前章节 |
+| 代码高亮 | 代码块自动高亮 + 一键复制 |
+| 图片灯箱 | 点击正文图片放大查看 |
 
-**不想让别人看到编辑器入口**
-删掉 `source/admin/index.html` 和 `_config.fluid.yml` 菜单里那行 `写文章` 即可；需要更强保护可套 Cloudflare Access。
+## 五、配置（可选）
 
-**想换主题**
-`npm i 主题包名`，改 `_config.yml` 的 `theme:` 即可，编辑器与自动发布流程不受影响。
+根目录 `config.json`：
 
-## 六、技术选型
+```json
+{
+  "title": "Khtao",
+  "subtitle": "记录技术、产品与生活",
+  "description": "一个用文字对抗遗忘的地方。",
+  "owner": "khtao",
+  "repo": "khtao.github.io",
+  "branch": "main",
+  "blogDir": "blog",
+  "footer": "© 2026 khtao · Built with GitHub Pages"
+}
+```
 
-| 组件 | 选择 | 理由 |
-|---|---|---|
-| 站点生成 | Hexo 7 | 中文生态好、插件丰富、扫描 `_posts` 自动收录新文章 |
-| 主题 | hexo-theme-fluid 1.9 | 响应式、自带搜索/归档/标签、配置友好 |
-| CI/CD | GitHub Actions 官方 Pages 流程 | 免密钥、原生集成 |
-| 编辑器 | Vditor + GitHub Contents API | 纯静态、无需自建后端，浏览器直连仓库读写；依赖已本地化，离线可用 |
-| 文章链接 | hexo-abbrlink | 自动生成短 ID，中文标题也能有干净 URL |
+改完 Commit 即可生效。若分支是 `master`，把 `branch` 改成 `master`（不写也会自动探测）。
 
-> 编辑器的 Vditor 与 js-yaml 已打包在 `source/admin/vendor/` 下，**不依赖任何 CDN**，国内访问也稳定。
-> 若你误删了 vendor，页面会自动回退到 jsDelivr 加载；两者都不可用时降级为纯文本框，仍可正常写文章。
-> 想换成自建 CDN：改 `source/admin/index.html` 顶部 `CDN` 常量即可。
+## 六、可能遇到的问题
+
+**Q：新文章没出现？**
+A：GitHub API 有缓存/CDN 延迟，通常几十秒内可见。点右下角 ↻ 按钮强制刷新；若仍没有，确认文件确实在 `blog/` 目录下且后缀是 `.md`/`.html`。
+
+**Q：提示「暂时无法连接 GitHub」？**
+A：GitHub 未认证 API 限制 60 次/小时（同一出口 IP）。稍等一会儿或点 ↻ 重试即可，已读过的文章会走本地缓存，不影响浏览。
+
+**Q：中文文件名乱码/打不开？**
+A：已做 URL 编码处理，正常可用；如仍不确定，改用英文文件名（如 `hello-world.md`）。
+
+**Q：想本地预览？**
+A：在这个目录执行 `python3 -m http.server 8000`，浏览器打开 http://localhost:8000 即可（联网状态下能读到仓库里的真实文章）。
