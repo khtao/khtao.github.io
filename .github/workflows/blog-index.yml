@@ -27,19 +27,26 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout full git history
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Build index from article files and git history
         run: python3 scripts/build_index.py
       - name: Prepare static website output
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p _site
-          cp index.html config.json .nojekyll _site/
+          cp index.html config.json _site/
+          # Always create .nojekyll: GitHub web uploads may omit hidden files.
+          touch _site/.nojekyll
           cp -R blog _site/blog
+          test -f _site/index.html
+          test -f _site/blog/index.json
+          python3 -m json.tool _site/blog/index.json > /dev/null
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload website and fresh index in one artifact
