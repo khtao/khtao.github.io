@@ -8,5 +8,6 @@
   "branch": "main",
   "blogDir": "blog",
   "pageSize": 50,
+  "token": "",
   "footer": "© 2026 khtao · Built with GitHub Pages"
 }
