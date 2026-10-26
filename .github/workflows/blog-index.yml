@@ -1,0 +1,224 @@
+# 为博客生成静态索引 blog/index.json
+# 作用：把「文章清单 + 标题 + 上传/修订日期 + 摘要 + 标签」预先算好存成静态文件，
+#       访问博客时只读这一个 JSON，完全不消耗 GitHub API 配额 —— 彻底告别 60 次/小时限制。
+#
+# 用法：把这个文件放到仓库的 .github/workflows/ 目录下即可（网页端 Add file 直接粘贴也行）。
+#       之后每次往 blog/ 上传或删除文件，它会自动跑一次；也可以在 Actions 页面手动 Run workflow。
+
+name: Build blog index
+
+on:
+  push:
+    paths:
+      - 'blog/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # 需要完整历史才能取到「首次提交」日期
+
+      - name: Generate blog/index.json
+        run: |
+          cat > /tmp/gen.py <<'PYEOF'
+          import json, os, re, subprocess, unicodedata
+
+          BLOG = "blog"
+          OUT  = os.path.join(BLOG, "index.json")
+
+          def git(*a):
+              try:
+                  return subprocess.check_output(["git"] + list(a), stderr=subprocess.DEVNULL).decode("utf-8", "ignore")
+              except Exception:
+                  return ""
+
+          def read(p):
+              try:
+                  return open(p, encoding="utf-8").read()
+              except Exception:
+                  return ""
+
+          def strip_markup(s):
+              s = re.sub(r"```[\s\S]*?```", " ", s)
+              s = re.sub(r"`[^`]*`", " ", s)
+              s = re.sub(r"!\[[^\]]*\]\([^)]*\)", " ", s)
+              s = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", s)
+              s = re.sub(r"<[^>]+>", " ", s)
+              s = re.sub(r"^[\s>#\-*|]+", " ", s, flags=re.M)
+              return re.sub(r"\s+", " ", s).strip()
+
+          def pretty_name(base):
+              s = re.sub(r"\.(md|markdown|html?)$", "", base, flags=re.I)
+              s = re.sub(r"^\s*\d{4}[-_.]?\d{2}[-_.]?\d{2}\s*[-_.\s]*", "", s)
+              s = re.sub(r"[_.\-]+", " ", s).strip()
+              return s or re.sub(r"\.(md|markdown|html?)$", "", base, flags=re.I)
+
+          def date_from_name(name):
+              m = re.search(r"(?:^|[^\d])(\d{4})[-_.]?(\d{2})[-_.]?(\d{2})(?:[^\d]|$)", name)
+              return "-".join(m.groups()) if m else ""
+
+          def parse_front_matter(raw):
+              fm, body = {}, raw
+              m = re.match(r"^\uFEFF?\s*---\r?\n([\s\S]*?)\r?\n---", raw)
+              if not m:
+                  return fm, body
+              for line in m.group(1).splitlines():
+                  i = line.find(":")
+                  if i < 0:
+                      continue
+                  k = line[:i].strip().lower()
+                  v = line[i + 1:].strip().strip("\"'")
+                  if k in ("tags", "tag", "categories", "category"):
+                      v = v.strip("[]")
+                      fm["tags"] = [x.strip() for x in re.split(r"[,，、]", v) if x.strip()]
+                  else:
+                      fm[k] = v
+              return fm, raw[m.end():]
+
+          def html_pick(raw):
+              def g(p):
+                  m = re.search(p, raw, re.I | re.S)
+                  return strip_markup(m.group(1)) if m else ""
+              title = (g(r"<meta[^>]+(?:property|name)=[\"']og:title[\"'][^>]+content=[\"']([^\"']+)[\"']")
+                       or g(r"<meta[^>]+content=[\"']([^\"']+)[\"'][^>]+(?:property|name)=[\"']og:title[\"']")
+                       or g(r"<h1[^>]*>([\s\S]*?)</h1>")
+                       or g(r"<title[^>]*>([\s\S]*?)</title>"))
+              desc = (g(r"<meta[^>]+(?:name|property)=[\"'](?:description|og:description)[\"'][^>]+content=[\"']([^\"']+)[\"']")
+                      or g(r"<meta[^>]+content=[\"']([^\"']+)[\"'][^>]+(?:name|property)=[\"'](?:description|og:description)[\"']"))
+              p = ""
+              for tag in re.findall(r"<p[^>]*>[\s\S]*?</p>", raw, re.I):
+                  if p:
+                      break
+                  inner = re.sub(r"^<p[^>]*>|</p>$", "", tag, flags=re.I)
+                  t = strip_markup(inner)
+                  if len(t.replace(" ", "")) >= 12:
+                      p = t
+              return title, desc, p
+
+          def md_pick(body):
+              lines = body.replace("\r\n", "\n").split("\n")
+              p = title = ""
+              hl = pl = -1
+              in_code = False
+              for i, ln in enumerate(lines):
+                  if re.match(r"^\s*```", ln):
+                      in_code = not in_code
+                      continue
+                  if in_code:
+                      continue
+                  t = ln.strip()
+                  if not t:
+                      continue
+                  mh = re.match(r"^#{1,6}\s+(.+?)\s*#*\s*$", ln)
+                  if mh:
+                      if not title:
+                          title, hl = mh.group(1).strip(), i
+                      continue
+                  if pl < 0 and not re.match(r"^(>|\||[-*+]\s|\d+[.)]\s|!\[|\[!|<!--|---|\*\*\*)", t):
+                      plain = strip_markup(t)
+                      if len(plain.replace(" ", "")) >= 12:
+                          p, pl = plain, i
+              if hl >= 0 and pl >= 0 and hl > pl:      # 标题在正文之后 → 只是小节标题
+                  title = ""
+              return title, p
+
+          files = []
+          if not os.path.isdir(BLOG):
+              raise SystemExit("no blog dir")
+
+          for name in sorted(os.listdir(BLOG)):
+              path = os.path.join(BLOG, name)
+              if not os.path.isfile(path):
+                  continue
+              if not re.search(r"\.(md|markdown|html?)$", name, re.I):
+                  continue
+              if name.startswith("_") or name.startswith("."):
+                  continue
+
+              raw  = read(path)
+              ishtml = bool(re.search(r"\.html?$", name, re.I))
+              fm, body = ({}, raw)
+              if ishtml:
+                  c = re.search(r"<!--([\s\S]*?)-->", raw)
+                  if c and re.search(r"title\s*:", c.group(1), re.I):
+                      for seg in c.group(1).split("|"):
+                          i = seg.find(":")
+                          if i < 0:
+                              continue
+                          k = seg[:i].strip().lower()
+                          v = seg[i + 1:].strip()
+                          if k in ("tags", "tag"):
+                              fm["tags"] = [x.strip() for x in re.split(r"[,，、]", v.strip("[]")) if x.strip()]
+                          else:
+                              fm[k] = v
+                      body = raw.replace(c.group(0), "")
+              else:
+                  fm, body = parse_front_matter(raw)
+
+              # 标题：手写 > 内容里的 > 文件名
+              if ishtml:
+                  htitle, hdesc, hp = html_pick(raw)
+                  title = fm.get("title") or htitle or pretty_name(name)
+                  summary = fm.get("summary") or hdesc or hp
+              else:
+                  mtitle, mp = md_pick(body)
+                  title = fm.get("title") or mtitle or pretty_name(name)
+                  summary = fm.get("summary") or mp
+              plain = strip_markup(body)
+              summary = (summary or plain)[:140]
+
+              # 日期：手写 > Git 提交记录 > 文件名
+              log = git("log", "--follow", "--format=%cI", "--", path)
+              dates = [d.strip()[:10] for d in log.splitlines() if d.strip()]
+              g_created = dates[-1] if dates else ""
+              g_updated = dates[0] if dates else ""
+              created = (fm.get("date") or fm.get("created") or "")[:10] or g_created or date_from_name(name)
+              updated = (fm.get("updated") or fm.get("modified") or fm.get("last_modified_at") or "")[:10] or g_updated or created
+              if updated and created and updated < created:
+                  updated = created
+
+              files.append({
+                  "name": name,
+                  "path": path.replace(os.sep, "/"),
+                  "sha": git("hash-object", path).strip()[:40],
+                  "title": title.strip(),
+                  "created": created,
+                  "updated": updated,
+                  "summary": summary,
+                  "tags": fm.get("tags") or [],
+                  "cover": fm.get("cover") or "",
+                  "words": len(re.sub(r"\s", "", plain)),
+              })
+
+          files.sort(key=lambda f: (f["created"] or "", f["name"]), reverse=True)
+          data = {
+              "generated": subprocess.check_output(["date", "-u", "+%Y-%m-%dT%H:%M:%SZ"]).decode().strip()
+                          if True else "",
+              "count": len(files),
+              "files": files,
+          }
+          os.makedirs(BLOG, exist_ok=True)
+          with open(OUT, "w", encoding="utf-8") as f:
+              json.dump(data, f, ensure_ascii=False, indent=1)
+          print("wrote %s (%d files)" % (OUT, len(files)))
+          PYEOF
+          python3 /tmp/gen.py
+
+      - name: Commit if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add blog/index.json
+          if git diff --cached --quiet; then
+            echo "index unchanged, nothing to commit"
+          else
+            git commit -m "chore(blog): refresh index [skip ci]"
+            git push
+          fi
