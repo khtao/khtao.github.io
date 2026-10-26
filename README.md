@@ -1,4 +1,5 @@
 [![Build and deploy blog](https://github.com/khtao/khtao.github.io/actions/workflows/blog-index.yml/badge.svg)](https://github.com/khtao/khtao.github.io/actions/workflows/blog-index.yml)
+[![pages-build-deployment](https://github.com/khtao/khtao.github.io/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/khtao/khtao.github.io/actions/workflows/pages/pages-build-deployment)
 # Khtao Blog · 免 API 的极简博客
 
 页面：`index.html`；配置：`config.json`；文章：`blog/`；静态文章索引：`blog/index.json`。
