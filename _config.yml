@@ -1,0 +1,121 @@
+# ==========================================
+# Hexo 主配置 —— 请把下面 Site 段改成你自己的
+# ==========================================
+
+# Site —— 必改
+title: 我的博客
+subtitle: ''
+description: 用 GitHub Pages 自动维护的个人博客
+keywords: 博客,Hexo,GitHub Pages
+author: YourName
+language: zh-CN
+timezone: Asia/Shanghai
+
+# URL —— 必改：https://<用户名>.github.io/<仓库名>
+# 若仓库名就是 <用户名>.github.io，则 root 保持 '/'
+url: https://khtao.github.io/my-blog
+root: /my-blog/
+permalink: posts/:abbrlink/
+permalink_defaults:
+abbrlink:
+  alg: crc32      # 由 hexo-abbrlink 生成短链接；不装该插件时改用 pretty_urls
+  rep: hex
+
+# Directory
+source_dir: source
+public_dir: public
+tag_dir: tags
+archive_dir: archives
+category_dir: categories
+code_dir: downloads/code
+i18n_dir: :lang
+# 关键：内置的 Markdown 编辑器是纯静态页面，必须原样输出，不能被主题渲染
+skip_render:
+  - admin/**
+  - 'admin/index.html'
+
+# Writing
+new_post_name: :year-:month-:day-:title.md
+default_layout: post
+titlecase: false
+external_link:
+  enable: true
+  field: site
+  exclude: ''
+filename_case: 0
+render_drafts: false
+post_asset_folder: false
+relative_link: false
+future: true
+highlight:
+  enable: true
+  line_number: true
+  auto_detect: false
+  tab_replace: ''
+  wrap: true
+  hljs: false
+prismjs:
+  enable: false
+  preprocess: true
+  line_number: true
+  tab_replace: ''
+
+# Home page setting
+index_generator:
+  path: ''
+  per_page: 10
+  order_by: -date
+
+# Category & Tag
+default_category: uncategorized
+category_map:
+tag_map:
+
+# Metadata elements
+meta_generator: true
+
+# Date / Time format
+date_format: YYYY-MM-DD
+time_format: HH:mm:ss
+updated_option: mtime       # 自动把 updated 写成文件的真实修改时间
+
+# Pagination
+per_page: 10
+pagination_dir: page
+
+# Include / Exclude file(s)
+include:
+exclude:
+ignore:
+
+# Extensions
+theme: fluid
+
+# 自动生成 sitemap.xml（提交给各搜索引擎用）
+sitemap:
+  path: sitemap.xml
+
+# 自动生成 atom.xml（RSS 订阅）
+feed:
+  enable: true
+  type: atom
+  path: atom.xml
+  limit: 20
+  hub:
+  content: true
+  content_limit: 200
+  content_limit_delim: ' '
+  order_by: -date
+
+# 本地搜索索引（fluid 主题搜索框依赖 hexo-generator-search）
+search:
+  path: /local-search.xml
+  field: post
+  content: true
+
+# Deployment —— 日常不用，Actions 会自动构建发布；本地想手动推时用
+deploy:
+  type: git
+  repo: https://github.com/yourname/my-blog.git
+  branch: gh-pages
+  message: "Site updated: {{ now('YYYY-MM-DD HH:mm:ss') }}"
