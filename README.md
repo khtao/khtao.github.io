@@ -70,7 +70,6 @@
 3. 把解压后**仓库根目录内**的文件和文件夹上传到新仓库根目录，特别注意保留 `.github/workflows/blog-index.yml`、`scripts/build_index.py`、`blog/`。
 4. 修改 `config.json`、按上面的 Pages 设置部署。使用 Git 或 GitHub Desktop 提交整个目录通常最不容易遗漏隐藏文件。
 
-📚 **第一次部署、改名、发文、常见报错与图片操作，都写在这里：** [《从零部署 Khtao Blog 3.0：让 Markdown 自动变成个人网站》](blog/从零部署%20Khtao%20Blog%203.0.md)。
 
 ## 📝 发第一篇文章：真的只需要 Markdown
 
