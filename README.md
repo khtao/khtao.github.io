@@ -1,94 +1,166 @@
-[![Build and deploy blog](https://github.com/khtao/khtao.github.io/actions/workflows/blog-index.yml/badge.svg)](https://github.com/khtao/khtao.github.io/actions/workflows/blog-index.yml)
-[![pages-build-deployment](https://github.com/khtao/khtao.github.io/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/khtao/khtao.github.io/actions/workflows/pages/pages-build-deployment)
-# Khtao Blog · 免 API 的极简博客
+<p align="center"><img src="blog/images/guide/hero.svg" width="100%" alt="Khtao Blog — 写作，就从这里开始"/></p>
 
-页面：`index.html`；配置：`config.json`；文章：`blog/`；静态文章索引：`blog/index.json`。
+<p align="center"><strong>把想法写成 Markdown，把它们留在自己的互联网角落。</strong></p>
 
-**特点：无需写文章头信息，上传 `.md` / `.html` 即能自动提取标题、文章摘要、首次提交日期、最后修订日期。网站浏览器只请求自己的 GitHub Pages 静态文件，不再访问 GitHub Contents / Commits API，也不需要 Personal Access Token。**
+<p align="center">一个轻量、好看、容易维护的个人博客模板。保留写作的简单，也认真对待浏览体验。</p>
 
-## 部署（重要，只需设置一次）
+<p align="center">
+<a href="https://khtao.github.io/#/">✨ 在线预览</a> ·
+<a href="blog/从零部署%20Khtao%20Blog%203.0.md">📖 图文部署教程</a> ·
+<a href="https://github.com/khtao/khtao.github.io">🗂 源码仓库</a> ·
+<a href="https://github.com/khtao/khtao.github.io/issues">🐛 反馈建议</a>
+</p>
 
-1. 将本压缩包 `khtao-blog/` **内部的所有文件和目录**上传到 GitHub 仓库 `khtao/khtao.github.io` 的根目录（不要将 `khtao-blog` 整个文件夹套在外层）。务必保留 `.github/workflows/blog-index.yml` 和 `scripts/build_index.py`。
-2. 仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**。这一项很重要：新的工作流会在同一次部署中生成 `blog/index.json` 并发布静态站点，彻底避免浏览器 API 限流、索引过期及文章删除后错误。
-3. 在仓库 **Actions** 页面，选择 **Build and deploy blog → Run workflow** 执行首次部署，也可以修改并提交一篇文章触发。
-4. 工作流显示绿色成功后，打开 `https://khtao.github.io/#/`。如果页面短时间仍是旧版，请强制刷新一次（Ctrl+Shift+R）。
+<p align="center"><strong>无需 npm 构建 · 支持 Markdown / HTML · 自动更新 · GitHub Pages 部署</strong></p>
 
-工作流无需自行填写 Token，不依赖额外 Python 包，也不需要把生成索引提交回仓库。其 Git 历史由 `actions/checkout` 的 `fetch-depth: 0` 获取。
-
-## 发布、修改或删除文章
-
-在 `blog/` 目录直接创建、上传、编辑或删除 `.md` / `.markdown` / `.html` / `.htm` 文件，然后提交。触发的 GitHub Actions 会**先从当前文章目录重新生成索引，再连同站点文件一起部署**。即使删除最后一篇文章，索引也会变成 `"files": []`，首页正常显示空状态。
-
-仓库目录内允许有图片等其它资源（`blog/images/`），只有 `blog/` 顶层的文章文件会列入索引。以 `_` 或 `.` 开头的文件以及写有 `draft: true` 的草稿不会公开在列表中。
-
-### 不需要任何头信息的 Markdown
-
-```md
-# 从零开始记录
-
-这是第一段介绍内容。系统会用它作为摘要，截取至多 160 个字符。
-
-## 正文
-更多内容……
-```
-
-文件名可以为 `从零开始记录.md`；标题优先读取首个标题，然后是文件名，摘要优先读取首个有效段落。首次提交日期和最后修订日期由工作流读取 Git 历史，而不是浏览器实时请求 GitHub API。对首次提交或修改提交的时间，使用 Git **提交日期**（不是作者手写的电脑文件创建时间）。
-
-### 可选手动覆盖（Markdown YAML 风格头信息）
-
-```md
----
-title: 自定义标题
-date: 2026-10-26
-updated: 2026-10-26
-tags: [随笔, 技术]
-summary: 自定义摘要
-cover: images/cover.svg
 ---
 
-文章正文……
+## 👀 先看看它长什么样
+
+<table>
+  <tr>
+    <td width="73%" align="center"><img src="blog/images/guide/desktop.webp" alt="Khtao Blog 3.0 浅色模式桌面端真实截图"/><br/><b>桌面端 · 编辑式双栏布局</b></td>
+    <td width="27%" align="center"><img src="blog/images/guide/mobile.webp" alt="Khtao Blog 3.0 手机端真实截图"/><br/><b>移动端 · 自适应阅读</b></td>
+  </tr>
+</table>
+
+<details>
+<summary>🌙 展开查看深色模式</summary>
+
+![Khtao Blog 深色模式真实截图](blog/images/guide/dark.webp)
+
+</details>
+
+> 预览图展示的是模板的示例文章。替换 `config.json` 与 `blog/` 中的内容后，这里就会成为你的博客。
+
+## ✨ 让写作回归简单
+
+| 你想要的 | Khtao Blog 怎么做 |
+|---|---|
+| 🎨 好看的个人主页 | 蓝紫色视觉语言、精选文章、作者侧栏、浅色／深色主题 |
+| ✍️ 打开就写 | 放入 `.md` 或 `.html`，无需为每篇文章手写标题、摘要、日期 |
+| 🧭 内容有条理 | 文章搜索、标签、分类、按年归档、最近发布／修订排序 |
+| 📖 读得舒服 | 文章目录、代码高亮、字号调节、前后篇导航、复制分享链接 |
+| 📱 随时随地 | 桌面、平板和手机响应式布局，支持键盘快捷搜索 `Ctrl/⌘ + K` |
+| 📡 方便订阅 | 自动生成 RSS (`feed.xml`) 以及基础站点地图 |
+| 🚀 更新不费力 | 提交文章后，GitHub Actions 构建索引并发布到 GitHub Pages |
+| 🔒 不怕 API 限流 | 访客直接读取本站 `blog/index.json`，不依赖 GitHub Contents API |
+
+**技术选择很克制：** 一个 `index.html` + `config.json` + Python 标准库索引生成器 + GitHub Actions。无需引入 Hexo、Jekyll、Astro 或 npm 构建链；浏览器展示 Markdown 时可使用 CDN 渲染库，并提供基础降级渲染。
+
+## 🚀 现在开始，给自己搭一座博客
+
+![从写文章到自动上线的流程图](blog/images/guide/deploy-flow.svg)
+
+### 方式 A：使用 GitHub 模板（如果仓库显示「Use this template」）
+
+1. 进入 [Khtao Blog 仓库](https://github.com/khtao/khtao.github.io)，点击 **Use this template → Create a new repository**。
+2. 仓库名填写 **`YOUR_USERNAME.github.io`**，其中 `YOUR_USERNAME` 替换为你自己的 GitHub 用户名，选择 Public。
+3. 打开 `config.json`，把 `owner`、`author`、`repo`、博客标题与介绍改成自己的信息。
+4. 在新仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**。
+5. 在 **Actions** 查看 `Build and deploy blog`。必要时通过 **Run workflow** 手动触发首次部署。
+6. 成功后访问 `https://YOUR_USERNAME.github.io/#/`。
+
+**没有「Use this template」按钮？** 这意味着仓库可能尚未启用模板模式，直接使用下方方式 B 即可。仓库维护者可在 **Settings → General → Template repository** 开启模板功能。
+
+### 方式 B：下载源码并上传（始终可用）
+
+1. 在 [仓库页面](https://github.com/khtao/khtao.github.io) 选择 **Code → Download ZIP**，解压。
+2. 在你的 GitHub 账号新建公开仓库 **`YOUR_USERNAME.github.io`**。
+3. 把解压后**仓库根目录内**的文件和文件夹上传到新仓库根目录，特别注意保留 `.github/workflows/blog-index.yml`、`scripts/build_index.py`、`blog/`。
+4. 修改 `config.json`、按上面的 Pages 设置部署。使用 Git 或 GitHub Desktop 提交整个目录通常最不容易遗漏隐藏文件。
+
+📚 **第一次部署、改名、发文、常见报错与图片操作，都写在这里：** [《从零部署 Khtao Blog 3.0：让 Markdown 自动变成个人网站》](blog/从零部署%20Khtao%20Blog%203.0.md)。
+
+## 📝 发第一篇文章：真的只需要 Markdown
+
+在 `blog/我的第一篇文章.md` 新建文件：
+
+```md
+# 我的第一篇文章
+
+今天，我终于有了一个真正属于自己的博客。
+
+## 从这里开始
+
+以后把学到的、做过的、想明白的，都慢慢写下来。
 ```
 
-- 标题：手写 `title` → 文章标题（Markdown 标题、HTML `<h1>` / `<title>` / `og:title`）→ 文件名
-- 上传日期：手写 `date/created` → Git 第一次提交日期 → 文件名日期
-- 修订日期：手写 `updated/modified` → Git 最后一次提交日期（如文章无提交记录则与创建日期相同）
-- 摘要：手写 `summary` → HTML 描述标签 → 正文首段 → 正文截断
-- 标签：可选，未写不产生分类；草稿使用 `draft: true`
+提交到 `main` 后，工作流会自动提取标题、摘要、首次提交日期与最近修订日期；文章索引、RSS 和页面一起发布。你无需去 GitHub API 查询文章列表。
 
-### HTML 文件也可以不写元信息
+想加分类和标签？在文章最前面**可选**地写：
 
-```html
-<h1>我的 HTML 文章</h1>
-<p>这里是正文第一段，用于自动生成文章摘要。</p>
+```yaml
+---
+category: 技术
+tags: [GitHub Pages, 博客]
+---
 ```
 
-兼容旧格式 `<!-- title: 自定义标题 | tags: [HTML] | summary: 摘要 -->`，也能读取 HTML 的 `<title>`、`<meta name="description">`、`og:title`、首个段落。HTML 文章使用独立 iframe 保留原始样式。
+> 完全不写头信息也能正常发布；添加时请让 `category`、`tags` 等字段保持顶格对齐。
 
-## 本地预览
+插入图片时，可把图片放进 `blog/images/`，正文用 `![图片说明](images/文件名.png)`；页面会自动将资源地址指向博客目录。
 
-在项目根目录执行：
+## 🗂 项目结构，一眼看懂
+
+```text
+YOUR_USERNAME.github.io/
+├── index.html                    # 页面、样式、文章阅读器
+├── config.json                   # 博客名称、简介和作者信息
+├── blog/
+│   ├── 我的第一篇文章.md          # 你的内容
+│   ├── images/                   # 图片与教程插图
+│   └── index.json                # 自动生成的文章索引
+├── scripts/
+│   └── build_index.py            # 提取元数据、生成 RSS / sitemap
+├── .github/
+│   └── workflows/
+│       └── blog-index.yml       # 自动部署到 GitHub Pages
+└── .nojekyll                     # 静态站点兼容文件（构建时也会自动创建）
+```
+
+### 个性化入口
+
+修改 `config.json` 就能调整 `title`、`subtitle`、`description`、`author`、`owner`、`repo`、`notice`、`about`。需要改配色或页面布局时，编辑 `index.html` 内的 CSS 即可。**请把 `owner` 与 `repo` 改成你的 GitHub 账号和实际仓库名称。**
+
+## 🧩 它是如何工作的？
+
+```text
+你新建、编辑或删除 blog/ 中的文章
+                ↓
+       Push / Commit 到 main
+                ↓
+     GitHub Actions 获取 Git 历史
+                ↓
+Python 生成 blog/index.json + feed.xml + sitemap.xml
+                ↓
+   与 index.html、blog/ 同步部署到 Pages
+                ↓
+        读者访问你的网站
+```
+
+- 文章删除后索引会同步变化；即使删除最后一篇文章，也会正常展示空状态。
+- Git 首次／最后提交时间用于计算发布和更新日期（若无历史记录，则使用可用的日期信息）。
+- 目前使用 `#/` 路由；站点地图只包含主页，**不等同于每篇文章都拥有独立的 SEO 页面**。
+- 一些增强型 Markdown 排版效果依赖外部 CDN；基础页面、索引与部署不需要调用 GitHub API。
+
+## 🔧 本地预览与检查
 
 ```bash
 python3 scripts/build_index.py
 python3 -m http.server 8000
 ```
 
-浏览器打开 `http://localhost:8000/#/`，不要直接通过 `file://` 协议打开 `index.html`。
+打开 `http://localhost:8000/#/`。如下载的源码包含 `tests/`，可运行 `python3 -m unittest discover -s tests -v`。
 
-可以运行离线回归测试（只需 Python 标准库）：
+请通过 HTTP 访问而不是双击使用 `file://` 打开，因为浏览器会限制本地文件的 `fetch` 行为。
 
-```bash
-python3 -m unittest discover -s tests -v
-```如果本地没有 `.git` 提交历史，无头信息文章的日期会尽量使用文件名日期，部署到 GitHub 后自动读取真实提交日期。
+## 💬 反馈、灵感与下一步
 
-## 常见问题
+喜欢这种**低维护、重内容**的博客方式？欢迎给仓库点一个 ⭐ Star，或者在 [Issues](https://github.com/khtao/khtao.github.io/issues) 留下你的作品、建议或问题。
 
-**删掉文章后还显示？** 确认对应的 Actions 部署已经完成，并刷新网页。GitHub Pages 的 CDN 更新可能有短暂延迟；网站每 5 分钟重新请求最新索引（附时间戳且禁用浏览器缓存）。
+也欢迎直接阅读 [图文部署教程](blog/从零部署%20Khtao%20Blog%203.0.md)，从第一篇文章开始记录。
 
-**首页提示「文章索引尚未就绪」？** 检查 Pages Source 是否已改为 **GitHub Actions**、工作流是否运行成功、站点根目录能否访问 `blog/index.json`。`blog/index.json` 必须包含 `files` 数组，允许是空数组。
+> **关于授权**：仓库公开不等于自动授予再分发权。维护者建议补充明确的 `LICENSE`（例如 MIT），让想要使用、修改和传播模板的人安心使用；发布前请以仓库实际许可为准。
 
-**不会再看到 GitHub API 限额错误吗？** 新版客户端不访问该 API，因此匿名配额不再影响首页加载。GitHub Pages 或用户自身网络完全不可达时，任何静态网站都不能保证在线可用，博客会尽可能展示本机上次成功同步的内容并明确标注缓存状态。
-
-**为什么仓库里的 `blog/index.json` 有时不是最新？** 发布时的索引在 Actions 内自动生成并作为同一次部署的文件上传；该生成文件不必提交回仓库。压缩包附带的初始索引仅用于本地预览和第一次上传时的兜底。
-
-**如何改风格/文案？** 首页文案改 `config.json`；视觉主题、文章样式改 `index.html` 的 `<style>` 区域。文章改动会自动部署；`index.html` 或 `config.json` 修改也会触发部署。
+<div align="center"><sub>Built with GitHub Pages · Made for writing, not configuration.</sub></div>
