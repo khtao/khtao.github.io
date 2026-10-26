@@ -125,24 +125,6 @@ mark{background:var(--accent-soft);color:var(--accent);border-radius:3px;padding
 .banner button.ghost{background:transparent;border:1px solid var(--line);color:var(--fg-mid);}
 .banner button.ghost:hover{border-color:var(--accent);color:var(--accent);}
 
-/* Token 弹窗 */
-.mask{position:fixed;inset:0;z-index:90;background:rgba(12,14,18,.55);backdrop-filter:blur(4px);
-  display:none;place-items:center;padding:20px;}
-.mask.on{display:grid;}
-.modal{width:min(520px,100%);background:var(--card);border:1px solid var(--line);border-radius:16px;
-  box-shadow:0 30px 80px rgba(0,0,0,.35);padding:26px 26px 22px;}
-.modal h3{margin:0 0 8px;font-size:18px;font-weight:700;}
-.modal p{margin:0 0 14px;font-size:13.5px;color:var(--fg-mid);line-height:1.7;}
-.modal ol{margin:0 0 14px;padding-left:20px;font-size:13px;color:var(--fg-mid);line-height:1.8;}
-.modal input{width:100%;height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line);
-  background:var(--bg-soft);color:var(--fg);font-size:13.5px;font-family:var(--mono);}
-.modal input:focus{outline:none;border-color:var(--accent);background:var(--bg);}
-.modal .acts{margin-top:18px;display:flex;gap:10px;justify-content:flex-end;align-items:center;}
-.modal .acts .note{flex:1;font-size:12px;color:var(--fg-soft);}
-.btn-p{padding:8px 16px;border-radius:9px;background:var(--accent);color:#fff;font-size:13.5px;font-weight:600;}
-[data-theme="dark"] .btn-p{color:#0e1117;}
-.btn-g{padding:8px 14px;border-radius:9px;border:1px solid var(--line);color:var(--fg-mid);font-size:13.5px;}
-
 /* 骨架/空/错误 */
 .skel{padding:24px 0;border-bottom:1px solid var(--line-soft);}
 .skel i{display:block;height:13px;border-radius:6px;background:var(--bg-soft);
@@ -312,6 +294,98 @@ footer{border-top:1px solid var(--line);margin-top:40px;}
   .post-title{font-size:18.5px;}
   .toc{display:none;}
 }
+
+/* ============ v3 · editorial refinement ============ */
+:root{
+  --bg:#fcfcfe; --bg-soft:#f3f4f9; --hover-bg:#f4f5fb;
+  --fg:#202335; --fg-mid:#485064; --fg-soft:#788195;
+  --line:#e6e8f0; --line-soft:#eceef4;
+  --accent:#5b5bd6; --accent-soft:rgba(91,91,214,.085);
+  --card:#ffffff; --radius:18px;
+}
+[data-theme="dark"]{
+  --bg:#0f121b; --bg-soft:#171c29; --hover-bg:#1b2130;
+  --fg:#eceefa; --fg-mid:#bbc0d1; --fg-soft:#858da3;
+  --line:#293043; --line-soft:#21283a;
+  --accent:#a6adff; --accent-soft:rgba(166,173,255,.12);
+  --card:#171c29;
+}
+body{letter-spacing:.004em;}
+.site-header{background:color-mix(in srgb,var(--bg) 88%,transparent);}
+.nav{height:68px;}
+.brand{display:inline-flex;align-items:center;gap:8px;letter-spacing:-.035em;font-size:17px;}
+.brand-icon{color:var(--accent);font-size:22px;line-height:1;}
+.brand small{padding-left:8px;border-left:1px solid var(--line);margin-left:5px;letter-spacing:.03em;}
+.wrap{max-width:1016px;}
+.hero{position:relative;padding:98px 0 64px;overflow:hidden;}
+.hero::after{content:"";position:absolute;top:30px;right:3%;width:210px;height:210px;
+ background:radial-gradient(circle,var(--accent-soft),transparent 72%);pointer-events:none;opacity:.65;}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.13em;font-weight:650;color:var(--accent);
+ display:flex;align-items:center;gap:9px;margin:0 0 20px;}
+.eyebrow-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 5px var(--accent-soft);}
+.hero h1{background:none;-webkit-text-fill-color:var(--fg);color:var(--fg);max-width:900px;
+ font-size:clamp(37px,5.2vw,58px);letter-spacing:-.052em;line-height:1.24;}
+.hero-star{display:inline-block;font-family:serif;font-size:.42em;vertical-align:top;margin:0 0 0 13px;color:var(--accent);
+ -webkit-text-fill-color:var(--accent);}
+.hero p{font-size:16px;line-height:1.9;margin-top:21px;}
+.hero-bottom{margin-top:36px;display:flex;align-items:center;gap:12px;color:var(--fg-soft);font-size:12.5px;}
+.hero-rule{width:34px;height:1px;background:var(--accent);opacity:.6;}
+.toolbar{padding:0 0 31px;gap:9px;}
+.chip{padding:7px 14px;background:var(--bg);border:1px solid var(--line);}
+.chip.on{box-shadow:0 3px 10px var(--accent-soft);}
+.list-title{font-size:11px;letter-spacing:.13em;text-transform:uppercase;font-weight:700;margin:0 0 7px;}
+.post-item{grid-template-columns:108px minmax(0,1fr);gap:30px;padding:30px 20px;
+ margin:0 -20px;border-bottom:1px solid var(--line);border-radius:14px;transition:background .22s ease,transform .22s ease;}
+.post-item:hover{background:var(--hover-bg);transform:translateX(3px);}
+.post-date{font-size:12px;letter-spacing:-.005em;padding-top:4px;}
+.post-date em{margin-top:5px;line-height:1.5;}
+.post-title{font-size:21px;line-height:1.48;font-weight:730;letter-spacing:-.029em;}
+.post-sum{font-size:14px;line-height:1.84;margin-top:10px;color:var(--fg-soft);max-width:720px;}
+.post-tags{display:flex;align-items:center;gap:8px;margin-top:16px;}
+.tag-mini{border-radius:999px;font-size:11.5px;padding:3px 10px;}
+.read-time{font-size:11px;font-family:var(--mono);color:var(--fg-soft);margin-left:auto;opacity:.83;white-space:nowrap;}
+.post-layout{gap:48px;}
+.post-main{max-width:718px;}
+.post-head h1{letter-spacing:-.048em;line-height:1.3;}
+.md{line-height:1.94;}
+.md h2{margin-top:2.35em;}
+.toc-mobile{display:none;}
+.empty{border-top:1px solid var(--line);margin-top:8px;padding:86px 0 100px;}
+.empty .big{font-size:32px;color:var(--accent);opacity:.45;}
+.empty h2{font-size:20px;font-weight:680;color:var(--fg);margin:6px 0;}
+.empty p{font-size:14px;margin:0;}
+.foot{max-width:1016px;}
+.foot a:hover{color:var(--accent);}
+@media(max-width:1080px){
+ .toc-mobile{display:block;border:1px solid var(--line);background:var(--bg-soft);border-radius:12px;margin:22px 0 26px;}
+ .toc-mobile summary{padding:11px 15px;cursor:pointer;font-size:13px;font-weight:650;color:var(--fg-mid);}
+ .toc-mobile-links{padding:0 14px 14px;display:grid;gap:4px;}
+ .toc-mobile-links a{font-size:13px;color:var(--fg-soft);padding:5px 9px;border-radius:6px;}
+ .toc-mobile-links a.lv3{padding-left:23px;}
+ .toc-mobile-links a:hover{background:var(--accent-soft);color:var(--accent);}
+}
+@media(max-width:640px){
+ .nav{height:60px;gap:9px;}
+ .brand{font-size:16px;}.brand-icon{font-size:19px;}
+ .search{flex:1 1 0;min-width:0;max-width:180px;}
+ .search input{height:34px;font-size:12px;padding-left:29px;padding-right:27px;}
+ .search svg{left:9px;}
+ .hero{padding:61px 0 45px;}
+ .hero h1{font-size:clamp(32px,8.5vw,43px);line-height:1.3;}
+ .hero::after{right:-120px;}
+ .hero p{margin-top:16px;font-size:14.5px;}
+ .hero-bottom{margin-top:23px;}
+ .post-item{grid-template-columns:1fr;gap:7px;margin:0 -12px;padding:24px 12px;}
+ .post-date{padding:0;font-size:11.5px;}
+ .post-date em{display:inline;margin-left:10px;}
+ .post-title{font-size:19px;}
+ .post-sum{font-size:13.5px;}
+ .post-layout{padding-top:32px;}
+ .empty{padding:65px 0;}
+}
+@media(prefers-reduced-motion:reduce){
+ .post-item{transition:none;}.post-item:hover{transform:none;}
+}
 </style>
 </head>
 <body>
@@ -338,42 +412,22 @@ footer{border-top:1px solid var(--line);margin-top:40px;}
 
 <footer><div class="foot">
   <span id="footText">© 2026 khtao · Built with GitHub Pages</span>
-  <span id="footSync"></span>
+  <a id="footGithub" href="https://github.com/khtao/khtao.github.io" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
 </div></footer>
 
 <div class="float">
-  <button id="refresh" aria-label="刷新文章" title="重新从 GitHub 拉取最新文章"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg></button>
+  <button id="refresh" aria-label="刷新文章" title="更新文章列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg></button>
   <button id="totop" aria-label="回到顶部"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
 </div>
 
 <div class="lightbox" id="lb"><img alt=""></div>
 
-<div class="mask" id="tkMask">
-  <div class="modal">
-    <h3>填写 GitHub Token（可选）</h3>
-    <p>匿名访问 GitHub API 限额是 <b>60 次/小时</b>（同一网络出口共用，公司/校园网很容易打满）。
-       填入任意有效 Token 后提升到 <b>5000 次/小时</b>，基本不会再看到连接失败。</p>
-    <ol>
-      <li>GitHub 右上角头像 → Settings → Developer settings</li>
-      <li>Personal access tokens → Fine-grained tokens → Generate new token</li>
-      <li>权限全部留空即可（公开仓库读内容不需要任何 scope）</li>
-      <li>生成后复制粘贴到下面，点保存</li>
-    </ol>
-    <input id="tkInput" type="password" placeholder="github_pat_xxxxxxxxxxxx" autocomplete="off">
-    <div class="acts">
-      <span class="note">只保存在本机浏览器，不会发送到任何第三方服务器。</span>
-      <button class="btn-g" onclick="closeToken()">取消</button>
-      <button class="btn-g" onclick="clearToken()">清除</button>
-      <button class="btn-p" onclick="saveToken()">保存并刷新</button>
-    </div>
-  </div>
-</div>
-
 <script>
 /* =======================================================================
-   自动化博客引擎
-   - 从 GitHub 仓库 blog/ 目录实时抓取文章（.md / .html）
-   - 无需本地 git 操作：网页端上传文件即发布
+   静态索引博客 · v3
+   - 文章清单和提交日期来自同域 blog/index.json（Actions 自动生成）
+   - 浏览器不再请求 GitHub API / 第三方镜像 / Personal Access Token
+   - 对零文章、删除、离线缓存做独立处理
    ======================================================================= */
 
 const DEFAULT_CFG = {
@@ -382,233 +436,67 @@ const DEFAULT_CFG = {
   blogDir:"blog", pageSize:50, footer:"© 2026 khtao · Built with GitHub Pages"
 };
 let cfg = Object.assign({}, DEFAULT_CFG);
-const CACHE_KEY = "khtao_blog_cache_v2";   // 文章正文与元信息缓存
-const META_KEY  = "khtao_blog_meta_v2";    // 按 sha 缓存的提交日期（跨会话复用，不重复消耗 API）
-const TOKEN_KEY = "khtao_gh_token";
+const CACHE_KEY = "khtao_blog_cache_v3";
 const state = {
-  posts:[], q:"", tag:"", loading:true, error:"",
-  offline:false,        // true = 正在展示本地缓存，未连上 GitHub
-  syncedAt:0, src:"",   // src = 本次数据来自哪个源
-  pending:0
+  posts:[], q:"", tag:"", loading:true, error:"", offline:false,
+  syncedAt:0, generated:"", hasList:false, refreshing:false
 };
-
-/* ---------- 工具 ---------- */
+let syncSequence = 0;
 const $ = s => document.querySelector(s);
-const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-const isPost = n => /\.(md|markdown|html?)$/i.test(n) && !n.startsWith("_") && !n.startsWith(".");
-
-/* ---------- GitHub Token：把 60 次/小时 提到 5000 次/小时 ---------- */
-function getToken(){ return (cfg.token && String(cfg.token).trim()) || localStorage.getItem(TOKEN_KEY) || ""; }
-function setToken(t){ t = String(t||"").trim(); t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); }
-
-async function ghFetch(url, timeout=9000){
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const isPost = n => /\.(md|markdown|html?)$/i.test(n) && !String(n).startsWith("_") && !String(n).startsWith(".");
+const safeStore = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+};
+async function getLocalText(url, timeout=10000){
   const ctl = new AbortController();
-  const t = setTimeout(() => ctl.abort(), timeout);
-  const headers = {Accept:"application/vnd.github+json"};
-  const tk = getToken();
-  if(tk) headers.Authorization = "Bearer " + tk;
+  const timer = setTimeout(() => ctl.abort(), timeout);
   try{
-    const r = await fetch(url, {signal:ctl.signal, cache:"no-store", headers});
-    if(r.status === 403 || r.status === 429) throw new Error("RATELIMIT");
-    if(!r.ok) throw new Error("HTTP " + r.status);
-    return {body: await r.text(), headers: r.headers};
-  } finally { clearTimeout(t); }
+    const r = await fetch(url, {signal:ctl.signal, cache:"no-store"});
+    if(!r.ok) throw new Error("HTTP_"+r.status);
+    return await r.text();
+  } finally { clearTimeout(timer); }
 }
-async function getText(url, timeout=9000){ return (await ghFetch(url, timeout)).body; }
-async function getJSON(url, timeout=9000){ return JSON.parse((await ghFetch(url, timeout)).body); }
-
-/* 多源兜底：按顺序试，任一成功即用 */
-async function tryHosts(urls, timeout){
-  for(const u of urls){
-    try{ return await getText(u, timeout); }catch(e){}
-  }
-  throw new Error("all sources failed");
-}
-async function tryJSON(urls, timeout){
-  for(const u of urls){
-    try{ return JSON.parse(await getText(u, timeout)); }catch(e){}
-  }
-  throw new Error("all sources failed");
-}
-/* 并发池：避免瞬间打满 API 限额 */
 async function pool(items, limit, fn){
-  const ret = [];
-  let i = 0;
-  const workers = Array(Math.min(limit, items.length)).fill(0).map(async () => {
-    while(i < items.length){
-      const idx = i++;
-      try{ ret[idx] = await fn(items[idx], idx); }catch(e){ ret[idx] = null; }
+  let next = 0;
+  await Promise.all(Array.from({length:Math.min(limit, items.length)}, async () => {
+    while(next < items.length){
+      const n = next++;
+      try{ await fn(items[n],n); }catch(e){ console.warn("文章载入失败",e); }
     }
-  });
-  await Promise.all(workers);
-  return ret;
+  }));
 }
-
-/* ---------- 配置 ---------- */
 async function loadConfig(){
   try{
-    const c = JSON.parse(await getText("config.json?v=" + Date.now(), 6000));
-    cfg = Object.assign({}, DEFAULT_CFG, c || {});
-  }catch(e){ cfg = Object.assign({}, DEFAULT_CFG); }
+    const c = JSON.parse(await getLocalText("./config.json?v=" + Date.now(),6000));
+    cfg = Object.assign({},DEFAULT_CFG,c||{});
+  }catch(e){ cfg = Object.assign({},DEFAULT_CFG); }
   document.title = cfg.title + " · Blog";
   const md = document.querySelector('meta[name=description]');
-  if(md) md.setAttribute("content", cfg.description);
-  const b = document.querySelector(".brand");
-  if(b) b.innerHTML = esc(cfg.title) + "<small>Blog</small>";
-  const f = $("#footText");
-  if(f) f.textContent = cfg.footer;
+  if(md) md.content = cfg.description;
+  const b = $(".brand");
+  if(b) b.innerHTML = `<span class="brand-icon" aria-hidden="true">✦</span>${esc(cfg.title)}<small>Notes</small>`;
+  $("#footText").textContent = cfg.footer;
+  const gh = $("#footGithub");
+  if(gh) gh.href = `https://github.com/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}`;
 }
-
-/* ---------- 各数据源地址 ---------- */
-function apiBase(){                       // GitHub API 及其公开镜像
-  return ["https://api.github.com",
-          "https://gh-proxy.com/https://api.github.com",
-          "https://ghproxy.net/https://api.github.com",
-          "https://gh-proxy.net/https://api.github.com"];
-}
-function rawURLs(path){
-  const {owner,repo,branch} = cfg;
-  const p = encodeURI(path);
-  return [
-    `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${p}`,
-    `https://raw.gitmirror.com/${owner}/${repo}/${branch}/${p}`,
-    `https://gh-proxy.com/https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${p}`,
-    `https://ghproxy.net/https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${p}`,
-    `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${p}`,
-    `https://fastly.jsdelivr.net/gh/${owner}/${repo}@${branch}/${p}`,
-    `https://raw.githack.com/${owner}/${repo}/${branch}/${p}`
-  ];
-}
-/* 目录：API → 镜像 → jsDelivr 清单 → ungh（后两者不受 API 限流影响） */
-async function fetchListViaAPI(){
-  const {owner,repo,blogDir} = cfg;
-  const branches = cfg.branch ? [cfg.branch] : ["main","master"];
-  for(const br of branches){
-    const q = `repos/${owner}/${repo}/contents/${blogDir}?ref=${br}&t=${Date.now()}`;
-    try{
-      const j = await tryJSON(apiBase().map(b => b + "/" + q), 9000);
-      if(Array.isArray(j)){
-        cfg.branch = br;
-        return {files: j.filter(f => f.type === "file" && isPost(f.name))
-                        .map(f => ({name:f.name, path:f.path, sha:f.sha})), src:"GitHub API"};
-      }
-    }catch(e){}
-  }
-  return null;
-}
-async function fetchListViaCDN(){
-  const {owner,repo,blogDir} = cfg;
-  const branches = cfg.branch ? [cfg.branch] : ["main","master"];
-  for(const br of branches){
-    // jsDelivr 文件清单（公开 CDN，无 GitHub API 限额）
-    try{
-      const d = await tryJSON([
-        `https://data.jsdelivr.com/v1/packages/gh/${owner}/${repo}@${br}?structure=flat`,
-        `https://data.jsdelivr.com/v1/package/gh/${owner}/${repo}@${br}/flat`
-      ], 9000);
-      const prefix = "/" + blogDir + "/";
-      const files = (d.files||[]).filter(f => f.name.startsWith(prefix) && isPost(f.name.split("/").pop()))
-        .map(f => ({name: f.name.slice(prefix.length), path: f.name.slice(1), sha: f.hash || f.name}));
-      if(files.length){ cfg.branch = br; return {files, src:"jsDelivr"}; }
-    }catch(e){}
-    // ungh.cc（unjs 维护的 GitHub 只读代理，公开、带缓存）
-    try{
-      const d = await getJSON(`https://ungh.cc/repos/${owner}/${repo}/files/${br}/${blogDir}`, 9000);
-      const files = (d.files||[]).filter(f => f.type === "file" && isPost(f.name.split("/").pop()))
-        .map(f => ({name: f.name.split("/").pop(), path: f.path, sha: f.sha || f.path}));
-      if(files.length){ cfg.branch = br; return {files, src:"ungh"}; }
-    }catch(e){}
-  }
-  return null;
-}
-/* 静态索引 blog/index.json（由 GitHub Actions 生成）：
-   一次静态请求就拿到「目录 + 标题 + 上传/修订日期 + 摘要 + 标签」，完全不消耗 API 配额 */
-async function fetchListViaIndex(){
-  const {blogDir} = cfg;
-  try{
-    const j = await tryJSON(rawURLs(blogDir + "/index.json").slice(0, 3), 6000);
-    if(j && Array.isArray(j.files) && j.files.length){
-      return {
-        files: j.files.filter(f => f && f.name && isPost(f.name))
-                      .map(f => ({name:f.name, path:f.path || (blogDir + "/" + f.name), sha:f.sha, meta:f})),
-        src: "静态索引" + (j.generated ? " " + String(j.generated).slice(0,10) : "")
-      };
-    }
-  }catch(e){}
-  return null;
+function localRepoUrl(path){
+  const encoded = String(path).split("/").map(encodeURIComponent).join("/");
+  return "./" + encoded;
 }
 async function fetchList(){
-  /* 静态索引与实时目录并行取：
-     - API 可用 → 以 API 目录为准（最新），日期从索引补，零额外请求
-     - API 不可用（限额/断网）→ 直接用索引，博客依旧完整可用 */
-  const [idx, api] = await Promise.all([fetchListViaIndex(), fetchListViaAPI()]);
-  if(api){
-    const map = {};
-    (idx ? idx.files : []).forEach(f => map[f.name] = f.meta);
-    return {
-      files: api.files.map(f => Object.assign({}, f, {meta: map[f.name]})),
-      src: (api.src || "GitHub API") + (idx ? " + 索引" : "")
-    };
-  }
-  if(idx) return idx;
-  const cdn = await fetchListViaCDN();
-  if(cdn) return cdn;
-  throw new Error("LIST_FAIL");
-}
-
-/* ---------- 提交日期：上传日期 = 首次提交，修订日期 = 最后一次提交 ---------- */
-function readMetaCache(){
-  try{ return JSON.parse(localStorage.getItem(META_KEY) || "{}") || {}; }catch(e){ return {}; }
-}
-function writeMetaCache(m){
-  try{ localStorage.setItem(META_KEY, JSON.stringify(m)); }catch(e){}
-}
-/* 单文件：返回 {created, updated}；结果按 sha 永久缓存，不会重复消耗 API */
-async function fetchDates(path, sha){
-  const key = path + "@" + sha;
-  const cache = readMetaCache();
-  if(cache[key] && cache[key].updated) return cache[key];
-  // 上次失败：1 小时内不再重试，避免反复撞限额
-  if(cache[key] && cache[key].fail && Date.now() - (cache[key].ts||0) < 3600000) return null;
-
-  const {owner,repo,branch} = cfg;
-  const p = encodeURI(path);
-  const base = `repos/${owner}/${repo}/commits?path=${p}&sha=${branch}`;
-  const dOf = c => ((c.commit && ((c.commit.committer||{}).date || (c.commit.author||{}).date)) || "").slice(0,10);
-  let updated = "", created = "";
-  try{
-    // 一次取最多 100 条：首条 = 最后一次提交，末条 = 首次提交
-    const arr = await tryJSON(apiBase().map(b => b + "/" + base + "&per_page=100"), 10000);
-    if(!Array.isArray(arr) || !arr.length) throw new Error("no commits");
-    updated = dOf(arr[0]) || "";
-    created = dOf(arr[arr.length - 1]) || "";
-    if(arr.length === 100){                 // 可能还有更早的，再翻到最后一页
-      try{
-        const r = await ghFetch(apiBase()[0] + "/" + base + "&per_page=1", 9000);
-        const link = r.headers.get("Link") || "";
-        const m = link.match(/[?&]page=(\d+)>;\s*rel="last"/);
-        if(m && parseInt(m[1],10) > 1){
-          const last = await tryJSON(apiBase().map(b => b + "/" + base + "&per_page=1&page=" + m[1]), 10000);
-          if(Array.isArray(last) && last.length) created = dOf(last[0]) || created;
-        }
-      }catch(e){}
-    }
-    if(!created) created = updated;
-    if(!updated) updated = created;
-  }catch(e){
-    const c = readMetaCache();
-    c[key] = {fail:true, ts:Date.now()};
-    writeMetaCache(c);
-    return null;
-  }
-  const val = {created, updated, ts:Date.now()};
-  const c = readMetaCache();
-  c[key] = val;
-  const keys = Object.keys(c);
-  if(keys.length > 500) keys.slice(0, keys.length - 500).forEach(k => delete c[k]);
-  writeMetaCache(c);
-  return val;
+  // 浏览器和 CDN 可缓存旧版 index.json；查询戳和 no-store 减少删除文章后的残留。
+  const url = localRepoUrl(cfg.blogDir.replace(/^\/+|\/+$/g, "") + "/index.json") + "?v=" + Date.now();
+  const j = JSON.parse(await getLocalText(url,10000));
+  // [] 表示用户删除了全部文章：必须视为成功，而不是切换到远程 GitHub API。
+  if(!j || !Array.isArray(j.files)) throw new Error("INVALID_INDEX");
+  const prefix = cfg.blogDir.replace(/^\/+|\/+$/g, "") + "/";
+  const files = j.files.filter(f => f && typeof f.name === "string" && isPost(f.name)
+    && !f.name.includes("/") && !f.name.includes("\\")
+    && (!f.path || f.path === prefix + f.name))
+    .map(f => ({name:f.name, path:prefix+f.name, sha:String(f.sha||""), meta:f}));
+  return {files, generated:String(j.generated||"")};
 }
 
 /* ---------- 相对路径解析：以 blog/ 为根目录 ---------- */
@@ -627,17 +515,7 @@ function relToRepoPath(rel){
   return (!clean || clean === base) ? null : clean;
 }
 function assetURLs(repoPath){
-  const {owner,repo,branch} = cfg;
-  const p = repoPath.split("/").map(encodeURIComponent).join("/");
-  return [
-    `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${p}`,
-    `https://raw.gitmirror.com/${owner}/${repo}/${branch}/${p}`,
-    `https://gh-proxy.com/https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${p}`,
-    `https://ghproxy.net/https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${p}`,
-    `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${p}`,
-    `https://fastly.jsdelivr.net/gh/${owner}/${repo}@${branch}/${p}`,
-    `https://raw.githack.com/${owner}/${repo}/${branch}/${p}`
-  ];
+  return [localRepoUrl(repoPath)];
 }
 
 /* 把整篇 HTML 文档里的相对路径资源改写成仓库绝对地址，并收集备用镜像 */
@@ -726,16 +604,22 @@ function injectHelper(doc, alt){
 /* ---------- 元信息解析 ---------- */
 function parseFrontMatter(raw){
   const fm = {};
-  const m = raw.match(/^\uFEFF?\s*---\r?\n([\s\S]*?)\r?\n---/);
+  const m = raw.match(/^\uFEFF?\s*---\r?\n([\s\S]*?)\r?\n---(?:\s*(?:\r?\n|$))/);
   if(!m) return {fm, body:raw};
+  let listTags = false;
   m[1].split(/\r?\n/).forEach(line => {
-    const i = line.indexOf(":");
-    if(i < 0) return;
-    let k = line.slice(0,i).trim().toLowerCase();
-    let v = line.slice(i+1).trim().replace(/^["']|["']$/g,"");
-    if(k === "tags" || k === "tag" || k === "categories" || k === "category"){
-      v = v.replace(/^\[|\]$/g,"");
-      fm.tags = v.split(/[,，、]/).map(s => s.trim()).filter(Boolean);
+    if(listTags && /^\s*-\s+\S/.test(line)){
+      fm.tags.push(line.replace(/^\s*-\s+/, "").trim().replace(/^['\"]|['\"]$/g, ""));
+      return;
+    }
+    listTags = false;
+    const match = line.match(/^([\w-]+)\s*:\s*(.*)$/);
+    if(!match) return;
+    const k = match[1].trim().toLowerCase();
+    let v = match[2].trim().replace(/^['\"]|['\"]$/g, "");
+    if(["tags", "tag", "categories", "category"].includes(k)){
+      if(!v){ fm.tags = []; listTags = true; }
+      else fm.tags = v.replace(/^\[|\]$/g, "").split(/[,，、]/).map(s => s.trim().replace(/^['\"]|['\"]$/g, "")).filter(Boolean);
     } else fm[k] = v;
   });
   return {fm, body: raw.slice(m[0].length)};
@@ -818,7 +702,7 @@ function parsePost(name, raw, extra){
 
   if(isHtml){
     const c = raw.match(/<!--([\s\S]*?)-->/);
-    if(c && /title\s*:/i.test(c[1])){
+    if(c && /(?:^|\|)\s*(?:title|date|created|updated|summary|tags|tag|cover|draft)\s*:/i.test(c[1])){
       c[1].split("|").forEach(seg => {
         const i = seg.indexOf(":");
         if(i < 0) return;
@@ -854,7 +738,11 @@ function parsePost(name, raw, extra){
     if(!meta.summary) meta.summary = pick.p;
   }
 
-  const tags = (meta.tags||[]).filter(Boolean);
+  const tags = (Array.isArray(meta.tags) && meta.tags.length ? meta.tags : Array.isArray(extra.tags) ? extra.tags : []).filter(Boolean);
+  const declaredTitle = isHtml ? /<!--[\s\S]*?\btitle\s*:/i.test(raw) : !!parseFrontMatter(raw).fm.title;
+  const declaredSummary = isHtml ? /<!--[\s\S]*?\bsummary\s*:/i.test(raw) : !!parseFrontMatter(raw).fm.summary;
+  if(!declaredTitle && extra.title) meta.title = extra.title;
+  if(!declaredSummary && extra.summary) meta.summary = extra.summary;
   /* 日期优先级：手写 frontmatter > 仓库提交记录 > 文件名里的日期 */
   const handCreated = ((meta.date || meta.created || meta.created_at || "") + "").slice(0,10);
   const handUpdated = ((meta.updated || meta.modified || meta.last_modified_at || meta.updated_at || "") + "").slice(0,10);
@@ -871,9 +759,9 @@ function parsePost(name, raw, extra){
     created, updated,
     date: created,                                  // 兼容旧字段：列表排序用
     tags,
-    autoTitle: !meta.title,                         // 标题是否为自动提取
-    autoDate: !handCreated,                         // 日期是否取自提交记录/文件名
-    autoSummary: !meta.summary,
+    autoTitle: !declaredTitle,                       // 无头信息时由正文/索引提取
+    autoDate: !handCreated,
+    autoSummary: !declaredSummary,
     summary: (meta.summary || plain).slice(0, 140),
     cover: meta.cover || "",
     draft: String(meta.draft||"").toLowerCase() === "true",
@@ -971,116 +859,103 @@ function renderBody(p, r){
   return mdFallback(p.body);
 }
 
-/* ---------- 缓存 ---------- */
+/* ---------- 缓存：仅作为加载加速和短暂离线回退，静态索引是唯一权威 ---------- */
 function readCache(){
-  try{ const c = JSON.parse(localStorage.getItem(CACHE_KEY) || "null"); return c && c.posts ? c : null; }catch(e){ return null; }
+  try{
+    const c = JSON.parse(safeStore.get(CACHE_KEY) || "null");
+    return c && Array.isArray(c.posts) ? c : null;
+  }catch(e){ return null; }
 }
 function writeCache(){
-  try{
-    localStorage.setItem(CACHE_KEY, JSON.stringify({
-      ts: Date.now(), branch: cfg.branch,
-      posts: state.posts.map(p => ({
-        name:p.name, sha:p.sha, path:p.path,
-        meta:{
-          title:p.title, created:p.created, updated:p.updated, tags:p.tags, summary:p.summary,
-          cover:p.cover, draft:p.draft, isHtml:p.isHtml, words:p.words,
-          autoTitle:p.autoTitle, autoSummary:p.autoSummary,
-          styles:p.styles, cssLinks:p.cssLinks, scripts:p.scripts, rawHtml:p.rawHtml
-        },
-        raw:p.body
-      }))
-    }));
-  }catch(e){}
+  safeStore.set(CACHE_KEY, JSON.stringify({
+    ts:state.syncedAt, branch:cfg.branch, generated:state.generated,
+    posts:state.posts.map(p => ({
+      name:p.name, sha:p.sha, path:p.path,
+      meta:{title:p.title,created:p.created,updated:p.updated,tags:p.tags,summary:p.summary,
+        cover:p.cover,draft:p.draft,isHtml:p.isHtml,words:p.words,
+        autoTitle:p.autoTitle,autoSummary:p.autoSummary,styles:p.styles,
+        cssLinks:p.cssLinks,scripts:p.scripts,rawHtml:p.rawHtml},
+      raw:p.body
+    }))
+  }));
 }
-/* 缓存重建：把持久化的日期（key=path@sha）回填，避免重复消耗 API */
 function hydrate(c){
-  const metaCache = readMetaCache();
-  return c.posts.map(p => {
-    const built = parsePost(p.name, p.raw || "", {});
-    const extra = (metaCache[(p.path || (cfg.blogDir + "/" + p.name)) + "@" + p.sha]) || {};
-    const merged = Object.assign(built, {sha:p.sha, path:p.path || (cfg.blogDir + "/" + p.name)}, p.meta || {});
-    if(!merged.created) merged.created = extra.created || merged.created || "";
-    if(!merged.updated) merged.updated = extra.updated || merged.updated || merged.created || "";
-    merged.date = merged.created;
-    return merged;
-  }).filter(p => !p.draft);
+  return c.posts.map(p => Object.assign(
+    parsePost(p.name,p.raw||"",{}),
+    {sha:p.sha,path:p.path||(cfg.blogDir+"/"+p.name)},p.meta||{}
+  )).filter(p => !p.draft);
 }
-
-/* ---------- 主流程 ---------- */
-async function refresh(force){
-  state.loading = true; render();
-  let got = null;
-  try{ got = await fetchList(); }
+async function refresh(force=false){
+  const seq = ++syncSequence;
+  state.refreshing = true;
+  if(!state.hasList) state.loading = true;
+  render();
+  let got;
+  try { got = await fetchList(); }
   catch(e){
-    // 连不上：有缓存就继续用缓存（静默），没有才提示
+    if(seq !== syncSequence) return;
+    state.refreshing = false;
     state.loading = false;
-    if(state.posts.length){
-      state.offline = true;
-      state.error = "";
-    } else {
-      state.error = "NO_NET";
-    }
-    render(); return;
+    state.offline = true;
+    // 错误只描述「站点索引」；不再错误地归因于 GitHub API 频率限制。
+    state.error = state.hasList ? "" : "INDEX_UNAVAILABLE";
+    render();
+    return;
   }
-
-  const list = got.files;
-  state.src = got.src;
-  state.offline = false;
-  const old = new Map(state.posts.map(p => [p.name, p]));
+  if(seq !== syncSequence) return;
+  const old = new Map(state.posts.map(p => [p.name,p]));
   const out = [];
-  for(const f of list){
-    const prev = old.get(f.name);
+  for(const f of got.files){
     const m = f.meta || {};
-    if(!force && prev && prev.sha === f.sha){
-      // 内容没变，直接复用缓存；索引里有日期就补齐
-      if(!prev.created && m.created) prev.created = m.created;
-      if(!prev.updated && m.updated) prev.updated = m.updated;
-      if(prev.updated && prev.created && prev.updated < prev.created) prev.updated = prev.created;
-      if(!prev.summary && m.summary) prev.summary = m.summary;
+    const prev = old.get(f.name);
+    if(!force && prev && prev.sha === f.sha && prev.body !== undefined){
+      // 从最新索引更新日期，确保已更改的提交日期能够同步。
+      if(m.created) prev.created = m.created;
+      if(m.updated) prev.updated = m.updated;
+      if(m.summary && prev.autoSummary) prev.summary = m.summary;
       prev.date = prev.created;
-      out.push(prev); continue;
+      out.push(prev);
+    }else{
+      out.push({name:f.name,path:f.path,sha:f.sha,_need:true,_meta:m});
     }
-    out.push({name:f.name, sha:f.sha, path:f.path, _need:true, _meta:m});
   }
-  let failed = 0;
-  await pool(out.filter(p => p._need), 4, async p => {
+  // 一旦新索引返回零文章，就丢弃旧缓存，不允许被删除的文章复活。
+  if(!out.length){
+    state.posts=[];
+    state.hasList=true;
+    state.generated=got.generated;
+    state.loading=false;
+    state.refreshing=false;
+    state.offline=false;
+    state.error="";
+    state.syncedAt=Date.now();
+    writeCache(); render(); return;
+  }
+  let failed=0;
+  await pool(out.filter(p=>p._need),4,async p=>{
     try{
-      const raw = await tryHosts(rawURLs(p.path || (cfg.blogDir + "/" + p.name)));
-      Object.assign(p, parsePost(p.name, raw, p._meta || {})); delete p._need;
+      const raw=await getLocalText(localRepoUrl(p.path)+"?v="+encodeURIComponent(p.sha||Date.now()),10000);
+      Object.assign(p,parsePost(p.name,raw,p._meta));
+      delete p._need;
     }catch(e){
       failed++;
-      const prev = old.get(p.name);
-      if(prev){ Object.assign(p, prev); p.sha = prev.sha; delete p._need; }
-      else { p._dead = true; }
+      const prev=old.get(p.name);
+      if(prev){
+        Object.assign(p,prev);
+        delete p._need;
+      }else p._dead=true;
     }
   });
-
-  /* 严格以仓库目录为准：已删除的文章立即消失 */
-  const live = out.filter(p => !p._dead && !p.draft && p.body !== undefined);
-  live.sort((a,b) => (b.created||"").localeCompare(a.created||"") || b.name.localeCompare(a.name));
-  state.posts = live;
-  state.loading = false;
-  state.error = failed ? (failed + " 篇内容获取失败，其余正常显示。") : "";
-  state.syncedAt = Date.now();
-  writeCache(); render();
-
-  /* 后台补齐「上传/修订日期」：只在缺日期或 sha 变了时才请求，结果永久缓存 */
-  await fillDates(live);
-}
-
-/* 日期补齐：并发 2，避免触发 API 限额；补完静默更新视图 */
-async function fillDates(posts){
-  const need = posts.filter(p => !p.created || !p.updated);
-  if(!need.length) return;
-  await pool(need, 2, async p => {
-    const d = await fetchDates(p.path || (cfg.blogDir + "/" + p.name), p.sha);
-    if(!d) return;
-    p.created = p.created || d.created;
-    p.updated = p.updated || d.updated || d.created;
-    if(p.updated && p.created && p.updated < p.created) p.updated = p.created;
-    p.date = p.created;
-  });
-  state.posts.sort((a,b) => (b.created||"").localeCompare(a.created||"") || b.name.localeCompare(a.name));
+  if(seq !== syncSequence) return;
+  state.posts=out.filter(p=>!p._dead&&!p.draft&&p.body!==undefined)
+    .sort((a,b)=>(b.created||"").localeCompare(a.created||"")||b.name.localeCompare(a.name));
+  state.hasList=true;
+  state.generated=got.generated;
+  state.loading=false;
+  state.refreshing=false;
+  state.offline=false;
+  state.error=failed ? failed + " 篇文章正文暂时无法加载，其他文章可以正常阅读。" : "";
+  state.syncedAt=Date.now();
   writeCache(); render();
 }
 
@@ -1104,23 +979,16 @@ function highlight(text, q){
   if(i < 0) return esc(text);
   return esc(text.slice(0,i)) + "<mark>" + esc(text.slice(i, i+q.length)) + "</mark>" + esc(text.slice(i+q.length));
 }
-/* 顶部状态条：离线缓存 / 连接失败 / Token 设置 */
+/* 只有真正缺失索引时才提示；空文章列表是一种正常状态。 */
 function statusHTML(){
-  if(state.error === "NO_NET"){
-    return `<div class="banner err">
-      <span>⚠ 暂时连不上 GitHub。若长期如此，多半是匿名 API 限额（60 次/小时，同一网络下共用）。</span>
-      <button onclick="refresh(true)">重试</button>
-      <button class="ghost" onclick="openToken()">填写 Token</button>
-    </div>`;
+  if(state.error === "INDEX_UNAVAILABLE"){
+    return `<div class="banner soft" role="status"><span>文章索引尚未就绪。请确认已上传 blog/index.json，并启用自动更新工作流。</span><button onclick="refresh(true)">重新加载</button></div>`;
   }
   if(state.error){
-    return `<div class="banner"><span>⚠ ${esc(state.error)}</span><button onclick="refresh(true)">重试</button></div>`;
+    return `<div class="banner soft" role="status"><span>${esc(state.error)}</span><button onclick="refresh(true)">重试</button></div>`;
   }
-  if(state.offline){
-    return `<div class="banner soft">
-      <span>正在展示本地缓存${state.syncedAt ? "（" + new Date(state.syncedAt).toLocaleString("zh-CN",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}) + " 同步）" : ""}，后台会继续尝试同步。</span>
-      <button onclick="refresh(true)">立即重试</button>
-    </div>`;
+  if(state.offline && state.posts.length){
+    return `<div class="banner soft" role="status"><span>当前显示上次同步的文章，站点索引暂时无法更新。</span><button onclick="refresh(true)">重新加载</button></div>`;
   }
   return "";
 }
@@ -1133,27 +1001,26 @@ function homeHTML(){
   const q = state.q.trim().toLowerCase();
   const shown = all.slice(0, cfg.pageSize);
 
-  let h = `<div class="hero">
-    <h1>${esc(cfg.subtitle || cfg.title)}</h1>
+  let h = `<section class="hero">
+    <div class="eyebrow"><span class="eyebrow-dot"></span> DIGITAL GARDEN · EST. 2026</div>
+    <h1>${esc(cfg.subtitle || cfg.title)}<span class="hero-star" aria-hidden="true">✳</span></h1>
     <p>${esc(cfg.description)}</p>
-    <div class="hero-meta"><span>${state.posts.length} 篇文章</span><span class="dot"></span><span>${tagList.length} 个标签</span>
-    ${state.syncedAt ? `<span class="dot"></span><span>已同步 ${new Date(state.syncedAt).toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"})}</span>` : ""}
-    ${state.src ? `<span class="dot"></span><span>来源 ${esc(state.src)}</span>` : ""}</div>
-  </div>`;
+    <div class="hero-bottom"><span class="hero-rule" aria-hidden="true"></span><span>${state.posts.length} 篇文章</span><span class="dot"></span><span>${tagList.length} 个标签</span></div>
+  </section>`;
 
   h += statusHTML();
 
   if(tagList.length){
     h += `<div class="toolbar">
       <button class="chip ${state.tag?"":"on"}" onclick="setTag('')">全部<span class="n">${state.posts.length}</span></button>` +
-      tagList.map(([t,n]) => `<button class="chip ${state.tag===t?"on":""}" onclick="setTag('${esc(t)}')">${esc(t)}<span class="n">${n}</span></button>`).join("") +
+      tagList.map(([t,n]) => `<button class="chip ${state.tag===t?"on":""}" onclick="setTag(${esc(JSON.stringify(t))})">${esc(t)}<span class="n">${n}</span></button>`).join("") +
     `</div>`;
   }
 
   if(state.loading){
     h += [0,1,2].map(() => `<div class="skel"><i style="width:26%"></i><div style="height:9px"></div><i style="width:62%;height:20px"></i><div style="height:9px"></div><i style="width:88%"></i></div>`).join("");
   } else if(!shown.length){
-    h += `<div class="empty"><div class="big">∅</div><div>没有找到匹配的文章</div></div>`;
+    h += `<div class="empty"><div class="big" aria-hidden="true">✦</div><h2>${state.posts.length ? "没有找到匹配的文章" : "这里还是一片空白"}</h2><p>${state.posts.length ? "尝试其他关键词或取消标签筛选。" : "下一篇文章，正在路上。"}</p></div>`;
   } else {
     h += `<div class="list-title">${state.tag ? "标签：" + esc(state.tag) : ""}${q ? (state.tag?" · ":"") + "搜索：" + esc(state.q) : ""}${!state.tag && !q ? "最新" : ""} · ${all.length} 篇</div>`;
     h += shown.map(p => `
@@ -1162,7 +1029,7 @@ function homeHTML(){
         <div>
           <h2 class="post-title">${highlight(p.title, q)}</h2>
           ${p.summary ? `<p class="post-sum">${highlight(p.summary.slice(0,140), q)}</p>` : ""}
-          ${p.tags.length ? `<div class="post-tags">${p.tags.map(t => `<span class="tag-mini">${esc(t)}</span>`).join("")}</div>` : ""}
+          <div class="post-tags">${p.tags.map(t=>`<span class="tag-mini">${esc(t)}</span>`).join("")}<span class="read-time">${Math.max(1,Math.ceil(p.words/400))} min read</span></div>
         </div>
       </a>`).join("");
   }
@@ -1211,6 +1078,7 @@ function postHTML(p, r){
       </div>
       ${p.cover ? `<div class="post-cover"><img src="${esc(resolveMedia(p.cover))}" alt=""></div>` : ""}
       <div class="post-divider"></div>
+      <details class="toc-mobile" id="tocMobile"><summary>本文目录</summary><div class="toc-mobile-links"></div></details>
       <div class="md" id="mdBody">${renderBody(p, r)}</div>
       ${foot}
     </div>
@@ -1298,27 +1166,6 @@ function setTag(t){
 }
 window.setTag = setTag;
 window.refresh = refresh;
-
-/* ---------- Token 弹窗 ---------- */
-function openToken(){
-  $("#tkInput").value = getToken();
-  $("#tkMask").classList.add("on");
-  setTimeout(() => $("#tkInput").focus(), 60);
-}
-function closeToken(){ $("#tkMask").classList.remove("on"); }
-function clearToken(){ setToken(""); closeToken(); refresh(true); }
-function saveToken(){
-  const v = $("#tkInput").value.trim();
-  setToken(v);
-  closeToken();
-  localStorage.removeItem(META_KEY);   // 换身份后重取日期
-  refresh(true);
-}
-window.openToken = openToken;
-window.closeToken = closeToken;
-window.clearToken = clearToken;
-window.saveToken = saveToken;
-$("#tkMask").addEventListener("click", e => { if(e.target === $("#tkMask")) closeToken(); });
 
 /* 注入作者自带样式（带作用域） */
 let styleSeq = 0;
@@ -1434,6 +1281,19 @@ function afterPost(p){
       html += `<a href="#${id}" data-id="${id}" class="${el.tagName === "H3" ? "lv3" : ""}">${esc(el.textContent)}</a>`;
     });
     toc.innerHTML = html;
+    const mobileLinks = $(".toc-mobile-links");
+    if(mobileLinks){ mobileLinks.innerHTML = html.replace('<div class="t">目录</div>', ''); }
+    const mobileToc = $("#tocMobile");
+    if(mobileToc){
+      mobileToc.querySelectorAll("a").forEach(a => {
+        a.onclick=e=>{
+          e.preventDefault();
+          const target = document.getElementById(a.dataset.id);
+          mobileToc.open=false;
+          if(target) target.scrollIntoView({behavior:"smooth",block:"start"});
+        };
+      });
+    }
     toc.querySelectorAll("a").forEach(a => {
       a.onclick = e => {
         e.preventDefault();
@@ -1450,7 +1310,11 @@ function afterPost(p){
       });
     }, {rootMargin:"-80px 0px -72% 0px"});
     hs.forEach(el => io.observe(el));
-  } else toc.innerHTML = "";
+  } else {
+    toc.innerHTML = "";
+    const mobileToc = $("#tocMobile");
+    if(mobileToc) mobileToc.remove();
+  }
 }
 
 /* ---------- 交互 ---------- */
@@ -1461,13 +1325,13 @@ function onScroll(){
   $("#totop").classList.toggle("show", h.scrollTop > 420);
 }
 function initUI(){
-  const saved = localStorage.getItem("khtao_theme");
+  const saved = safeStore.get("khtao_theme");
   const dark = saved ? saved === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
   document.documentElement.dataset.theme = dark ? "dark" : "light";
   $("#theme").onclick = () => {
     const now = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = now;
-    localStorage.setItem("khtao_theme", now);
+    safeStore.set("khtao_theme", now);
   };
 
   let timer;
@@ -1500,18 +1364,23 @@ function initUI(){
   initUI();
   await loadConfig();
   const c = readCache();
-  if(c && c.posts && c.posts.length){
+  if(c){
     cfg.branch = c.branch || cfg.branch;
     state.posts = hydrate(c);
     state.syncedAt = c.ts;
     state.loading = false;
-    state.offline = true;
+    state.offline = false;
+    state.hasList = true;
+    state.generated = c.generated || "";
     render();
   }
-  renderers = await ensureRenderers();
+  // 首屏索引同步不受外部 Markdown 高亮 CDN 影响。
+  const renderersPending = ensureRenderers();
   await refresh(false);
+  renderers = await renderersPending;
+  if(location.hash.startsWith("#/p/")) render();
   onScroll();
-  /* 之后每 5 分钟静默同步一次：有新文章自动出现，删掉的自动消失 */
+  /* 每 5 分钟从站点自己的索引同步一次；包括删除最后一篇文章的情况。 */
   setInterval(() => { if(!document.hidden) refresh(false); }, 5 * 60 * 1000);
   document.addEventListener("visibilitychange", () => {
     if(!document.hidden && Date.now() - state.syncedAt > 60000) refresh(false);
