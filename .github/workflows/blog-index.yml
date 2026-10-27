@@ -1,6 +1,8 @@
 name: Build and deploy blog
 
 on:
+  schedule:
+    - cron: '17 */6 * * *'
   push:
     branches: [main]
     paths:
