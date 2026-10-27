@@ -1868,7 +1868,7 @@ function topicsHTML(){
   return shellHTML(h);
 }
 function aboutHTML(){
-  const gh=`https://github.com/${encodeURIComponent(cfg.owner)}`;
+  const gh=`https://github.com/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.owner)}.github.io`;
   let h=headingHTML('HELLO / ABOUT','关于这里','写字，是为了让日子留下痕迹。');
   h+=`<div class="about-panel">
     <div class="about-identity"><span class="about-avatar">${esc((cfg.author||'K').slice(0,1).toUpperCase())}</span><div><strong>${esc(cfg.author||cfg.title)}</strong><span>写作者 · 学习者 · 记录者</span></div></div>
@@ -1876,7 +1876,7 @@ function aboutHTML(){
     <p>${esc(cfg.about||cfg.description)}</p>
     <h3>关于写字</h3>
     <p>把 Markdown 或 HTML 放进 <code>blog/</code>，剩下的交给时间。</p>
-    <h3>在别处</h3><p><a class="about-link" href="${gh}" target="_blank" rel="noopener noreferrer">在 GitHub 继续聊 ↗</a></p>
+    <h3>使用本博客模板</h3><p><a class="about-link" href="${gh}" target="_blank" rel="noopener noreferrer">在 GitHub 源代码↗</a></p>
     <div class="about-quote">“${esc(cfg.description)}”</div>
   </div>`;
   return shellHTML(h);
