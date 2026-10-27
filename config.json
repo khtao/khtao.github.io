@@ -12,10 +12,12 @@
   "projects": {
     "enabled": true,
     "featured": [],
-    "featuredCount": 4,
+    "featuredCount": 3,
     "exclude": [
       "khtao.github.io"
     ],
-    "source": "projects.json"
+    "source": "projects.json",
+    "refreshMinutes": 60,
+    "liveRefresh": true
   }
 }
