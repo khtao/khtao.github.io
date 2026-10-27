@@ -137,9 +137,14 @@ def scan(root: Path, blogdir: str, images_subdir: str = 'images') -> dict:
         digest = sha256(path)
         rel = path.relative_to(folder).as_posix()
         prev = manifest.get(rel)
-        if isinstance(prev, dict) and prev.get('sha') == digest and prev.get('settings') == SETTINGS_ID:
+        # 只在「内容没变」且「WebP 孪生文件确实还在」时才跳过。
+        # 少了后半个条件，一旦 .webp 被误删或被 .gitignore 排除，
+        # 脚本会永远认为已处理过，WebP 就再也补不回来了。
+        webp_ok = (path.with_suffix('.webp')).is_file()
+        if isinstance(prev, dict) and prev.get('sha') == digest \
+                and prev.get('settings') == SETTINGS_ID and webp_ok:
             stats['skipped'] += 1
-            stats['webp'] += 1 if (path.with_suffix('.webp')).is_file() else 0
+            stats['webp'] += 1
             stats['bytesBefore'] += int(prev.get('bytes', 0))
             stats['bytesAfter'] += int(prev.get('bytes', 0))
             stats['webpBytes'] += int(prev.get('webpBytes', 0))
@@ -156,12 +161,11 @@ def scan(root: Path, blogdir: str, images_subdir: str = 'images') -> dict:
             stats['skipped'] += 1
             continue
 
-        # Keep the original bytes if re-encoding somehow made it bigger.
-        if a >= b and not needs_downscale(Image.open(path)):
-            pass
+        # 记下的是**落盘后**文件的 sha：下次运行读到同一个 sha 就跳过，
+        # 避免重复压缩导致画质一代代劣化。
         entry['bytes'] = path.stat().st_size
         entry['originalBytes'] = before
-        entry['sha'] = sha256(path)          # digest of the *stored* file
+        entry['sha'] = sha256(path)
         manifest[rel] = entry
         stats['bytesBefore'] += b
         stats['bytesAfter'] += entry['bytes']

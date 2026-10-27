@@ -184,8 +184,32 @@ def file_name_date(name: str) -> str:
     return text_date('-'.join(m.groups())) if m else ''
 
 
-def git_dates(root: Path, path: Path) -> tuple[str, str]:
+def git_dates_bulk(root: Path) -> dict[str, list[str]]:
+    """All file -> [commit dates] in ONE git call (newest first).
+
+    `--follow` (used by the fallback) spawns one git process per article and
+    costs ~330 ms each: 50 posts meant ~16 s of pure subprocess overhead.
+    This walks the whole history once instead. Renamed files simply do not
+    appear here, so callers fall back to `--follow` for those.
+    """
+    mapping: dict[str, list[str]] = {}
+    cur = ''
+    # \x01 marks a commit header line, so it can never be confused with a path
+    for line in git(root, 'log', '--format=\x01%cI', '--name-only').splitlines():
+        if line.startswith('\x01'):
+            cur = text_date(line[1:])
+        elif line.strip() and cur:
+            mapping.setdefault(line.strip(), []).append(cur)
+    return mapping
+
+
+def git_dates(root: Path, path: Path, bulk: dict | None = None) -> tuple[str, str]:
     rel = path.relative_to(root).as_posix()
+    if bulk is not None:
+        dates = bulk.get(rel)
+        if dates:
+            return (dates[-1], dates[0])      # (最旧=创建, 最新=修订)
+    # 重命名过的文件在 bulk 里查不到，回退到按文件跟随历史的精确查询
     lines = git(root, 'log', '--follow', '--format=%cI', '--', rel).splitlines()
     dates = [text_date(x) for x in lines if text_date(x)]
     return (dates[-1], dates[0]) if dates else ('', '')
@@ -196,6 +220,7 @@ def build(root: Path, blogdir: str = 'blog') -> dict:
     if not folder.is_dir():
         raise FileNotFoundError(f'blog directory not found: {folder}')
     files = []
+    bulk = git_dates_bulk(root)          # 一次 git log 覆盖所有文章
     for path in sorted(folder.iterdir()):
         if not path.is_file() or path.suffix.lower() not in EXT or path.name.startswith(('_', '.')):
             continue
@@ -222,7 +247,7 @@ def build(root: Path, blogdir: str = 'blog') -> dict:
             continue
         title = meta.get('title') or picked_title or name_title(path.name)
         summary = (meta.get('summary') or meta.get('description') or picked_summary or plain)[:SUMMARY_LIMIT]
-        created_git, updated_git = git_dates(root, path)
+        created_git, updated_git = git_dates(root, path, bulk)
         created = text_date(next((meta[k] for k in ('date','created','published','created_at') if meta.get(k)), '')) or created_git or file_name_date(path.name)
         updated = text_date(next((meta[k] for k in ('updated','modified','last_modified_at','updated_at') if meta.get(k)), '')) or updated_git or created
         if created and updated and updated < created: updated = created
@@ -273,6 +298,10 @@ def build_robots(root: Path, base: str, cfg: dict) -> None:
     Extra user agents can be appended via config.json -> blockedBots.
     """
     extra = cfg.get('blockedBots') or []
+    # 容错：写成 "MyBot" 而不是 ["MyBot"] 时不要按字符拆开，
+    # 否则会生成 M/y/B/o/t 五个垃圾 UA，而真正的 MyBot 反而没被拦。
+    if isinstance(extra, str):
+        extra = re.split(r'[,，\s]+', extra)
     bots = [str(b).strip() for b in list(BLOCKED_BOTS) + list(extra)]
     # dict.fromkeys 去重且保持顺序，避免写出重复的 User-agent 段
     bots = list(dict.fromkeys([b for b in bots if b]))

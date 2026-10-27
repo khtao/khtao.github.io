@@ -56,7 +56,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 
 /* ============ 顶部 ============ */
 .progress{position:fixed;top:0;left:0;right:0;height:2px;z-index:60;background:transparent;}
-.progress i{display:block;height:100%;width:0;background:var(--accent);transition:width .1s linear;}
+/* 用 scaleX 而不是 width：width 动画每帧触发布局，scaleX 只走合成层 */
+.progress i{display:block;height:100%;width:100%;background:var(--accent);
+  transform:scaleX(0);transform-origin:0 50%;will-change:transform;transition:transform .1s linear;}
 .site-header{
   position:sticky;top:0;z-index:50;
   background:color-mix(in srgb, var(--bg) 82%, transparent);
@@ -706,6 +708,7 @@ html{scroll-behavior:auto}
 .cr-meta dd a{color:var(--accent);border-bottom:1px solid transparent}
 .cr-meta dd a:hover{border-bottom-color:var(--accent)}
 .cr-notice{margin:12px 0 0;padding-top:11px;border-top:1px dashed var(--line);color:var(--fg-soft);font-size:12.5px}
+.md-wait{padding:40px 0;color:var(--fg-soft);font-size:14px;text-align:center}
 .cr-toast{
   position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:80;
   background:var(--fg);color:var(--bg);padding:9px 18px;border-radius:999px;
@@ -1023,7 +1026,9 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const isPost = n => /\.(md|markdown|html?)$/i.test(n) && !String(n).startsWith("_") && !String(n).startsWith(".");
 const safeStore = {
   get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
-  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+  // 返回是否成功：写入失败（多为配额超限）时调用方需要能感知并降级
+  set(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
 };
 async function getLocalText(url, timeout=10000, cache="no-store"){
   const ctl = new AbortController();
@@ -1050,6 +1055,11 @@ async function loadConfig(){
     const c = JSON.parse(await getLocalText("./config.json?v=" + Date.now(),6000));
     cfg = Object.assign({},DEFAULT_CFG,c||{});
   }catch(e){ cfg = Object.assign({},DEFAULT_CFG); }
+  // 这几个字段拼进资源路径，填错会让整站静默走错 URL（表现为"索引还没生成好"，
+  // 但真正的错误在 config.json）。空值一律回落默认。
+  for(const k of ["blogDir","branch","owner","repo"]){
+    if(typeof cfg[k] !== "string" || !cfg[k].trim()) cfg[k] = DEFAULT_CFG[k];
+  }
   document.title = cfg.title + " · Blog";
   const md = document.querySelector('meta[name=description]');
   if(md) md.content = cfg.description;
@@ -1439,17 +1449,33 @@ function readCache(){
     return c && Array.isArray(c.posts) ? c : null;
   }catch(e){ return null; }
 }
+/* 缓存正文能让回访秒开，但全文都塞进 localStorage 有上限（通常 ~5MB）。
+   写不下时逐级退让：先少存几篇正文，再退到只存元数据（仍能秒出列表，
+   正文按需拉取），绝不静默失败 —— 否则"秒开"会悄悄失效且无从察觉。 */
 function writeCache(){
-  safeStore.set(CACHE_KEY, JSON.stringify({
+  // localStorage 配额通常按 UTF-16 字符计（约 5M）。字符串远超就别白写一次：
+  // 失败的 setItem 本身也很慢，7 次尝试能把主线程卡住几百毫秒。
+  const LIMIT = 2000000;
+  const pack = (posts, withBody) => JSON.stringify({
     ts:state.syncedAt, branch:cfg.branch, generated:state.generated,
-    posts:state.posts.map(p => ({
+    posts:posts.map(p => ({
       name:p.name, sha:p.sha, path:p.path,
       meta:{title:p.title,created:p.created,updated:p.updated,tags:p.tags,summary:p.summary,
         cover:p.cover,category:p.category,draft:p.draft,isHtml:p.isHtml,words:p.words,
         autoTitle:p.autoTitle,autoSummary:p.autoSummary,scripts:p.scripts,rawHtml:p.rawHtml},
-      raw:p.body
+      raw:withBody ? p.body : undefined
     }))
-  }));
+  });
+  const full = pack(state.posts, true);
+  if(full.length <= LIMIT && safeStore.set(CACHE_KEY, full)) return;
+  // 超了就少存几篇正文，再不行只留元数据（列表仍能秒出，正文按需拉取）
+  for(const n of [10, 3]){
+    if(n >= state.posts.length) continue;
+    const part = pack(state.posts.slice(0, n), true);
+    if(part.length <= LIMIT && safeStore.set(CACHE_KEY, part)) return;
+  }
+  if(safeStore.set(CACHE_KEY, pack(state.posts, false))) return;
+  safeStore.del(CACHE_KEY);   // 连元数据都放不下：清掉，别留半截旧缓存
 }
 function hydrate(c){
   return c.posts.map(p => Object.assign(
@@ -1457,11 +1483,27 @@ function hydrate(c){
     {sha:p.sha,path:p.path||(cfg.blogDir+"/"+p.name)},p.meta||{}
   )).filter(p => !p.draft);
 }
+/* 文章集合指纹：用于判断「这次同步到底有没有带来变化」。
+   定时器每 5 分钟跑一次 refresh，绝大多数时候什么都没变 ——
+   这时不该重绘整页：读者正在看的文章会被 innerHTML 重建，
+   原样 HTML 文章的 iframe 更是会整个重载，滚动位置直接回到顶部。 */
+function postsSignature(){
+  return state.posts.map(p => p.name + ":" + (p.sha || "")).join("|")
+       + "#" + state.generated;
+}
+
 async function refresh(force=false){
   const seq = ++syncSequence;
+  const prevSig = postsSignature();
+  const prevHadList = state.hasList;
+  // 只在真正需要时才重绘 / 落盘。注意用「值」而不是函数：
+  // 写成 const changed = () => ... 后再调用两次，等于把 O(n) 的指纹拼接跑两遍。
+  // 两个 return 分支互斥，各自只求值一次。
   state.refreshing = true;
+  const wasLoading = state.loading;
   if(!state.hasList) state.loading = true;
-  render();
+  // 只在真的要切换骨架屏时重绘；静默同步不打扰读者
+  if(state.loading !== wasLoading) render();
   let got;
   try { got = await fetchList(); }
   catch(e){
@@ -1480,7 +1522,8 @@ async function refresh(force=false){
   for(const f of got.files){
     const m = f.meta || {};
     const prev = old.get(f.name);
-    if(!force && prev && prev.sha === f.sha && prev.body !== undefined){
+    // body 为空串说明这份缓存是配额不足时的降级产物，正文得重新拉取
+    if(!force && prev && prev.sha === f.sha && prev.body){
       // 从最新索引更新日期，确保已更改的提交日期能够同步。
       if(m.created) prev.created = m.created;
       if(m.updated) prev.updated = m.updated;
@@ -1502,7 +1545,11 @@ async function refresh(force=false){
     state.offline=false;
     state.error="";
     state.syncedAt=Date.now();
-    writeCache(); render(); return;
+    // 内容没变就别重写缓存：JSON.stringify 全文 + localStorage 写盘都是
+    // 同步阻塞主线程的，每 5 分钟白做一次纯属浪费。
+    const dirty = force || !prevHadList || postsSignature() !== prevSig;
+    if(dirty){ writeCache(); render(); }
+    return;
   }
   let failed=0;
   await pool(out.filter(p=>p._need),4,async p=>{
@@ -1530,7 +1577,9 @@ async function refresh(force=false){
   state.offline=false;
   state.error=failed ? failed + " 篇文章正文暂时无法加载，其他文章可以正常阅读。" : "";
   state.syncedAt=Date.now();
-  writeCache(); render();
+  // 内容没变就不重绘、也不重写缓存：force（手动点刷新）与首次加载仍然照常执行
+  const dirty = force || !prevHadList || postsSignature() !== prevSig;
+  if(dirty){ writeCache(); render(); }
 }
 
 /* ---------- GitHub 项目：仅本人创建的仓库，fork 一律排除 ---------- */
@@ -2025,9 +2074,12 @@ function postAbsoluteURL(p){
 function prettyURL(url){
   try{
     const d = decodeURIComponent(url);
-    // 只信“没有残留 %XX”的结果，避免二次解码把合法内容弄坏
-    return /%[0-9A-Fa-f]{2}/.test(d) ? url : d;
-  }catch(e){ return url; }
+    // 解码后出现「裸 %」（% 后面不是两位十六进制）说明文件名本身就含 %，
+    // URL 里写作 %25。这时展示解码结果会得到一个粘贴后打不开的链接，
+    // 所以宁可原样显示。不能用 encodeURI 回验：它会把裸 % 编成 %25，反而误判为可逆。
+    if(/%(?![0-9A-Fa-f]{2})/.test(d)) return url;
+    return d;
+  }catch(e){ return url; }   // 非法转义（如 %ZZ）直接放弃解码
 }
 /* 文末完整声明框 */
 function copyrightHTML(p){
@@ -2070,23 +2122,40 @@ function crToast(msg){
   crToastTimer = setTimeout(() => { el.style.opacity = "0"; }, 2200);
 }
 /* 复制正文时自动带上出处；短摘引不受影响 */
-function initCopyrightGuard(){
-  document.addEventListener("copy", e => {
+function crCopyTail(){
+  const c = crCfg();
+  if(c.enabled === false || c.copyAppend === false) return "";
+  const link = prettyURL(location.href);
+  let tail = "\n\n—— 摘自《" + (document.title.split(" · ")[0] || cfg.title) + "》\n" + link;
+  if(c.notice) tail += "\n（" + c.notice + "）";
+  return tail;
+}
+/* 在输入框里复制自己的文字不该被追加出处 */
+function crIsEditing(win){
+  try{
+    const el = (win || window).document.activeElement;
+    if(!el) return false;
+    return /^(input|textarea)$/i.test(el.tagName || "") || !!el.isContentEditable;
+  }catch(e){ return false; }
+}
+function crAttachCopy(win){
+  const doc = win.document;
+  doc.addEventListener("copy", e => {
     const c = crCfg();
     if(c.enabled === false || c.copyAppend === false) return;
-    const sel = String(window.getSelection() || "").trim();
+    if(crIsEditing(win)) return;                        // 别打扰用户复制自己的输入
+    const sel = String(win.getSelection() || "").trim();
     if(sel.length < (parseInt(c.copyMinLength, 10) || 40)) return;
-    // 粘贴出去是给人看的：中文还原显示，读起来才像一条出处
-    const link = prettyURL(location.href);
-    let tail = "\n\n—— 摘自《" + (document.title.split(" · ")[0] || cfg.title) + "》\n" + link;
-    if(c.notice) tail += "\n（" + c.notice + "）";
     try{
       if(e.clipboardData){
-        e.clipboardData.setData("text/plain", sel + tail);
+        e.clipboardData.setData("text/plain", sel + crCopyTail());
         e.preventDefault();
       }
     }catch(err){ /* 浏览器不允许改写剪贴板时静默放行 */ }
   });
+}
+function initCopyrightGuard(){
+  crAttachCopy(window);
   // 可选：屏蔽图片右键另存（默认关闭，避免误伤正常读者）
   document.addEventListener("contextmenu", e => {
     const c = crCfg();
@@ -2097,6 +2166,12 @@ function initCopyrightGuard(){
       crToast("图片受版权保护，请勿另存或二次分发");
     }
   });
+}
+
+/* 缓存配额不足时正文可能还没回填，这时要给提示而不是一片空白 */
+function bodyHTML(p, r){
+  if(p.isHtml || p.body) return `<div class="md" id="mdBody">${renderBody(p, r)}</div>`;
+  return `<div class="md md-wait">正文正在载入…</div>`;
 }
 
 function postHTML(p, r){
@@ -2158,7 +2233,7 @@ function postHTML(p, r){
         </div>
       </div>
       <details class="toc-mobile" id="tocMobile"><summary>本文目录</summary><div class="toc-mobile-links"></div></details>
-      <div class="md" id="mdBody">${renderBody(p, r)}</div>
+      ${bodyHTML(p, r)}
       ${copyrightHTML(p)}
       ${relatedHTML(p)}
       ${foot}
@@ -2209,6 +2284,10 @@ let renderers = {marked:false, hljs:false};
 function render(){
   const h = location.hash.replace(/^#/, "");
   const app = $("#app");
+  // 无条件先清理：iframe 的 scroll/resize 监听、注入样式都挂在这里。
+  // 只在 /p/ 分支里清理会漏掉「读原样 HTML 文章 → 点回首页」这条路，
+  // 每往返一次就多留一组监听，来回几次滚动就开始卡。
+  clearInjected();
   if(h.startsWith("/p/")){
     const name = decodeURIComponent(h.slice(3));
     const p = findPost(name);
@@ -2223,7 +2302,6 @@ function render(){
       }
       return;
     }
-    clearInjected();
     app.innerHTML = postHTML(p, renderers);
     document.title = p.title + " · " + cfg.title;
     const md=document.querySelector('meta[name="description"]'); if(md)md.content=p.summary||cfg.description;
@@ -2502,7 +2580,9 @@ function initRawFrame(){
     freezeViewportUnits(d, window.innerHeight || 900);
     watchFrameHeight(fr, d);
     fixFrameLinks(d);
-    fixFrameImages(d);
+    fixFrameImages(d, fr);
+    // 原样 HTML 在 iframe 里，父页的 copy 监听够不着，单独挂一份
+    try{ if(d.defaultView) crAttachCopy(d.defaultView); }catch(e){}
     buildRawToc(d, fr);
   };
   fr.addEventListener("load", setup);
@@ -2526,34 +2606,168 @@ function webpSupported(){
   }catch(e){ WEBP_OK = false; }
   return WEBP_OK;
 }
+/* 某个目录下的 WebP 一旦 404，就认为整套 WebP 都没生成（本地预览常遇到）。
+   记下目录后同目录图片不再尝试，否则每张图都要多付一次 404 往返。 */
+const webpFailedDirs = new Set();
+const dirOf = src => String(src).replace(/[^/]*$/, "");
+function mediaSrc(src){
+  if(!/\.(jpe?g|png)$/i.test(src) || !webpSupported()) return src;
+  if(webpFailedDirs.has(dirOf(src))) return src;
+  return src.replace(/\.(jpe?g|png)$/i, ".webp");
+}
+/* 换上 WebP 后的兜底：404 就退回原图，并记住这个目录 */
+function guardWebp(img){
+  const orig = img.getAttribute("data-origsrc");
+  if(!orig) return;
+  img.addEventListener("error", function onerr(){
+    const cur = img.getAttribute("src") || "";
+    if(!/\.webp$/i.test(cur)) return;          // 原图也失败就不折腾了
+    img.removeEventListener("error", onerr);
+    webpFailedDirs.add(dirOf(orig));
+    img.setAttribute("src", orig);
+  });
+}
 function tuneImage(img, eager){
   if(!img || img.dataset.mediaTuned) return;
   img.dataset.mediaTuned = "1";
-  // 首屏几张立刻加载，其余交给浏览器原生的视口判定。
+  const src = img.getAttribute("src") || "";
+  if(!src) return;
+  img.setAttribute("data-origsrc", src);
+  // 正文图片在页面主文档里，浏览器原生的视口判定是准的，直接用。
   img.setAttribute("loading", eager ? "eager" : "lazy");
   img.setAttribute("decoding", "async");
   if(eager) img.setAttribute("fetchpriority", "high");
-  const src = img.getAttribute("src") || "";
-  if(!/\.(jpe?g|png)$/i.test(src) || !webpSupported()) return;
-  const webp = src.replace(/\.(jpe?g|png)$/i, ".webp");
-  // WebP 缺失（例如本地预览时没跑过优化脚本）就回退到原图，不会裂图。
-  img.addEventListener("error", function onerr(){
-    img.removeEventListener("error", onerr);
-    if(img.getAttribute("src") !== src) img.setAttribute("src", src);
-  });
-  img.setAttribute("src", webp);
+  const next = mediaSrc(src);
+  if(next !== src){ guardWebp(img); img.setAttribute("src", next); }
 }
-/* 文章正文/封面：前 2 张立即加载，其余懒加载 */
+/* 文章正文/封面：前几张立即加载，其余懒加载 */
 function tuneBodyImages(scope, eagerCount){
   if(!scope) return;
-  const imgs = scope.querySelectorAll("img");
-  imgs.forEach((img, i) => tuneImage(img, i < (eagerCount || 0)));
+  scope.querySelectorAll("img").forEach((img, i) => tuneImage(img, i < (eagerCount || 0)));
 }
-/* 原样 HTML 在 iframe 里渲染，拿不到父页的 body，单独处理一次 */
-function fixFrameImages(d){
-  if(!d) return;
+
+/* ---------- iframe 内的图片：必须由父页面来驱动 ----------
+   原样 HTML 用 iframe 隔离渲染，高度被撑到内容全高、内部不滚动。
+   后果是 iframe 自己的"视口"覆盖整篇文章，里面每张图都算"可见"，
+   loading="lazy" 完全失效 —— 一篇 51 图的游记仍会一次性拉完 11MB。
+   所以这里改成：先抽走 src，再由父页面按**父视口**位置决定何时装回去。
+   图片容器 .ph 是固定 aspect-ratio，抽走 src 不会让布局塌陷。 */
+let frameLazy = {items:[], fr:null, raf:0, measured:false};
+const BLANK_IMG = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+function resetFrameLazy(){
+  frameLazy.items = []; frameLazy.fr = null; frameLazy.measured = false;
+  if(frameLazy.raf){ cancelAnimationFrame(frameLazy.raf); frameLazy.raf = 0; }
+}
+/* 缓存每张图在 iframe 文档内的偏移。
+   滚动时每帧对 51 张图各读一次**跨文档** getBoundingClientRect 会强制
+   布局、明显掉帧；而图片容器是固定 aspect-ratio，位置稳定不变，
+   所以只需量一次（窗口尺寸变化时作废重量）。 */
+function measureFrameLazy(){
+  for(const it of frameLazy.items){
+    try{
+      const r = it.img.getBoundingClientRect();
+      it.top = (typeof r.top === "number" && !isNaN(r.top)) ? r.top : null;
+      it.h = r.height || 0;
+    }catch(e){
+      // 量不到位置（跨文档被拒等）时不能留 NaN —— 后续比较全为 false，
+      // 这张图就永远等不到加载。标成 null，交给下面直接放行。
+      it.top = null; it.h = 0;
+    }
+  }
+  frameLazy.measured = true;
+}
+function pumpFrameLazy(){
+  frameLazy.raf = 0;
+  const fr = frameLazy.fr;
+  if(!fr || !frameLazy.items.length) return;
+  if(!frameLazy.measured) measureFrameLazy();
+  const frTop = fr.getBoundingClientRect().top;   // iframe 自身位置每次都要重读
+  const vh = window.innerHeight || 800;
+  const ahead = vh * 1.5;                          // 提前一屏半开始加载
+  const remain = [];
+  let loaded = 0, unlocked = 0;
+  for(const it of frameLazy.items){
+    // top 为 null 表示位置量不到：与其永远不加载，不如直接放行
+    const top = frTop + (it.top || 0);
+    if(it.top === null || (top < vh + ahead && top + (it.h || 0) > -ahead)){
+      const src = it.img.getAttribute("data-lazysrc");
+      if(src){
+        it.img.removeAttribute("data-lazysrc");
+        guardWebp(it.img);
+        // 真图就位后释放锁定的高度，让它回到自然尺寸（与锁定值一致，无跳动）。
+        // 失败也要解锁，否则会留一个空白方块。
+        if(it.img.dataset.lockH){
+          const unlock = () => { it.img.style.height = ""; delete it.img.dataset.lockH; };
+          it.img.addEventListener("load", unlock, {once:true});
+          it.img.addEventListener("error", unlock, {once:true});
+        } else {
+          unlocked++;   // 没锁高度：加载后会把后面的内容顶下去
+        }
+        it.img.setAttribute("src", src);
+        loaded++;
+      }
+    } else {
+      remain.push(it);
+    }
+  }
+  frameLazy.items = remain;
+  // 只有「没锁住高度的图」加载完才会撑开版面、改变后续图片的偏移。
+  // 锁住高度的（容器有固定 aspect-ratio / 固定 px，或加载前已量到高度）
+  // 布局纹丝不动，重测纯属浪费 —— 每帧对几十张图跨文档量一遍会掉帧。
+  if(unlocked > 0) frameLazy.measured = false;
+}
+function scheduleFrameLazy(){
+  if(frameLazy.raf) return;
+  frameLazy.raf = requestAnimationFrame(pumpFrameLazy);
+}
+/* 必须是具名函数：下面要靠同一个引用把它摘掉。
+   用匿名函数注册、却拿 scheduleFrameLazy 去 remove，是摘不掉的 ——
+   窗口每 resize 一次就多留一个监听，而它还会顺手作废测量缓存，越用越卡。 */
+function onFrameResize(){
+  frameLazy.measured = false;
+  scheduleFrameLazy();
+}
+function fixFrameImages(d, fr){
+  if(!d || !fr) return;
   try{
-    d.querySelectorAll("img").forEach((img, i) => tuneImage(img, i < 2));
+    resetFrameLazy();
+    frameLazy.fr = fr;
+    d.querySelectorAll("img").forEach((img, i) => {
+      const src = img.getAttribute("src");
+      if(!src) return;
+      img.setAttribute("data-origsrc", src);
+      // 文章自带的灯箱常读 data-full。若作者没写、灯箱又退化成读 img.src，
+      // 就会拿到我们塞的透明占位图 —— 点开是空白。这里补上真地址兜底。
+      if(!img.getAttribute("data-full")) img.setAttribute("data-full", src);
+      img.setAttribute("decoding", "async");
+      img.removeAttribute("loading");           // 原生 lazy 在这里无效，交给父页面
+      const next = mediaSrc(src);
+      if(i < 6){                                // 首屏一屏左右，直接给真图
+        if(next !== src) guardWebp(img);
+        img.setAttribute("src", next);
+      } else {
+        // 抽走 src 前先锁住当前高度。若文章没给图片固定高度容器
+        // （本仓库两篇碰巧都有，但作者新写的未必），换成 1x1 占位会让
+        // 版面塌成 1px —— 滚动时脚下剧烈跳动。锁定后位置纹丝不动。
+        let hh = 0;
+        try{ hh = img.getBoundingClientRect().height; }catch(e){}
+        if(hh > 4){
+          img.style.height = hh + "px";
+          img.dataset.lockH = "1";
+        }
+        img.setAttribute("data-lazysrc", next);
+        img.setAttribute("src", BLANK_IMG);     // 透明占位，避免破图图标
+        frameLazy.items.push({img, top:0, h:0});
+      }
+    });
+    window.addEventListener("scroll", scheduleFrameLazy, {passive:true});
+    window.addEventListener("resize", onFrameResize);
+    rawObservers.push(() => {
+      window.removeEventListener("scroll", scheduleFrameLazy);
+      window.removeEventListener("resize", onFrameResize);
+      resetFrameLazy();
+    });
+    scheduleFrameLazy();
   }catch(e){}
 }
 
@@ -2564,6 +2778,8 @@ function afterPost(p){
     initRawFrame();
     return;
   }
+  // 封面在 mdBody 之外，单独治理：它在首屏，立即加载但换 WebP
+  tuneBodyImages(document.querySelector(".post-cover"), 1);
   // ① 相对路径资源（图片/附件/文章互链）统一以 blog/ 为根解析
   rewriteAssets(body);
   // ② 可选：执行文章内脚本（需在元信息里写 scripts: true）
@@ -2643,11 +2859,19 @@ function afterPost(p){
 }
 
 /* ---------- 交互 ---------- */
+/* scroll 事件在部分浏览器里一帧能来好几次，且读 scrollHeight 会强制布局。
+   用 rAF 合并到每帧最多一次。 */
+let scrollRaf = 0;
 function onScroll(){
-  const h = document.documentElement;
-  const max = h.scrollHeight - h.clientHeight;
-  $("#bar").style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + "%";
-  $("#totop").classList.toggle("show", h.scrollTop > 420);
+  if(scrollRaf) return;
+  scrollRaf = requestAnimationFrame(() => {
+    scrollRaf = 0;
+    const h = document.documentElement;
+    const max = h.scrollHeight - h.clientHeight;
+    const ratio = max > 0 ? Math.min(1, h.scrollTop / max) : 0;
+    $("#bar").style.transform = "scaleX(" + ratio + ")";
+    $("#totop").classList.toggle("show", h.scrollTop > 420);
+  });
 }
 let toastTimer;
 function showToast(message){
@@ -2732,7 +2956,11 @@ function initUI(){
     if(e.key === "Escape") $("#lb").classList.remove("on");
   });
   window.addEventListener("scroll", onScroll, {passive:true});
-  window.addEventListener("hashchange", () => { state.visible=6; window.scrollTo(0,0); render(); onScroll(); });
+  /* 这里不重置 state.visible：翻到第 24 篇再点进文章，返回时只剩 6 篇等于白翻。
+     真正需要回到第一页的场景（搜索、换话题、换排序）在各自的处理器里重置。 */
+  window.addEventListener("hashchange", () => {
+    window.scrollTo(0,0); render(); onScroll();
+  });
 }
 
 /* ---------- 启动：先渲染缓存（秒开），再静默同步 ---------- */
