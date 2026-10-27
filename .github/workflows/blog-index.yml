@@ -8,6 +8,7 @@ on:
       - 'index.html'
       - 'config.json'
       - 'scripts/**'
+      - 'assets/**'
       - '.github/workflows/blog-index.yml'
   workflow_dispatch:
   # 定时刷新 projects.json：仓库改名、改描述、Star 变化都会跟上来。
@@ -38,8 +39,22 @@ jobs:
         with:
           fetch-depth: 0
       - name: Install image tooling
-        # 图片优化依赖 Pillow；装不上也不能让构建失败（脚本会自行降级跳过）。
-        run: python3 -m pip install --quiet Pillow || echo "Pillow unavailable, keeping originals"
+        # 图片优化依赖 Pillow。ubuntu-24.04 的系统 python3 受 PEP 668 约束，
+        # 裸 pip install 会被拒绝，所以依次尝试 pip(--break-system-packages) 与 apt。
+        # 都失败也不能让构建红：脚本会自行跳过，按原图发布。
+        run: |
+          if python3 -c "import PIL" 2>/dev/null; then
+            echo "Pillow 已就绪"
+          elif python3 -m pip install --quiet --break-system-packages Pillow 2>/dev/null; then
+            echo "Pillow 已通过 pip 安装"
+          elif sudo apt-get update -qq && sudo apt-get install -y -qq python3-pil 2>/dev/null; then
+            echo "Pillow 已通过 apt 安装"
+          else
+            echo "::warning::Pillow 不可用，本次按原图发布（不影响站点正常访问）"
+          fi
+      - name: Extract inline base64 images out of articles
+        # 必须排在 build_index 之前：它会改写文章源码，之后算出的 sha 才是最终内容的。
+        run: python3 scripts/extract_inline_images.py
       - name: Optimize images (WebP twins + recompress)
         run: python3 scripts/optimize_images.py
       - name: Build index from article files and git history
@@ -65,6 +80,8 @@ jobs:
           # 本地化的渲染器（marked / highlight.js）：index.html 靠它们摆脱境外 CDN
           if [ -d assets ]; then cp -R assets _site/assets; fi
           test -f _site/assets/vendor/marked.min.js
+          # .optimized.json 只是构建期的去重账本，访客用不到，不必发布
+          find _site -name '.optimized.json' -delete
           # projects.json 是可选产物：存在才一起发布，缺失时前端会自行回退。
           if [ -f projects.json ]; then
             cp projects.json _site/projects.json
