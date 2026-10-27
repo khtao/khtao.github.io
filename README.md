@@ -158,7 +158,7 @@ python3 -m http.server 8000
 
 喜欢这种**低维护、重内容**的博客方式？欢迎给仓库点一个 ⭐ Star，或者在 [Issues](https://github.com/khtao/khtao.github.io/issues) 留下你的作品、建议或问题。
 
-也欢迎直接阅读 [图文部署教程](blog/从零部署%20Khtao%20Blog%203.0.md)，从第一篇文章开始记录。
+也欢迎直接阅读 [图文部署教程](blog/%E4%BB%8E%E9%9B%B6%E9%83%A8%E7%BD%B2GitHub%E5%8D%9A%E5%AE%A2.md))，从第一篇文章开始记录。
 
 > **关于授权**：仓库公开不等于自动授予再分发权。维护者建议补充明确的 `LICENSE`（例如 MIT），让想要使用、修改和传播模板的人安心使用；发布前请以仓库实际许可为准。
 
