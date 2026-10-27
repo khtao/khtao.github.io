@@ -230,7 +230,8 @@ mark{background:var(--accent-soft);color:var(--accent);border-radius:3px;padding
 .raw-head .lb{font-size:11px;letter-spacing:1.2px;font-weight:700;color:var(--fg-soft);
   background:var(--bg-soft);border:1px solid var(--line);padding:3px 9px;border-radius:99px;}
 /* 兜底排版：只在作者没写样式时生效 —— 作者 CSS 由 injectStyle 注入在最后，天然覆盖这里 */
-.md.md-raw{min-height:40vh;}
+/* 但正文容器本身永远随内容撑开：高度自动、不裁切、不产生内置滚动条 */
+.md.md-raw{min-height:40vh;height:auto;max-height:none;overflow:visible;}
 .md-raw h1,.md-raw h2,.md-raw h3,.md-raw h4{
   border:0;padding:0;margin:1.4em 0 .6em;line-height:1.35;font-weight:700;letter-spacing:-.01em;
 }
@@ -1109,6 +1110,41 @@ function scopeSelectors(sel, scope){
     return scope + " " + s;
   }).filter(Boolean).join(", ");
 }
+/* 按 ; 切分声明，忽略引号与括号里的分号 */
+function splitDecls(decl){
+  const out = []; let buf = "", inStr = null, depth = 0;
+  for(let i = 0; i < decl.length; i++){
+    const c = decl[i];
+    if(inStr){ buf += c; if(c === "\\"){ buf += decl[++i] || ""; continue; } if(c === inStr) inStr = null; continue; }
+    if(c === '"' || c === "'"){ inStr = c; buf += c; continue; }
+    if(c === "("){ depth++; buf += c; continue; }
+    if(c === ")"){ depth--; buf += c; continue; }
+    if(c === ";" && !depth){ out.push(buf); buf = ""; continue; }
+    buf += c;
+  }
+  if(buf.trim()) out.push(buf);
+  return out;
+}
+/* 选择器是否作用在 html / body / :root 上 —— 加作用域后它们会落到 .md-raw 本身 */
+function isRootSelector(sel){
+  return String(sel).split(",").some(s => /^(html|body|:root)\b/i.test(s.trim()));
+}
+/* 去掉会把正文锁成「独立滚动区」的声明：
+   原样 HTML 常见的 html,body{height:100%;overflow:hidden/auto} 一旦加作用域，
+   就变成 .md-raw{height:100%;overflow:hidden} —— 文章被裁掉、还多出一条内置滚动条。
+   这里直接剔除，让正文高度完全由内容决定，滚动统一交给页面。 */
+function neutralizeRoot(decl){
+  return splitDecls(decl).filter(d => {
+    const m = d.match(/^\s*(?:-[a-z]+-)?([a-z-]+)\s*:\s*([\s\S]*)$/i);
+    if(!m) return true;
+    const prop = m[1].toLowerCase(), val = m[2].trim().toLowerCase();
+    if(["height","min-height","max-height"].includes(prop) && /^(100%|100vh|100dvh|100svh)$/.test(val)) return false;
+    if(["overflow","overflow-x","overflow-y"].includes(prop) && /^(hidden|auto|scroll|clip)$/.test(val)) return false;
+    if(prop === "overscroll-behavior" || prop === "overscroll-behavior-y") return false;
+    if(prop === "position" && val === "fixed") return false;
+    return true;
+  }).join(";");
+}
 /* 把一段 CSS 限定到 scope 内：@media 递归，@keyframes/@font-face 原样保留 */
 function scopeCSS(css, scope){
   css = String(css || "").replace(/\/\*[\s\S]*?\*\//g, "");
@@ -1139,7 +1175,10 @@ function scopeCSS(css, scope){
     if(j < 0) break;
     const sel = css.slice(i, j).trim();
     const e4 = cssBlockEnd(css, j);
-    if(sel) out += scopeSelectors(sel, scope) + "{" + css.slice(j + 1, e4 - 1) + "}";
+    if(sel){
+      const decls = css.slice(j + 1, e4 - 1);
+      out += scopeSelectors(sel, scope) + "{" + (isRootSelector(sel) ? neutralizeRoot(decls) : decls) + "}";
+    }
     i = e4;
   }
   return out;
@@ -1950,7 +1989,7 @@ function topicsHTML(){
   return shellHTML(h);
 }
 function aboutHTML(){
-  const gh=`https://github.com/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.owner)}.github.io`;
+  const gh=`https://github.com/${encodeURIComponent(cfg.owner)}`;
   let h=headingHTML('HELLO / ABOUT','关于这里','写字，是为了让日子留下痕迹。');
   h+=`<div class="about-panel">
     <div class="about-identity"><span class="about-avatar">${esc((cfg.author||'K').slice(0,1).toUpperCase())}</span><div><strong>${esc(cfg.author||cfg.title)}</strong><span>写作者 · 学习者 · 记录者</span></div></div>
@@ -2172,15 +2211,23 @@ function rewriteAssets(root){
 /* 原样 HTML：把作者自带的 CSS 限定在 .md-raw 内注入，避免污染整站主题 */
 function injectRawStyles(p){
   (p.styles || []).forEach(css => injectStyle(scopeCSS(css, ".md-raw")));
-  // 外链 CSS 无法做作用域隔离，改为按仓库地址直接引入（作者样式通常已自洽）
-  (p.cssLinks || []).forEach(href => {
-    const rp = relToRepoPath(href);
-    const url = rp ? assetURLs(rp)[0] : href;
-    if(!url) return;
-    const link = document.createElement("link");
-    link.rel = "stylesheet"; link.href = url; link.id = "raw-style-" + (++styleSeq);
-    document.head.appendChild(link);
-  });
+  (p.cssLinks || []).forEach(href => injectRawLink(href));
+}
+/* 外链 CSS：优先取回文本再加作用域。
+   直接挂 <link> 的话，作者写的 html,body{height:100%;overflow:hidden}
+   会套住整个站点（页面滚不动、文章被裁成视口高度）。
+   取不回来（跨域或离线）时才退回 <link>，保证样式不丢。 */
+async function injectRawLink(href){
+  const rp = relToRepoPath(href);
+  const url = rp ? assetURLs(rp)[0] : href;
+  if(!url) return;
+  try{
+    const text = await getLocalText(url, 6000);
+    if(text && text.trim()){ injectStyle(scopeCSS(text, ".md-raw")); return; }
+  }catch(e){}
+  const link = document.createElement("link");
+  link.rel = "stylesheet"; link.href = url; link.id = "raw-style-" + (++styleSeq);
+  document.head.appendChild(link);
 }
 
 function afterPost(p){
