@@ -203,11 +203,12 @@ class GitDateTests(unittest.TestCase):
             p.write_text(p.read_text(encoding='utf-8') + '\n第二次提交。\n', encoding='utf-8')
         self._commit('2026-03-05T10:00:00+0000')
 
-        bulk = build_index.git_dates_bulk(self.root)
+        bulk, renamed = build_index.git_dates_bulk(self.root)
         mismatch = []
         for n in names:
             p = self.root / 'blog' / n
             follow = build_index.git_dates(self.root, p)          # 旧逻辑（逐文件）
+
             b = bulk.get('blog/' + n)
             got = (b[-1], b[0]) if b else ('', '')
             if got != follow:
@@ -215,9 +216,74 @@ class GitDateTests(unittest.TestCase):
         self.assertEqual(mismatch, [], f'#15 批量结果不一致：{mismatch}')
 
         # 抽样校验具体日期
-        self.assertEqual(build_index.git_dates(self.root, self.root / 'blog' / 'post00.md', bulk),
+        self.assertEqual(build_index.git_dates(self.root, self.root / 'blog' / 'post00.md', bulk, renamed),
                          ('2026-01-01', '2026-03-05'))
-        self.assertEqual(build_index.git_dates(self.root, self.root / 'blog' / 'post05.md', bulk),
+        self.assertEqual(build_index.git_dates(self.root, self.root / 'blog' / 'post05.md', bulk, renamed),
+                         ('2026-01-01', '2026-01-01'))
+
+    def test_renamed_file_falls_back_to_follow(self):
+        """批量查询按路径收集，重命名过的文件在新路径下查不到旧历史。
+        必须回退到 --follow 才能拿到改名前那次提交，否则 created 会算错。"""
+        old = self.root / 'blog' / '旧名字.md'
+        old.write_text('# 旧名字\n\n正文。\n', encoding='utf-8')
+        self._commit('2026-01-01T10:00:00+0000')
+
+        new = self.root / 'blog' / '新名字.md'
+        old.rename(new)
+        self._commit('2026-04-01T10:00:00+0000')
+
+        bulk, renamed = build_index.git_dates_bulk(self.root)
+        # 批量按路径统计，重命名后的新路径只挂得上改名那次提交
+        self.assertEqual(bulk.get('blog/新名字.md'), ['2026-04-01'],
+                         f'批量按路径统计，实际 {bulk.get("blog/新名字.md")}')
+
+        # 但 git_dates 必须回退到 --follow，把改名前那次也算进来
+        got = build_index.git_dates(self.root, new, bulk, renamed)
+        self.assertEqual(got, ('2026-01-01', '2026-04-01'),
+                         f'重命名文件必须回退 --follow，实际 {got}')
+
+    def test_sha_matches_file_content(self):
+        """index.json 的 sha 决定前端是否重新拉正文，必须等于文件真实摘要。"""
+        art = self.root / 'blog' / '正文.md'
+        art.write_text('# 标题\n\n正文内容。\n', encoding='utf-8')
+        self._commit('2026-01-01T10:00:00+0000')
+        data = build_index.build(self.root, 'blog')
+        entry = next(f for f in data['files'] if f['name'] == '正文.md')
+
+        import hashlib
+        # 前端用这个 sha 判断「正文要不要重新拉」，必须精确等于文件内容摘要
+        self.assertEqual(entry['sha'], hashlib.sha256(art.read_bytes()).hexdigest(),
+                         'sha 必须等于文件内容 sha256，否则缓存判断会失真')
+        # 改内容 → sha 必须变，否则改了文章访客还读旧的
+        art.write_text('# 标题\n\n改过的正文。\n', encoding='utf-8')
+        self._commit('2026-02-01T10:00:00+0000')
+        d2 = build_index.build(self.root, 'blog')
+        e2 = next(f for f in d2['files'] if f['name'] == '正文.md')
+        self.assertNotEqual(e2['sha'], entry['sha'], '内容改变后 sha 必须变')
+
+    def test_non_ascii_paths_are_not_quoted_away(self):
+        """中文文件名必须命中批量结果。
+
+        git 默认把非 ASCII 路径转义成 "blog/\344\270\255..." 并加引号。
+        不加 core.quotePath=false 的话，中文仓库里每篇文章都匹配不上，
+        静默退化回逐文件 --follow —— 结果仍正确，但批量优化等于白做，
+        且没有任何报错。这是本次审计实际抓到的 bug。
+        """
+        names = ['桂林山水.md', '从零部署博客.md', '50个必去的地方.html']
+        for n in names:
+            (self.root / 'blog' / n).write_text('# t\n\n正文。\n', encoding='utf-8')
+        self._commit('2026-01-01T10:00:00+0000')
+
+        bulk, renamed = build_index.git_dates_bulk(self.root)
+        for n in names:
+            self.assertIn('blog/' + n, bulk,
+                          f'中文文件名「{n}」未命中批量结果（路径被转义了？）现有 key: '
+                          f'{[k for k in bulk if "blog/" in k][:3]}')
+            self.assertEqual(bulk['blog/' + n], ['2026-01-01'])
+
+        # 命中后 git_dates 应直接取用，不再逐个 spawn --follow
+        p = self.root / 'blog' / names[0]
+        self.assertEqual(build_index.git_dates(self.root, p, bulk, renamed),
                          ('2026-01-01', '2026-01-01'))
 
     def test_bulk_is_single_git_call(self):

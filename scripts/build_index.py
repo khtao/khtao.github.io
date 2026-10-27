@@ -184,33 +184,60 @@ def file_name_date(name: str) -> str:
     return text_date('-'.join(m.groups())) if m else ''
 
 
-def git_dates_bulk(root: Path) -> dict[str, list[str]]:
+def git_dates_bulk(root: Path) -> tuple[dict[str, list[str]], set[str]]:
     """All file -> [commit dates] in ONE git call (newest first).
 
     `--follow` (used by the fallback) spawns one git process per article and
     costs ~330 ms each: 50 posts meant ~16 s of pure subprocess overhead.
-    This walks the whole history once instead. Renamed files simply do not
-    appear here, so callers fall back to `--follow` for those.
+    This walks the whole history once instead.
+
+    Returns (mapping, renamed). `renamed` holds paths that once appeared as
+    the TARGET of a rename: for those, the path only carries history from the
+    rename onwards, so `created` would be wrong — callers must fall back to
+    `--follow`, which follows the file across renames.
+
+    Uses --name-status (not --name-only) precisely so renames can be spotted.
     """
     mapping: dict[str, list[str]] = {}
+    renamed: set[str] = set()
     cur = ''
+    # -c core.quotePath=false 是必需的：git 默认把非 ASCII 路径转义成
+    # "blog/\344\270\255..." 这种八进制字面量并加引号。中文文件名的仓库里
+    # 这会让所有文章都匹配不上、静默退化回逐文件 --follow ——
+    # 结果仍然正确，但批量优化等于白做，且没有任何报错。
     # \x01 marks a commit header line, so it can never be confused with a path
-    for line in git(root, 'log', '--format=\x01%cI', '--name-only').splitlines():
+    out = git(root, '-c', 'core.quotePath=false', 'log', '--format=\x01%cI', '--name-status')
+    for line in out.splitlines():
         if line.startswith('\x01'):
             cur = text_date(line[1:])
-        elif line.strip() and cur:
-            mapping.setdefault(line.strip(), []).append(cur)
-    return mapping
+            continue
+        raw = line.strip()
+        if not raw or not cur:
+            continue
+        parts = raw.split('\t')
+        status = parts[0].strip()[:1]
+        paths = [x.strip() for x in parts[1:] if x.strip()]
+        if not paths:
+            continue
+        target = paths[-1]          # rename 行是 "R100\t旧\t新"，取新路径
+        mapping.setdefault(target, []).append(cur)
+        if status == 'R':
+            renamed.add(target)
+    return mapping, renamed
 
 
-def git_dates(root: Path, path: Path, bulk: dict | None = None) -> tuple[str, str]:
+def git_dates(root: Path, path: Path, bulk: dict | None = None,
+              renamed: set | None = None) -> tuple[str, str]:
     rel = path.relative_to(root).as_posix()
     if bulk is not None:
-        dates = bulk.get(rel)
-        if dates:
-            return (dates[-1], dates[0])      # (最旧=创建, 最新=修订)
-    # 重命名过的文件在 bulk 里查不到，回退到按文件跟随历史的精确查询
-    lines = git(root, 'log', '--follow', '--format=%cI', '--', rel).splitlines()
+        # 重命名过的文件在新路径下只有改名之后的历史，用它算 created 会偏晚
+        if rel not in (renamed or set()):
+            dates = bulk.get(rel)
+            if dates:
+                return (dates[-1], dates[0])      # (最旧=创建, 最新=修订)
+    # 重命名文件（或批量里没有的）回退到按文件跟随历史的精确查询
+    lines = git(root, '-c', 'core.quotePath=false',
+                'log', '--follow', '--format=%cI', '--', rel).splitlines()
     dates = [text_date(x) for x in lines if text_date(x)]
     return (dates[-1], dates[0]) if dates else ('', '')
 
@@ -220,7 +247,7 @@ def build(root: Path, blogdir: str = 'blog') -> dict:
     if not folder.is_dir():
         raise FileNotFoundError(f'blog directory not found: {folder}')
     files = []
-    bulk = git_dates_bulk(root)          # 一次 git log 覆盖所有文章
+    bulk, renamed = git_dates_bulk(root)   # 一次 git log 覆盖所有文章
     for path in sorted(folder.iterdir()):
         if not path.is_file() or path.suffix.lower() not in EXT or path.name.startswith(('_', '.')):
             continue
@@ -247,7 +274,7 @@ def build(root: Path, blogdir: str = 'blog') -> dict:
             continue
         title = meta.get('title') or picked_title or name_title(path.name)
         summary = (meta.get('summary') or meta.get('description') or picked_summary or plain)[:SUMMARY_LIMIT]
-        created_git, updated_git = git_dates(root, path, bulk)
+        created_git, updated_git = git_dates(root, path, bulk, renamed)
         created = text_date(next((meta[k] for k in ('date','created','published','created_at') if meta.get(k)), '')) or created_git or file_name_date(path.name)
         updated = text_date(next((meta[k] for k in ('updated','modified','last_modified_at','updated_at') if meta.get(k)), '')) or updated_git or created
         if created and updated and updated < created: updated = created

@@ -15,7 +15,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { boot, bare, wait, Suite, ROOT } = require('./harness');
+const { boot, bare, wait, Suite, ROOT, mountRealArticle } = require('./harness');
 
 async function run() {
   const s = new Suite('性能 / 内存 / 健壮性');
@@ -65,11 +65,15 @@ async function run() {
       W.location.hash = '#/p/' + encodeURIComponent('中国50个一生必去的地方.html');
       W.dispatchEvent(new W.Event('hashchange'));
       await wait(320);
+      // 关键：jsdom 不会自己加载 iframe。不挂载的话 rawObservers 恒为 0，
+      // 这条断言会变成假阳性 —— 之前正是这样漏掉了真实的泄漏。
+      await mountRealArticle(W, '中国50个一生必去的地方.html');
       W.location.hash = '#/';
       W.dispatchEvent(new W.Event('hashchange'));
       await wait(220);
     }
     P.addEventListener = oa; P.removeEventListener = or;
+    s.ok(add > 0, '#14 往返期间确实注册过监听（前提成立，否则断言无意义）', `add=${add}`);
     s.eq(add - rem, 0, '#14/#17 往返 4 次后 window 监听净残留为 0', `add=${add} remove=${rem}`);
     s.eq(W.eval('rawObservers.length'), 0, '#14 iframe 观察者已全部 disconnect');
     s.eq(W.eval('frameLazy.items.length'), 0, '#14 懒加载队列已清空');

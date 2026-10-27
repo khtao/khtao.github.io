@@ -18,6 +18,75 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const HTML_PATH = path.join(ROOT, 'index.html');
 const HTML = fs.readFileSync(HTML_PATH, 'utf8');
 
+/** 一篇真实文章里有 src 的图片数量（灯箱里的空 <img> 不算） */
+function countableImages(html) {
+  const { JSDOM } = require('jsdom');
+  const d = new JSDOM(html).window.document;
+  return [...d.querySelectorAll('img')].filter((i) => i.getAttribute('src')).length;
+}
+
+/**
+ * 让 iframe 真正走一遍 initRawFrame() 的完整代码路径。
+ *
+ * 为什么需要它：jsdom 默认不加载 iframe 的外部资源，父页面路由到
+ * 原样 HTML 文章后 #rawFrame 永远停在 about:blank，setup() 从不执行 ——
+ * 于是「rawObservers.length === 0」「frameLazy.items.length === 0」
+ * 这类断言会**恒为真**，把一个真实的泄漏 bug 测成通过（假阳性）。
+ *
+ * 做法：把文章解析成一个子文档挂到 iframe.contentDocument 上，再调
+ * initRawFrame()。几何信息仍需 mock（jsdom 没有布局引擎，rect 全是 0），
+ * 但注入样式、视口冻结、高度监听、图片治理、复制挂载这条链路是真的。
+ */
+async function mountRealArticle(W, articleName, opts = {}) {
+  const { JSDOM } = require('jsdom');
+  const file = path.join(ROOT, 'blog', articleName);
+  const html = fs.readFileSync(file, 'utf8');
+  const fr = W.document.getElementById('rawFrame');
+  if (!fr) return null;
+
+  const sub = new JSDOM(html, { url: 'https://khtao.github.io/blog/' + encodeURIComponent(articleName), pretendToBeVisual: true });
+  await new Promise((r) => {
+    if (sub.window.document.readyState === 'complete') return r();
+    sub.window.addEventListener('load', r);
+  });
+  Object.defineProperty(fr, 'contentDocument', { configurable: true, get: () => sub.window.document });
+  Object.defineProperty(fr, 'contentWindow', { configurable: true, get: () => sub.window });
+
+  const step = opts.step || 320, h = opts.height || 300;
+  [...sub.window.document.querySelectorAll('img')].forEach((im, i) => {
+    im.getBoundingClientRect = () => ({
+      top: i * step, height: h, left: 0, width: 800, bottom: i * step + h, right: 800,
+    });
+  });
+  fr.getBoundingClientRect = () => ({ top: 0, height: 5000, left: 0, width: 800, bottom: 5000, right: 800 });
+
+  W.eval('initRawFrame()');
+  await new Promise((r) => setTimeout(r, 150));
+  return { fr, sub, html, imgCount: countableImages(html) };
+}
+
+/** 直接挂一个自定义 HTML 子文档（不读真实文章） */
+async function mountFrameDoc(W, html, opts = {}) {
+  const { JSDOM } = require('jsdom');
+  const fr = W.document.getElementById('rawFrame');
+  if (!fr) return null;
+  const sub = new JSDOM(html, { url: 'https://khtao.github.io/blog/x.html', pretendToBeVisual: true });
+  await new Promise((r) => {
+    if (sub.window.document.readyState === 'complete') return r();
+    sub.window.addEventListener('load', r);
+  });
+  Object.defineProperty(fr, 'contentDocument', { configurable: true, get: () => sub.window.document });
+  Object.defineProperty(fr, 'contentWindow', { configurable: true, get: () => sub.window });
+  const step = opts.step || 320, h = opts.height === undefined ? 300 : opts.height;
+  [...sub.window.document.querySelectorAll('img')].forEach((im, i) => {
+    im.getBoundingClientRect = () => ({
+      top: i * step, height: h, left: 0, width: 800, bottom: i * step + h, right: 800,
+    });
+  });
+  fr.getBoundingClientRect = () => ({ top: 0, height: 5000, left: 0, width: 800, bottom: 5000, right: 800 });
+  return { fr, sub };
+}
+
 /** Serve ./xxx from the real repo so the page can boot for real. */
 function makeFetch() {
   return async (u) => {
@@ -108,4 +177,4 @@ class Suite {
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-module.exports = { boot, bare, wait, Suite, ROOT, HTML };
+module.exports = { boot, bare, wait, Suite, ROOT, HTML, mountRealArticle, mountFrameDoc, countableImages };

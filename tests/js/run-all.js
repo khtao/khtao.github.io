@@ -9,6 +9,7 @@ const SUITES = [
   ['图片加载', './test-images'],
   ['版权与链接', './test-copyright'],
   ['性能 / 内存 / 健壮性', './test-performance'],
+  ['覆盖缺口补充', './test-gaps'],
 ];
 
 (async () => {
