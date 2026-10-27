@@ -220,7 +220,7 @@ mark{background:var(--accent-soft);color:var(--accent);border-radius:3px;padding
 [data-theme="dark"] .hljs-built_in,[data-theme="dark"] .hljs-name,[data-theme="dark"] .hljs-tag{color:#e06c75;}
 
 /* ============ 原始 HTML 文章：iframe 原样渲染 ============ */
-.post-layout.raw{grid-template-columns:minmax(0,1fr);gap:0;max-width:1340px;padding:14px 24px 30px;}
+.post-layout.raw{grid-template-columns:minmax(0,1fr);gap:0;max-width:var(--post-width);padding:14px var(--post-pad-x) 30px;}
 .post-layout.raw .post-main{max-width:none;}
 .raw-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 0 12px;}
 .raw-head .sp{flex:1;}
@@ -585,7 +585,7 @@ body{background:var(--bg);}
 
 
 /* ============ v5 · GitHub Pages editorial upgrade ============ */
-:root{--reading-size:16px;--soft-shadow:0 18px 55px rgba(57,69,114,.055)}
+:root{--reading-size:16px;--soft-shadow:0 18px 55px rgba(57,69,114,.055);--post-width:1340px;--post-pad-x:24px}
 [data-theme="dark"]{--soft-shadow:0 18px 55px rgba(0,0,0,.17)}
 html{scroll-behavior:auto}
 .skip-link{position:fixed;z-index:200;top:-80px;left:20px;background:var(--accent);color:white;padding:11px 17px;border-radius:0 0 10px 10px;font-size:13px}
@@ -749,17 +749,17 @@ html{scroll-behavior:auto}
   .post-related a:last-child { text-align: left; }
 }
 
-/* ===== Khtao Blog 3.0 · 自适应宽屏阅读（置于所有旧规则之后） =====
- * 旧样式里 .post-layout 最宽 1080px、.post-main 最宽 718px，
- * 导致宽屏下内容只占一小块。本规则仅作用于 Markdown 阅读页，
- * 不影响首页、归档、标签及 HTML 原样展示模式（.raw）。
+/* ===== Khtao Blog 3.0 · 阅读宽度与 HTML 原样展示页保持一致 =====
+ * Markdown 阅读页与 .raw（HTML 原样渲染）共用 --post-width / --post-pad-x，
+ * 宽屏下不再无限拉宽：两份版式的可视宽度完全相同。
+ * 仅作用于 Markdown 阅读页，不影响首页、归档、话题与 HTML 原样模式（.raw）。
  */
 .post-layout:not(.raw) {
   width: 100%;
-  max-width: 1600px;
+  max-width: var(--post-width);
   margin-inline: auto;
-  padding-left: clamp(18px, 3vw, 48px);
-  padding-right: clamp(18px, 3vw, 48px);
+  padding-left: var(--post-pad-x);
+  padding-right: var(--post-pad-x);
   grid-template-columns: minmax(0, 1fr) 210px;
   column-gap: clamp(28px, 3.5vw, 56px);
 }
@@ -815,6 +815,82 @@ html{scroll-behavior:auto}
   }
 }
 
+/* ===== v6 · HTML 原样阅读页目录（浮层，不占版面、不改变正文宽度） ===== */
+.raw-toc{
+  position:fixed;z-index:120;top:78px;right:16px;width:266px;max-width:calc(100vw - 32px);
+  max-height:calc(100vh - 132px);overflow-y:auto;overscroll-behavior:contain;
+  padding:13px 0 14px;border-radius:14px;border:1px solid var(--line);
+  background:color-mix(in srgb,var(--card) 94%,transparent);
+  backdrop-filter:saturate(180%) blur(12px);-webkit-backdrop-filter:saturate(180%) blur(12px);
+  box-shadow:var(--shadow);opacity:0;transform:translateX(12px);pointer-events:none;
+  transition:opacity .2s ease,transform .2s ease;
+}
+.raw-toc.on{opacity:1;transform:none;pointer-events:auto;}
+.raw-toc::-webkit-scrollbar{width:3px;}
+.raw-toc::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
+.raw-toc .t{display:flex;align-items:center;gap:8px;padding:0 14px 9px;font-size:11.5px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--fg-soft);}
+.raw-toc .t button{margin-left:auto;font-size:15px;line-height:1;color:var(--fg-soft);padding:2px 4px;border-radius:6px;}
+.raw-toc .t button:hover{background:var(--hover-bg);color:var(--fg);}
+.raw-toc a{display:block;padding:5px 14px;font-size:13px;line-height:1.5;color:var(--fg-soft);
+  border-left:2px solid transparent;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:.15s;}
+.raw-toc a:hover{color:var(--fg);background:var(--hover-bg);}
+.raw-toc a.on{color:var(--accent);border-left-color:var(--accent);font-weight:600;}
+.raw-toc a.lv2{padding-left:28px;}
+.raw-toc a.lv3{padding-left:42px;font-size:12.5px;}
+.raw-toc a.lv1{font-weight:600;color:var(--fg-mid);}
+.raw-toc .none{padding:2px 14px 8px;font-size:12.5px;color:var(--fg-soft);line-height:1.7;}
+@media(max-width:900px){
+  .raw-toc{top:auto;bottom:12px;left:12px;right:12px;width:auto;max-height:46vh;
+    transform:translateY(12px);}
+  .raw-toc.on{transform:none;}
+}
+
+/* ===== v6 · 话题页（标签 + 分类合并） ===== */
+.topic-summary{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin:24px 0 6px;font-size:13px;color:var(--fg-soft);}
+.topic-summary strong{color:var(--accent);font-size:15px;}
+.topic-block{margin-top:26px;}
+.topic-block>.list-title{margin-bottom:14px;}
+.topic-wall{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 40px;}
+.topic-wall>a{display:flex;align-items:center;gap:4px;background:var(--paper);border:1px solid var(--line);
+  border-radius:999px;padding:7px 13px;font-size:13px;color:var(--fg-mid);transition:.18s;}
+.topic-wall>a>span{color:var(--accent);}
+.topic-wall>a>small{font:10px var(--mono);color:var(--fg-soft);}
+.topic-wall>a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);}
+.topic-wall>a.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+[data-theme="dark"] .topic-wall>a.on{color:#0e1117;}
+[data-theme="dark"] .topic-wall>a.on>span,[data-theme="dark"] .topic-wall>a.on>small{color:#0e1117;}
+
+/* ===== v6 · GitHub 项目页 ===== */
+.proj-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:22px 0 6px;}
+.proj-toolbar .chip{background:var(--paper);}
+.proj-stats{font-size:13px;color:var(--fg-soft);margin:20px 0 0;}
+.proj-stats strong{color:var(--accent);}
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:14px;margin:20px 0 40px;}
+.proj-card{display:flex;flex-direction:column;gap:9px;min-height:150px;padding:19px 20px 17px;border-radius:16px;
+  border:1px solid var(--line);background:var(--paper);box-shadow:var(--soft-shadow);transition:.18s;}
+.proj-card:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 40%,var(--line));}
+.proj-top{display:flex;align-items:center;gap:9px;min-width:0;}
+.proj-name{font-size:15.5px;font-weight:700;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.proj-card:hover .proj-name{color:var(--accent);}
+.proj-flag{font-size:10px;color:var(--fg-soft);border:1px solid var(--line);border-radius:999px;padding:1px 7px;white-space:nowrap;}
+.proj-star{margin-left:auto;font:600 12px var(--mono);color:var(--fg-soft);white-space:nowrap;}
+.proj-desc{margin:0;font-size:13px;line-height:1.8;color:var(--fg-soft);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.proj-foot{margin-top:auto;display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:11.5px;color:var(--fg-soft);}
+.proj-lang{display:inline-flex;align-items:center;gap:5px;}
+.proj-lang i{width:9px;height:9px;border-radius:50%;background:var(--fg-soft);display:inline-block;}
+.proj-topics{display:flex;gap:5px;flex-wrap:wrap;}
+.proj-topics span{background:var(--bg-soft);border:1px solid var(--line-soft);border-radius:6px;padding:1px 7px;font-size:10.5px;}
+.proj-arrow{margin-left:auto;color:var(--accent);font-size:14px;}
+.proj-empty,.proj-skel{display:grid;gap:12px;margin:22px 0 40px;}
+.proj-skel i{display:block;height:96px;border-radius:16px;background:linear-gradient(90deg,var(--bg-soft) 25%,var(--hover-bg) 37%,var(--bg-soft) 63%);
+  background-size:400% 100%;animation:sh 1.4s ease infinite;}
+.home-projects .feed-heading{padding-top:48px;}
+@media(max-width:560px){
+  .proj-grid{grid-template-columns:1fr;}
+  .raw-toc a.lv3{padding-left:34px;}
+}
+
 </style>
 </head>
 <body>
@@ -828,8 +904,8 @@ html{scroll-behavior:auto}
     <nav class="nav-links" aria-label="主要导航">
       <a class="nav-link" data-section="home" href="#/">首页</a>
       <a class="nav-link" data-section="archive" href="#/archive">归档</a>
-      <a class="nav-link" data-section="tags" href="#/tags">标签</a>
-      <a class="nav-link" data-section="categories" href="#/categories">分类</a>
+      <a class="nav-link" data-section="topics" href="#/topics">话题</a>
+      <a class="nav-link" data-section="projects" href="#/projects">项目</a>
       <a class="nav-link" data-section="about" href="#/about">关于</a>
     </nav>
     <div class="nav-spacer"></div>
@@ -872,13 +948,17 @@ html{scroll-behavior:auto}
 const DEFAULT_CFG = {
   title:"Khtao", subtitle:"记录技术、产品与生活", description:"一个用文字对抗遗忘的地方。",
   author:"khtao", owner:"khtao", repo:"khtao.github.io", branch:"main",
-  blogDir:"blog", pageSize:50, notice:"欢迎来访。这里会持续更新笔记和思考。", footer:"© 2026 khtao · Built with GitHub Pages"
+  blogDir:"blog", pageSize:50, notice:"欢迎来访。这里会持续更新笔记和思考。", footer:"© 2026 khtao · Built with GitHub Pages",
+  projects:{enabled:true, featured:[], exclude:["khtao.github.io"], source:"projects.json"}
 };
 let cfg = Object.assign({}, DEFAULT_CFG);
 const CACHE_KEY = "khtao_blog_cache_v3";
+const PROJECT_CACHE_KEY = "khtao_projects_v1";
+const PROJECT_TTL = 6 * 60 * 60 * 1000;
 const state = {
-  posts:[], q:"", tag:"", category:"", loading:true, error:"", offline:false,
-  syncedAt:0, generated:"", hasList:false, refreshing:false, sort:"new", visible:6
+  posts:[], q:"", topic:"", loading:true, error:"", offline:false,
+  syncedAt:0, generated:"", hasList:false, refreshing:false, sort:"new", visible:6,
+  repos:[], reposState:"idle", reposError:"", repoLang:"", reposSyncedAt:0
 };
 let syncSequence = 0;
 const $ = s => document.querySelector(s);
@@ -921,6 +1001,9 @@ async function loadConfig(){
   $("#footText").textContent = cfg.footer;
   const gh = $("#footGithub");
   if(gh) gh.href = `https://github.com/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}`;
+  // 项目页可以在 config.json 里整体关闭：关闭时导航入口一并隐藏
+  const projNav = document.querySelector('.nav-link[data-section="projects"]');
+  if(projNav) projNav.hidden = !projectCfg().enabled;
 }
 function localRepoUrl(path){
   const encoded = String(path).split("/").map(encodeURIComponent).join("/");
@@ -1405,12 +1488,193 @@ async function refresh(force=false){
   writeCache(); render();
 }
 
+/* ---------- GitHub 项目：仅本人创建的仓库，fork 一律排除 ---------- */
+function projectCfg(){
+  const p = cfg.projects || {};
+  return {
+    enabled: p.enabled !== false,
+    featured: Array.isArray(p.featured) ? p.featured : (Array.isArray(cfg.featuredProjects) ? cfg.featuredProjects : []),
+    count: Math.max(1, Math.min(6, Number(p.featuredCount || cfg.featuredCount || 3))),
+    exclude: Array.isArray(p.exclude) ? p.exclude : [],
+    source: String(p.source || "projects.json")
+  };
+}
+function num(n){
+  const v = Number(n || 0);
+  return v >= 1000 ? (v / 1000).toFixed(v >= 10000 ? 0 : 1).replace(/\.0$/, "") + "k" : String(v);
+}
+const LANG_COLOR = {"JavaScript":"#f1e05a","TypeScript":"#3178c6","Python":"#3572A5","Go":"#00ADD8","Rust":"#dea584",
+  "Java":"#b07219","Kotlin":"#A97BFF","Swift":"#F05138","C":"#555555","C++":"#f34b7d","C#":"#178600","HTML":"#e34c26",
+  "CSS":"#563d7c","Vue":"#41b883","Svelte":"#ff3e00","Shell":"#89e051","PHP":"#4F5D95","Ruby":"#701516",
+  "Dart":"#00B4AB","Scala":"#c22d40","Jupyter Notebook":"#DA5B0B","Makefile":"#427819","Dockerfile":"#384d54",
+  "Astro":"#ff5a03","MDX":"#fcb32c","Objective-C":"#438eff","Elixir":"#6e4a7e","Zig":"#ec915c"};
+function langColor(l){ return LANG_COLOR[l] || "#8b93a1"; }
+function normalizeRepos(list){
+  const ex = new Set(projectCfg().exclude.map(s => String(s).toLowerCase()));
+  return (Array.isArray(list) ? list : [])
+    // fork 与私有仓库不参与展示：这里展示的是「本人创建」的项目
+    .filter(r => r && typeof r === "object" && !r.fork && !r.private && (r.name || r.full_name))
+    .filter(r => !ex.has(String(r.name || "").toLowerCase()) && !ex.has(String(r.full_name || "").toLowerCase()))
+    .map(r => ({
+      name: String(r.name || String(r.full_name || "").split("/").pop()),
+      full_name: String(r.full_name || r.name || ""),
+      html_url: r.html_url || "", homepage: r.homepage || "",
+      description: r.description || "", language: r.language || "",
+      stars: Number(r.stargazers_count || r.stars || 0),
+      forks: Number(r.forks_count || 0),
+      topics: Array.isArray(r.topics) ? r.topics.slice(0, 3) : [],
+      pushed_at: String(r.pushed_at || r.updated_at || "").slice(0, 10),
+      archived: !!r.archived, fork: false
+    }))
+    .sort((a, b) => b.stars - a.stars || b.pushed_at.localeCompare(a.pushed_at));
+}
+function projectCache(){
+  try{
+    const c = JSON.parse(safeStore.get(PROJECT_CACHE_KEY) || "null");
+    return c && Array.isArray(c.repos) ? c : null;
+  }catch(e){ return null; }
+}
+async function fetchProjects(){
+  const pc = projectCfg();
+  // ① 优先读取仓库内由 Actions 生成的快照：稳定、不消耗 API 配额
+  if(pc.source){
+    try{
+      const j = JSON.parse(await getLocalText("./" + pc.source.replace(/^\/+/, "") + "?v=" + Date.now(), 6000));
+      if(j && Array.isArray(j.repos)) return normalizeRepos(j.repos);
+    }catch(e){}
+  }
+  // ② 没有快照时浏览器直连 GitHub 公开接口，fork 同样会在上面被过滤掉
+  const url = "https://api.github.com/users/" + encodeURIComponent(cfg.owner) + "/repos?per_page=100&sort=pushed";
+  const j = JSON.parse(await getLocalText(url, 10000));
+  return normalizeRepos(Array.isArray(j) ? j : []);
+}
+async function loadProjects(force=false){
+  const pc = projectCfg();
+  if(!pc.enabled){ state.repos = []; state.reposState = "off"; return; }
+  if(state.reposState === "loading") return;
+  if(!force && state.reposState === "ready") return;
+  const cached = projectCache();
+  if(!force && cached && Date.now() - (cached.ts || 0) < PROJECT_TTL){
+    state.repos = cached.repos; state.reposState = "ready"; paintProjects(); return;
+  }
+  state.reposState = "loading";
+  state.reposError = "";
+  paintProjects();
+  try{
+    const repos = await fetchProjects();
+    state.repos = repos;
+    state.reposState = "ready";
+    state.reposSyncedAt = Date.now();
+    safeStore.set(PROJECT_CACHE_KEY, JSON.stringify({ts:state.reposSyncedAt, repos}));
+  }catch(e){
+    state.reposError = "暂时没能读取 GitHub 仓库列表。";
+    state.reposState = state.repos.length ? "ready" : "error";
+  }
+  paintProjects();
+}
+window.loadProjects = loadProjects;
+function featuredRepos(){
+  const pc = projectCfg();
+  const want = pc.featured.map(String).filter(Boolean);
+  // 没手动指定时，自动取 Star 最高的几个（列表已在 normalizeRepos 里排好序）
+  if(!want.length) return state.repos.slice(0, pc.count);
+  const byName = new Map(state.repos.map(r => [String(r.name).toLowerCase(), r]));
+  const byFull = new Map(state.repos.map(r => [String(r.full_name).toLowerCase(), r]));
+  return want.map(w => {
+    const hit = byFull.get(w.toLowerCase()) || byName.get(w.toLowerCase());
+    if(hit) return hit;
+    // 列表还没加载完或名字写错时，配置里的仓库至少还能被点开
+    const full = w.includes("/") ? w : cfg.owner + "/" + w;
+    return {name:full.split("/").pop(), full_name:full, html_url:"https://github.com/" + full, homepage:"",
+      description:"", language:"", stars:0, forks:0, topics:[], pushed_at:"", archived:false, pending:true};
+  }).slice(0, 6);
+}
+function projectCard(r){
+  const url = r.html_url || ("https://github.com/" + (r.full_name || r.name));
+  const desc = r.description ? r.description.slice(0, 120)
+    : (r.pending ? "仓库信息加载中…" : "这个仓库还没有写简介。");
+  return `<a class="proj-card" href="${esc(url)}" target="_blank" rel="noopener noreferrer">
+    <div class="proj-top"><span class="proj-name" title="${esc(r.name)}">${esc(r.name)}</span>
+      ${r.archived ? '<span class="proj-flag">已归档</span>' : ""}
+      ${r.stars ? `<span class="proj-star" title="Star 数">★ ${esc(num(r.stars))}</span>` : ""}</div>
+    <p class="proj-desc">${esc(desc)}</p>
+    <div class="proj-foot">
+      ${r.language ? `<span class="proj-lang"><i style="background:${esc(langColor(r.language))}"></i>${esc(r.language)}</span>` : ""}
+      ${r.pushed_at ? `<span>更新 ${esc(r.pushed_at)}</span>` : ""}
+      ${r.topics.length ? `<span class="proj-topics">${r.topics.map(t => `<span>#${esc(t)}</span>`).join("")}</span>` : ""}
+      <span class="proj-arrow" aria-hidden="true">↗</span>
+    </div></a>`;
+}
+function projectsHTML(){
+  const pc = projectCfg();
+  let h = headingHTML('OPEN SOURCE / PROJECTS','开源项目','这里只收录我自己创建的仓库，fork 的项目不计入。');
+  h += statusHTML();
+  if(!pc.enabled){
+    h += `<div class="empty"><div class="big" aria-hidden="true">✦</div><h2>项目展示已关闭</h2><p>在 config.json 里把 projects.enabled 设为 true 即可开启。</p></div>`;
+    return shellHTML(h);
+  }
+  if(state.reposState === "loading" && !state.repos.length){
+    h += `<div class="proj-stats">正在读取 GitHub 仓库…</div><div class="proj-skel"><i></i><i></i><i></i></div>`;
+    return shellHTML(h);
+  }
+  if(state.reposState === "error"){
+    h += `<div class="banner soft" role="status"><span>${esc(state.reposError)}</span><button onclick="loadProjects(true)">重试</button></div>`;
+  }
+  const all = state.repos;
+  const langs = countsBy(all.map(r => r.language || "Other"));
+  const shown = state.repoLang ? all.filter(r => (r.language || "Other") === state.repoLang) : all;
+  const stars = all.reduce((s, r) => s + (r.stars || 0), 0);
+  if(all.length){
+    h += `<div class="proj-stats">共 <strong>${all.length}</strong> 个自建仓库 · 累计 <strong>${esc(num(stars))}</strong> 个 Star</div>`;
+    if(langs.length > 1){
+      h += `<div class="proj-toolbar" aria-label="按语言筛选">
+        <a class="chip ${state.repoLang ? "" : "on"}" href="#/projects" data-lang="">全部 <span class="n">${all.length}</span></a>
+        ${langs.slice(0, 10).map(([l, n]) => `<a class="chip ${state.repoLang === l ? "on" : ""}" href="#/projects" data-lang="${esc(l)}">${esc(l)} <span class="n">${n}</span></a>`).join("")}
+      </div>`;
+    }
+    h += shown.length ? `<div class="proj-grid">${shown.map(projectCard).join("")}</div>`
+      : `<div class="empty"><div class="big" aria-hidden="true">✦</div><h2>这个语言下还没有仓库</h2></div>`;
+  } else if(state.reposState !== "error"){
+    h += `<div class="empty"><div class="big" aria-hidden="true">✦</div><h2>暂时没有仓库</h2><p>GitHub 上还没有公开的非 fork 仓库。</p></div>`;
+  }
+  h += `<p class="page-tip">数据来自 <a href="https://github.com/${encodeURIComponent(cfg.owner)}" target="_blank" rel="noopener noreferrer">GitHub</a>，fork 与私有仓库已自动排除。在 <code>config.json</code> 的 <code>projects.featured</code> 里写上仓库名（如 <code>owner/repo</code>），即可指定首页展示的项目；留空则自动展示 Star 最高的 ${pc.count} 个。希望构建时生成离线快照，可运行 <code>scripts/build_projects.py</code>。</p>`;
+  return shellHTML(h);
+}
+function homeProjectsHTML(){
+  const pc = projectCfg();
+  if(!pc.enabled) return "";
+  const list = featuredRepos();
+  const title = pc.featured.length ? "精选项目" : "热门项目";
+  const body = list.length ? list.map(projectCard).join("")
+    : (state.reposState === "error"
+      ? '<div class="feed-placeholder">项目列表暂时读不出来，可稍后到「项目」页重试。</div>'
+      : '<div class="proj-skel"><i></i><i></i></div>');
+  return `<section class="home-projects"><div class="feed-heading">
+      <div><div class="feed-kicker">OPEN SOURCE / FEATURED</div><h2>${title} <span>${list.length}</span></h2></div>
+      <a href="#/projects">全部项目 ↗</a></div>
+    <div class="proj-grid" id="homeProjects">${body}</div></section>`;
+}
+/* 项目数据到位后只补画对应区块，避免整页重绘打断阅读 */
+function paintProjects(){
+  const box = document.getElementById("homeProjects");
+  if(box){
+    const list = featuredRepos();
+    box.innerHTML = list.length ? list.map(projectCard).join("")
+      : (state.reposState === "error" ? '<div class="feed-placeholder">项目列表暂时读不出来，可稍后到「项目」页重试。</div>' : "");
+    const head = box.parentElement && box.parentElement.querySelector(".feed-heading h2 span");
+    if(head) head.textContent = String(list.length);
+  }
+  const stat = document.getElementById("statProjects");
+  if(stat) stat.textContent = state.repos.length ? String(state.repos.length) : "—";
+  if(location.hash.replace(/^#/, "") === "/projects") render();
+}
+
 /* ---------- 渲染：首页 ---------- */
 function filtered(){
   const q = state.q.trim().toLowerCase();
   return state.posts.filter(p => {
-    if(state.tag && !p.tags.includes(state.tag)) return false;
-    if(state.category && p.category !== state.category) return false;
+    // 标签与分类合并为「话题」：命中分类或任一标签即算匹配
+    if(state.topic && !(p.category === state.topic || p.tags.includes(state.topic))) return false;
     if(!q) return true;
     return (p.title + " " + p.summary + " " + p.plain + " " + p.tags.join(" ") + " " + p.category).toLowerCase().includes(q);
   }).sort((a,b)=>state.sort === "updated"
@@ -1449,9 +1713,14 @@ function countsBy(items){
 }
 function allTags(){ return countsBy(state.posts.flatMap(p=>p.tags)); }
 function allCategories(){ return countsBy(state.posts.map(p=>p.category||"未分类")); }
+/* 话题 = 分类 + 标签，同一篇文章里的重复值只计一次 */
+function allTopics(){
+  return countsBy(state.posts.flatMap(p => [...new Set([p.category || "未分类", ...p.tags])]));
+}
+function topicURL(t){ return "#/topic/"+encodeURIComponent(t); }
 function postURL(p){ return "#/p/"+encodeURIComponent(p.name); }
 function sidebarHTML(){
-  const tags=allTags().slice(0,12);
+  const tags=allTopics().slice(0,12);
   const latest=[...state.posts].sort((a,b)=>(b.updated||b.created||"").localeCompare(a.updated||a.created||"")).slice(0,4);
   return `<aside class="home-sidebar" aria-label="站点侧栏">
     <section class="side-card profile-card">
@@ -1460,8 +1729,8 @@ function sidebarHTML(){
       <p class="profile-desc">${esc(cfg.description)}</p>
       <div class="profile-stats">
         <a href="#/archive"><strong>${state.posts.length}</strong><span>文章</span></a>
-        <a href="#/tags"><strong>${allTags().length}</strong><span>标签</span></a>
-        <a href="#/categories"><strong>${allCategories().length}</strong><span>分类</span></a>
+        <a href="#/topics"><strong>${allTopics().length}</strong><span>话题</span></a>
+        <a href="#/projects"><strong id="statProjects">${state.repos.length || "—"}</strong><span>项目</span></a>
       </div>
       <a class="profile-follow" href="https://github.com/${encodeURIComponent(cfg.owner)}" target="_blank" rel="noopener noreferrer">GitHub · Follow me <span aria-hidden="true">↗</span></a>
     </section>
@@ -1474,8 +1743,8 @@ function sidebarHTML(){
       <div class="side-recent">${latest.map(p=>`<a href="${postURL(p)}"><span>${esc(p.title)}</span><small>${esc(fmtDate(p.updated||p.created))}</small></a>`).join("")}</div>
     </section>` : ''}
     ${tags.length ? `<section class="side-card">
-      <div class="side-title">热门标签 <a href="#/tags">更多 ↗</a></div>
-      <div class="side-tags">${tags.map(([t,n])=>`<a href="#/tag/${encodeURIComponent(t)}">${esc(t)} <span>${n}</span></a>`).join("")}</div>
+      <div class="side-title">热门话题 <a href="#/topics">更多 ↗</a></div>
+      <div class="side-tags">${tags.map(([t,n])=>`<a href="${topicURL(t)}">${esc(t)} <span>${n}</span></a>`).join("")}</div>
     </section>` : ''}
     <div class="side-card subscription-card"><div class="side-title"><span class="side-title-icon">↗</span> 保持联系</div>
       <p>文章更新时，使用 RSS 第一时间阅读。无需注册，也不需要邮件订阅。</p>
@@ -1513,10 +1782,9 @@ function headingHTML(kicker,title,subtitle=''){
 }
 function homeHTML(){
   const all=filtered();
-  const tags=allTags();
   const q=state.q.trim().toLowerCase();
-  const shown=all.slice(0, Math.min(all.length, state.visible + (!state.tag && !state.category && !state.q.trim() ? 1 : 0)));
-  const normal=!state.tag && !state.category && !q;
+  const shown=all.slice(0, Math.min(all.length, state.visible + (!state.topic && !state.q.trim() ? 1 : 0)));
+  const normal=!state.topic && !q;
   let h=`<section class="hero">
     <div class="eyebrow"><span class="eyebrow-dot"></span>DIGITAL GARDEN · NOTES & IDEAS</div>
     <h1>${esc(cfg.subtitle||cfg.title)}<span class="hero-star" aria-hidden="true">✳</span></h1>
@@ -1527,10 +1795,10 @@ function homeHTML(){
   if(state.loading){
     h+=[0,1,2].map(()=>`<div class="skel"><i style="width:28%"></i><div style="height:10px"></div><i style="width:75%;height:20px"></i></div>`).join("");
   } else if(normal && shown.length){
-    h+=`<nav class="quick-discover" aria-label="探索分类">
+    h+=`<nav class="quick-discover" aria-label="探索话题">
       <span class="quick-label">探索话题 <span aria-hidden="true">/</span></span>
-      ${allCategories().slice(0,4).map(([c,n])=>`<a href="#/category/${encodeURIComponent(c)}">${esc(c)} <small>${n}</small></a>`).join('')}
-      <a class="quick-all" href="#/categories">查看分类 ↗</a>
+      ${allTopics().slice(0,4).map(([t,n])=>`<a href="${topicURL(t)}">${esc(t)} <small>${n}</small></a>`).join('')}
+      <a class="quick-all" href="#/topics">查看话题 ↗</a>
     </nav>`;
     h+=featuredHTML(shown[0]);
     h+=`<div class="feed-heading"><div><div class="feed-kicker">THE JOURNAL / ALL NOTES</div><h2>最近文章 <span>${Math.max(0,all.length-1)}</span></h2></div>
@@ -1538,14 +1806,15 @@ function homeHTML(){
     if(shown.length>1) h+=`<div class="post-list">${shown.slice(1).map(p=>postCard(p)).join("")}</div>`;
     else h+=`<p class="feed-placeholder">新的故事正在慢慢写下。</p>`;
   } else {
-    if(state.tag || state.category || q){
-      const active = state.tag ? `标签 · ${state.tag}` : state.category ? `分类 · ${state.category}` : `搜索 · ${state.q}`;
+    if(state.topic || q){
+      const active = state.topic ? `话题 · ${state.topic}` : `搜索 · ${state.q}`;
       h+=`<div class="filter-info"><strong>${esc(active)}</strong><span>${all.length} 篇结果</span><button type="button" class="clear-filters" data-clear="true">清除筛选 ×</button></div>`;
     }
     if(!shown.length){
       h+=`<div class="empty"><div class="big" aria-hidden="true">✦</div><h2>${state.loading?'正在加载':state.posts.length?'暂时没有符合条件的文章':'这里还是一片空白'}</h2><p>${state.posts.length?'尝试新的关键词，或查看其他标签。':'下一篇文章，正在路上。'}</p></div>`;
     }else h+=`<div class="post-list">${shown.map(p=>postCard(p,q)).join('')}</div>`;
   }
+  if(normal) h += homeProjectsHTML();
   if(all.length>shown.length) h+=`<div class="loadmore-area"><button class="loadmore" data-more="true">继续阅读更多文章 <span>${shown.length} / ${all.length}</span> ↘</button></div>`;
   return shellHTML(h);
 }
@@ -1566,18 +1835,22 @@ function archiveHTML(){
   }
   return shellHTML(h);
 }
-function tagsHTML(){
-  const tags=allTags();
-  let h=headingHTML('DISCOVER / TAGS','文章标签','沿着关键词，找到感兴趣的内容。')+statusHTML();
-  if(tags.length)h+=`<div class="tag-wall">${tags.map(([t,n])=>`<a href="#/tag/${encodeURIComponent(t)}"><span>#</span> ${esc(t)}<small>${n}</small></a>`).join('')}</div>`;
-  else h+='<div class="empty"><div class="big">#</div><h2>暂无标签</h2></div>';
-  return shellHTML(h);
-}
-function categoriesHTML(){
+/* 标签与分类功能重复，合并为单一「话题」页：分类是主线索，标签是细粒度入口 */
+function topicsHTML(){
+  const topics=allTopics();
   const cs=allCategories();
-  let h=headingHTML('EXPLORE / CATEGORIES','文章分类','按照主题，把知识整理成章节。')+statusHTML();
-  if(cs.length)h+=`<div class="category-grid">${cs.map(([c,n],i)=>`<a class="category-card" href="#/category/${encodeURIComponent(c)}"><span class="category-glyph">${['✳','◇','⌘','✦'][i%4]}</span><span class="category-label">${esc(c)}</span><small>${n} 篇文章</small><b aria-hidden="true">↗</b></a>`).join('')}</div>`;
-  else h+='<div class="empty"><h2>暂无分类</h2></div>';
+  let h=headingHTML('DISCOVER / TOPICS','文章话题','分类与标签在同一处：从一个关键词，进入一批文章。')+statusHTML();
+  if(state.loading){
+    h+='<div class="skel"><i style="width:40%"></i><div style="height:10px"></div><i style="width:70%;height:20px"></i></div>';
+  } else if(!topics.length){
+    h+='<div class="empty"><div class="big" aria-hidden="true">✦</div><h2>还没有话题</h2><p>给文章写上 category 或 tags，这里会自动出现。</p></div>';
+  } else {
+    h+=`<div class="topic-summary">共 <strong>${topics.length}</strong> 个话题 · 其中 <strong>${cs.length}</strong> 个是主分类 · 点击任意话题即可筛选文章</div>`;
+    h+=`<div class="topic-block"><div class="list-title">主分类 / CATEGORIES</div>
+      <div class="category-grid">${cs.map(([c,n],i)=>`<a class="category-card" href="${topicURL(c)}"><span class="category-glyph">${['✳','◇','⌘','✦'][i%4]}</span><span class="category-label">${esc(c)}</span><small>${n} 篇文章</small><b aria-hidden="true">↗</b></a>`).join('')}</div></div>`;
+    h+=`<div class="topic-block"><div class="list-title">全部话题 / TAGS & CATEGORIES</div>
+      <div class="topic-wall">${topics.map(([t,n])=>`<a href="${topicURL(t)}"><span>#</span> ${esc(t)}<small>${n}</small></a>`).join('')}</div></div>`;
+  }
   return shellHTML(h);
 }
 function aboutHTML(){
@@ -1615,8 +1888,8 @@ function postHTML(p, r){
           ${p.created ? `<span>上传于 ${esc(fmtDate(p.created))}</span>` : ""}
           ${p.updated && p.updated !== p.created ? `<span class="dot"></span><span>修订于 ${esc(fmtDate(p.updated))}</span>` : ""}
           <span class="dot"></span><span>约 ${mins} 分钟 · ${p.words} 字</span>
-          ${p.category && p.category!=="未分类" ? `<span class="dot"></span><a class="tag-mini" href="#/category/${encodeURIComponent(p.category)}">${esc(p.category)}</a>` : ""}
-          ${p.tags.length ? `<span class="dot"></span>${p.tags.map(t => `<a class="tag-mini" href="#/tag/${encodeURIComponent(t)}">${esc(t)}</a>`).join(" ")}` : ""}
+          ${p.category && p.category!=="未分类" ? `<span class="dot"></span><a class="tag-mini" href="${topicURL(p.category)}">${esc(p.category)}</a>` : ""}
+          ${p.tags.length ? `<span class="dot"></span>${p.tags.map(t => `<a class="tag-mini" href="${topicURL(t)}">${esc(t)}</a>`).join(" ")}` : ""}
         </div>`;
   const foot = `<div class="post-foot">
         <a href="#/">← 返回全部文章</a>
@@ -1630,6 +1903,7 @@ function postHTML(p, r){
         <div class="raw-head">
           <a class="back" style="margin:0" href="#/">← 返回</a>
           <a class="btn-s" href="${standalone}" target="_blank" rel="noopener">↗ 独立页面打开</a>
+          <button type="button" class="btn-s" id="rawTocBtn" data-raw-toc="true" aria-pressed="false" aria-controls="rawToc">☰ 目录</button>
           <span class="sp"></span>
           <span class="lb">原样渲染 HTML</span>
         </div>
@@ -1639,6 +1913,7 @@ function postHTML(p, r){
         </div>
         <iframe class="raw-frame" id="rawFrame" title="${esc(p.title)}" scrolling="auto"></iframe>
       </div>
+      <aside class="raw-toc" id="rawToc" aria-label="文章目录"></aside>
     </div>`;
   }
 
@@ -1738,30 +2013,39 @@ function render(){
   } else {
     document.body.classList.remove("raw-mode");
     document.documentElement.classList.remove("raw-mode");
-    state.tag=""; state.category="";
+    state.topic="";
     let section="home";
-    if(h.startsWith("/tag/")) state.tag=decodeURIComponent(h.slice(5));
-    if(h.startsWith("/category/")) state.category=decodeURIComponent(h.slice(10));
+    if(h.startsWith("/topic/")) state.topic=decodeURIComponent(h.slice(7));
+    else if(h.startsWith("/tag/")) state.topic=decodeURIComponent(h.slice(5));       // 旧「标签」链接兼容
+    else if(h.startsWith("/category/")) state.topic=decodeURIComponent(h.slice(10)); // 旧「分类」链接兼容
     if(h==="/archive")section="archive";
-    else if(h==="/tags")section="tags";
-    else if(h==="/categories")section="categories";
+    else if(h==="/topics")section="topics";
+    else if(h==="/projects")section="projects";
     else if(h==="/about")section="about";
-    app.innerHTML= section==="archive"?archiveHTML():section==="tags"?tagsHTML():section==="categories"?categoriesHTML():section==="about"?aboutHTML():homeHTML();
-    document.title=(section==="home"?cfg.title:{archive:"归档",tags:"标签",categories:"分类",about:"关于"}[section]+" · "+cfg.title);
+    else if(h==="/tags" || h==="/categories"){
+      // 标签页与分类页已合并为话题页，老链接自动落到新页面
+      try{ history.replaceState(null, "", "#/topics"); }catch(e){}
+      section="topics";
+    }
+    app.innerHTML= section==="archive"?archiveHTML():section==="topics"?topicsHTML():section==="projects"?projectsHTML():section==="about"?aboutHTML():homeHTML();
+    document.title=(section==="home"?cfg.title:{archive:"归档",topics:"话题",projects:"项目",about:"关于"}[section]+" · "+cfg.title);
     const md=document.querySelector('meta[name="description"]'); if(md)md.content=cfg.description;
     const og=document.querySelector('meta[property="og:title"]'); if(og)og.content=document.title;
     const ogd=document.querySelector('meta[property="og:description"]'); if(ogd)ogd.content=cfg.description;
     $("#q").value=state.q;
     $("#searchWrap").classList.toggle("has",!!state.q);
     updateActiveNav(section);
+    // 只在首次进入时自动拉取；失败后由「重试」按钮触发，避免无限重试
+    if(section==="projects" && state.reposState === "idle") loadProjects();
   }
 }
-function setTag(t){
-  state.tag = t;
-  location.hash = t ? "#/tag/" + encodeURIComponent(t) : "#/";
+function setTopic(t){
+  state.topic = t || "";
+  location.hash = t ? "#/topic/" + encodeURIComponent(t) : "#/";
   if(!t) render();
 }
-window.setTag = setTag;
+window.setTopic = setTopic;
+window.setTag = setTopic; // 兼容旧链接里可能的调用
 window.refresh = refresh;
 
 /* 注入作者自带样式（带作用域） */
@@ -1821,7 +2105,7 @@ function mountRawFrame(p){
   if(!fr) return;
   const built = buildRawDoc(p);
   applyFrameHeight();
-  fr.onload = () => { try{ applyFrameHeight(); }catch(e){} };
+  fr.onload = () => { try{ applyFrameHeight(); }catch(e){} buildRawToc(); };
   fr.srcdoc = injectHelper(built.html, built.alt);
 }
 window.addEventListener("message", e => {
@@ -1832,6 +2116,82 @@ window.addEventListener("message", e => {
   try{ fr.contentWindow.scrollTo({top: Math.max(0, d.y), behavior:"smooth"}); }catch(err){}
 });
 window.addEventListener("resize", applyFrameHeight);
+
+/* ---------- HTML 原样阅读页目录 ----------
+   iframe 里的标题无法用常规方式取到，这里在 srcdoc 加载完成后读取同域文档，
+   生成一份「浮层目录」：position:fixed，不进入布局流，正文宽度完全不变。 */
+function toggleRawToc(force){
+  const panel = $("#rawToc");
+  if(!panel) return;
+  const btn = $("#rawTocBtn");
+  const on = force === undefined ? !panel.classList.contains("on") : !!force;
+  panel.classList.toggle("on", on);
+  if(btn){
+    btn.classList.toggle("on", on);
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.textContent = on ? "✕ 目录" : "☰ 目录";
+  }
+}
+function rawFrameCtx(){
+  const fr = $("#rawFrame");
+  try{ return fr && fr.contentDocument && fr.contentWindow ? {doc:fr.contentDocument, win:fr.contentWindow} : null; }
+  catch(e){ return null; }
+}
+function scrollRawTo(id){
+  const ctx = rawFrameCtx();
+  if(!ctx) return;
+  const el = ctx.doc.getElementById(id);
+  if(!el) return;
+  const y = el.getBoundingClientRect().top + (ctx.win.pageYOffset || ctx.doc.documentElement.scrollTop || 0) - 16;
+  try{ ctx.win.scrollTo({top:Math.max(0, y), behavior:"smooth"}); }
+  catch(e){ ctx.win.scrollTo(0, Math.max(0, y)); }
+}
+function onRawScroll(){
+  const ctx = rawFrameCtx();
+  const panel = $("#rawToc");
+  if(!ctx || !panel) return;
+  const links = [...panel.querySelectorAll("a")];
+  if(!links.length) return;
+  let active = links[0].dataset.id;
+  links.forEach(a => {
+    const el = ctx.doc.getElementById(a.dataset.id);
+    if(el && el.getBoundingClientRect().top <= 110) active = a.dataset.id;
+  });
+  links.forEach(a => a.classList.toggle("on", a.dataset.id === active));
+}
+function buildRawToc(){
+  const panel = $("#rawToc");
+  if(!panel) return;
+  panel.innerHTML = "";
+  panel.classList.remove("on");
+  const btn = $("#rawTocBtn");
+  const ctx = rawFrameCtx();
+  if(!ctx){
+    panel.innerHTML = '<div class="none">目录需要同域渲染才能读取，也可以点击「独立页面打开」阅读全文。</div>';
+    if(btn){ btn.disabled = true; btn.textContent = "☰ 目录"; }
+    return;
+  }
+  const hs = [...ctx.doc.querySelectorAll("h1,h2,h3")].filter(el => (el.textContent || "").trim());
+  if(hs.length < 2){
+    panel.innerHTML = '<div class="none">这篇文章里没有可提取的小标题。</div>';
+    if(btn){ btn.disabled = true; btn.textContent = "无目录"; }
+    return;
+  }
+  const items = hs.map((el, i) => {
+    if(!el.id) el.id = "raw-sec-" + i;
+    return {id:el.id, level:Number(el.tagName.slice(1)) || 2, text:(el.textContent || "").trim().slice(0, 60)};
+  });
+  panel.innerHTML = '<div class="t">目录 <button type="button" data-raw-toc-close="true" aria-label="关闭目录">×</button></div>' +
+    items.map(it => `<a href="#${esc(it.id)}" data-id="${esc(it.id)}" class="lv${it.level}" title="${esc(it.text)}">${esc(it.text)}</a>`).join("");
+  panel.querySelectorAll("a").forEach(a => { a.onclick = e => { e.preventDefault(); scrollRawTo(a.dataset.id); }; });
+  const close = panel.querySelector("[data-raw-toc-close]");
+  if(close) close.onclick = () => toggleRawToc(false);
+  if(btn){ btn.disabled = false; btn.textContent = "☰ 目录"; }
+  // 宽屏默认展开；窄屏收起，由按钮控制
+  toggleRawToc(window.innerWidth >= 1200);
+  try{ ctx.win.addEventListener("scroll", onRawScroll, {passive:true}); }catch(e){}
+  onRawScroll();
+}
 
 function afterPost(p){
   // 原始 HTML：整篇塞进 iframe，自带样式/脚本/布局全部原样生效
@@ -1940,7 +2300,7 @@ function initUI(){
   $("#app").addEventListener('click',e=>{
     const clear=e.target.closest('[data-clear]');
     if(clear){
-      state.q='';state.tag='';state.category='';state.visible=6;
+      state.q='';state.topic='';state.visible=6;
       $('#q').value='';$('#searchWrap').classList.remove('has');
       if(location.hash!=='#/')location.hash='#/';else render();return;
     }
@@ -1948,6 +2308,10 @@ function initUI(){
     if(sort){state.sort=sort.dataset.sort; state.visible=6;render();return;}
     const more=e.target.closest('[data-more]');
     if(more){state.visible+=6;render();return;}
+    const rawToc=e.target.closest('[data-raw-toc]');
+    if(rawToc){toggleRawToc();return;}
+    const lang=e.target.closest('[data-lang]');
+    if(lang){state.repoLang=lang.dataset.lang||"";render();return;}
     const font=e.target.closest('[data-font]');
     if(font){
       const n=Math.max(14,Math.min(22,applyReadingSize()+Number(font.dataset.font)));
@@ -1976,7 +2340,7 @@ function initUI(){
     $("#searchWrap").classList.toggle("has", !!v);
     timer = setTimeout(() => {
       state.q = v; state.visible=6;
-      if(location.hash.startsWith("#/p/") || location.hash==="#/archive" || location.hash==="#/tags" || location.hash==="#/categories" || location.hash==="#/about"){
+      if(location.hash.startsWith("#/p/") || location.hash==="#/archive" || location.hash==="#/topics" || location.hash==="#/projects" || location.hash==="#/about"){
         location.hash="#/";
       }else render();
     }, 180);
@@ -2002,6 +2366,9 @@ function initUI(){
 (async function init(){
   initUI();
   await loadConfig();
+  /* 首页精选项目与「项目」页用的仓库列表：与文章索引并行加载，
+     排在渲染器 CDN 之前，避免外部脚本变慢时项目数据迟迟不到位。 */
+  loadProjects();
   const c = readCache();
   if(c){
     cfg.branch = c.branch || cfg.branch;
@@ -2021,6 +2388,7 @@ function initUI(){
   onScroll();
   /* 每 5 分钟从站点自己的索引同步一次；包括删除最后一篇文章的情况。 */
   setInterval(() => { if(!document.hidden) refresh(false); }, 5 * 60 * 1000);
+  setInterval(() => { if(!document.hidden) loadProjects(true); }, 6 * 60 * 60 * 1000);
   document.addEventListener("visibilitychange", () => {
     if(!document.hidden && Date.now() - state.syncedAt > 60000) refresh(false);
   });

@@ -8,5 +8,14 @@
   "branch": "main",
   "blogDir": "blog",
   "pageSize": 50,
-  "footer": "© 2026 khtao · Built with GitHub Pages"
+  "footer": "© 2026 khtao · Built with GitHub Pages",
+  "projects": {
+    "enabled": true,
+    "featured": [],
+    "featuredCount": 4,
+    "exclude": [
+      "khtao.github.io"
+    ],
+    "source": "projects.json"
+  }
 }
