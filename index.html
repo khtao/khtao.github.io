@@ -219,41 +219,30 @@ mark{background:var(--accent-soft);color:var(--accent);border-radius:3px;padding
 [data-theme="dark"] .hljs-attr,[data-theme="dark"] .hljs-params,[data-theme="dark"] .hljs-symbol{color:#e5c07b;}
 [data-theme="dark"] .hljs-built_in,[data-theme="dark"] .hljs-name,[data-theme="dark"] .hljs-tag{color:#e06c75;}
 
-/* ============ 原始 HTML 文章：内联嵌入，作者自带的样式说了算 ============ */
+/* ============ 原始 HTML 文章：iframe 原样渲染 ============ */
+.post-layout.raw{grid-template-columns:minmax(0,1fr);gap:0;max-width:var(--post-width);padding:14px var(--post-pad-x) 30px;}
+.post-layout.raw .post-main{max-width:none;}
+.raw-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 0 12px;}
+.raw-head .sp{flex:1;}
+.raw-head .lb{font-size:11px;letter-spacing:1.4px;font-weight:700;color:var(--fg-soft);
+  background:var(--bg-soft);border:1px solid var(--line);padding:3px 9px;border-radius:99px;}
 .btn-s{padding:6px 12px;border-radius:9px;border:1px solid var(--line);background:var(--bg);
   color:var(--fg-mid);font-size:12.5px;font-weight:600;transition:.16s;white-space:nowrap;}
 .btn-s:hover{border-color:var(--accent);color:var(--accent);}
 .btn-s.on{background:var(--accent);border-color:var(--accent);color:#fff;}
 [data-theme="dark"] .btn-s.on{color:#0e1117;}
-.raw-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:2px 0 0;}
-.raw-head .sp{flex:1;}
-.raw-head .lb{font-size:11px;letter-spacing:1.2px;font-weight:700;color:var(--fg-soft);
-  background:var(--bg-soft);border:1px solid var(--line);padding:3px 9px;border-radius:99px;}
-/* 兜底排版：只在作者没写样式时生效 —— 作者 CSS 由 injectStyle 注入在最后，天然覆盖这里 */
-/* 但正文容器本身永远随内容撑开：高度自动、不裁切、不产生内置滚动条 */
-.md.md-raw{min-height:40vh;height:auto;max-height:none;overflow:visible;}
-.md-raw h1,.md-raw h2,.md-raw h3,.md-raw h4{
-  border:0;padding:0;margin:1.4em 0 .6em;line-height:1.35;font-weight:700;letter-spacing:-.01em;
-}
-.md-raw h1{font-size:1.85em}
-.md-raw h2{font-size:1.45em}
-.md-raw h3{font-size:1.2em}
-.md-raw h4{font-size:1.04em}
-.md-raw p{margin:1em 0}
-.md-raw img,.md-raw video,.md-raw iframe{max-width:100%;height:auto}
-.md-raw a{color:var(--accent)}
-.md-raw hr{margin:2em 0;border:0;height:1px;background:var(--line)}
-.md-raw table{border-collapse:collapse;max-width:100%;font-size:15px}
-.md-raw th,.md-raw td{border:1px solid var(--line);padding:8px 12px;text-align:left}
-.md-raw th{background:var(--bg-soft)}
-.md-raw ul,.md-raw ol{padding-left:1.4em;margin:1em 0}
-.md-raw li{margin:.35em 0}
-.md-raw blockquote{margin:1.2em 0;padding:.3em 0 .3em 16px;border-left:3px solid var(--accent);color:var(--fg-mid)}
-.md-raw pre,.md-raw code,.md-raw kbd,.md-raw samp{font-family:var(--mono)}
-.md-raw pre{overflow-x:auto;background:var(--code-bg);border:1px solid var(--line-soft);
-  border-radius:12px;padding:14px 16px;line-height:1.68}
-.md-raw pre code{background:none;border:0;padding:0}
-.md-raw code{font-size:.88em;background:var(--bg-soft);padding:.16em .4em;border-radius:6px;border:1px solid var(--line-soft)}
+.raw-title{padding:4px 2px 12px;}
+.raw-title h1{font-size:clamp(24px,3.4vw,34px);font-weight:800;letter-spacing:-.028em;line-height:1.3;margin:0;}
+.raw-title .post-meta{margin:10px 0 0;}
+.raw-frame{display:block;width:100%;border:0;background:#fff;border-radius:12px;
+  border:1px solid var(--line-soft);box-shadow:var(--shadow);}
+.raw-tip{font-size:12px;color:var(--fg-soft);padding:10px 2px 0;}
+/* 原样模式：外层不再产生滚动，滚动全部交给文章自己 */
+html.raw-mode,html.raw-mode body{overflow:hidden;height:100%}
+html.raw-mode footer{display:none;}
+html.raw-mode #totop{display:none;}
+html.raw-mode .post-layout.raw{padding-bottom:0;}
+html.raw-mode main{overflow:hidden;}
 
 /* TOC */
 .toc{position:sticky;top:88px;font-size:13.5px;max-height:calc(100vh - 130px);overflow-y:auto;}
@@ -826,6 +815,37 @@ html{scroll-behavior:auto}
   }
 }
 
+/* ===== v6 · HTML 原样阅读页目录（浮层，不占版面、不改变正文宽度） ===== */
+.raw-toc{
+  position:fixed;z-index:120;top:78px;right:16px;width:266px;max-width:calc(100vw - 32px);
+  max-height:calc(100vh - 132px);overflow-y:auto;overscroll-behavior:contain;
+  padding:13px 0 14px;border-radius:14px;border:1px solid var(--line);
+  background:color-mix(in srgb,var(--card) 94%,transparent);
+  backdrop-filter:saturate(180%) blur(12px);-webkit-backdrop-filter:saturate(180%) blur(12px);
+  box-shadow:var(--shadow);opacity:0;transform:translateX(12px);pointer-events:none;
+  transition:opacity .2s ease,transform .2s ease;
+}
+.raw-toc.on{opacity:1;transform:none;pointer-events:auto;}
+.raw-toc::-webkit-scrollbar{width:3px;}
+.raw-toc::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
+.raw-toc .t{display:flex;align-items:center;gap:8px;padding:0 14px 9px;font-size:11.5px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--fg-soft);}
+.raw-toc .t button{margin-left:auto;font-size:15px;line-height:1;color:var(--fg-soft);padding:2px 4px;border-radius:6px;}
+.raw-toc .t button:hover{background:var(--hover-bg);color:var(--fg);}
+.raw-toc a{display:block;padding:5px 14px;font-size:13px;line-height:1.5;color:var(--fg-soft);
+  border-left:2px solid transparent;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:.15s;}
+.raw-toc a:hover{color:var(--fg);background:var(--hover-bg);}
+.raw-toc a.on{color:var(--accent);border-left-color:var(--accent);font-weight:600;}
+.raw-toc a.lv2{padding-left:28px;}
+.raw-toc a.lv3{padding-left:42px;font-size:12.5px;}
+.raw-toc a.lv1{font-weight:600;color:var(--fg-mid);}
+.raw-toc .none{padding:2px 14px 8px;font-size:12.5px;color:var(--fg-soft);line-height:1.7;}
+@media(max-width:900px){
+  .raw-toc{top:auto;bottom:12px;left:12px;right:12px;width:auto;max-height:46vh;
+    transform:translateY(12px);}
+  .raw-toc.on{transform:none;}
+}
+
 /* ===== v6 · 话题页（标签 + 分类合并） ===== */
 .topic-summary{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin:24px 0 6px;font-size:13px;color:var(--fg-soft);}
 .topic-summary strong{color:var(--accent);font-size:15px;}
@@ -878,6 +898,7 @@ html{scroll-behavior:auto}
 .home-projects .feed-heading{padding-top:48px;}
 @media(max-width:560px){
   .proj-grid{grid-template-columns:1fr;}
+  .raw-toc a.lv3{padding-left:34px;}
 }
 
 </style>
@@ -938,7 +959,7 @@ const DEFAULT_CFG = {
   title:"Khtao", subtitle:"记录技术、产品与生活", description:"一个用文字对抗遗忘的地方。",
   author:"khtao", owner:"khtao", repo:"khtao.github.io", branch:"main",
   blogDir:"blog", pageSize:50, notice:"欢迎来访。这里会持续更新笔记和思考。", footer:"© 2026 khtao · Built with GitHub Pages",
-  projects:{enabled:true, featured:[], exclude:["khtao.github.io"], source:"projects.json", refreshMinutes:60, liveRefresh:true}
+  projects:{enabled:true, featured:[], exclude:["khtao.github.io"], source:"projects.json", refreshMinutes:10, liveRefresh:true}
 };
 let cfg = Object.assign({}, DEFAULT_CFG);
 const CACHE_KEY = "khtao_blog_cache_v3";
@@ -1066,122 +1087,52 @@ function rewriteDocAssets(html){
   return {html:"<!DOCTYPE html>\n" + doc.documentElement.outerHTML, alt};
 }
 
-/* 内联嵌入的安全底线：默认去掉脚本与内联事件，javascript: 链接失效。
-   作者确实需要脚本时，在文章元信息里写 scripts: true 才会放行。 */
-function sanitizeRawHtml(html, allowScripts){
-  let out = String(html || "");
-  if(allowScripts) return out;
-  return out
-    .replace(/<script\b[\s\S]*?<\/script>/gi, "")
-    .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
-    .replace(/\b(href|src)\s*=\s*["']\s*javascript:[^"']*["']/gi, '$1="#"');
+/* 组装一篇原始 HTML 文章要塞进 iframe 的完整文档 */
+function buildRawDoc(p){
+  const raw = p.rawHtml || p.body || "";
+  const isFull = /<!doctype\s+html/i.test(raw) || /<html[\s>]/i.test(raw);
+  let doc = raw;
+  if(!isFull){
+    const links = (p.cssLinks || []).map(h => {
+      const rp = relToRepoPath(h);
+      return '<link rel="stylesheet" href="' + (rp ? assetURLs(rp)[0] : h) + '">';
+    });
+    doc = '<!DOCTYPE html>\n<html lang="zh-CN"><head><meta charset="utf-8">' +
+      '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+      '<style>html,body{margin:0;padding:0}body{padding:14px 16px;font-size:16px;line-height:1.75;color:#16181d;' +
+      'font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif}img{max-width:100%}</style>' +
+      (p.styles || []).map(c => "<style>" + c + "</style>").join("") + links.join("") +
+      "</head><body>" + p.body + "</body></html>";
+  }
+  return rewriteDocAssets(doc);
 }
 
-/* ---------- 原始 HTML：内联嵌入（不再是 iframe） ----------
-   把作者自带的 CSS 限定在 .md-raw 作用域内注入，正文直接成为页面 DOM 的一部分：
-   导航、页脚、滚动条、目录都和 Markdown 文章完全一致，不再有「内嵌浏览器」的割裂感。
-   想看 100% 未被加工的效果，仍可用文章页上的「独立页面打开」。 */
-
-/* CSS 花括号配对：返回从 open 处那条规则结束后的下标 */
-function cssBlockEnd(css, open){
-  let depth = 0, i = open, n = css.length, inStr = null;
-  while(i < n){
-    const c = css[i];
-    if(inStr){
-      if(c === "\\") { i += 2; continue; }
-      if(c === inStr) inStr = null;
-      i++; continue;
-    }
-    if(c === '"' || c === "'"){ inStr = c; i++; continue; }
-    if(c === "{") depth++;
-    else if(c === "}"){ depth--; if(depth === 0) return i + 1; }
-    i++;
-  }
-  return n;
+/* 注入 iframe 内部的小助手：图片源回退 / 锚点跳转 / 高度上报 */
+function rawFrameHelper(alt){
+  return "\n<script>(function(){" +
+    "var ALT=" + JSON.stringify(alt || {}) + ";\n" +
+    "document.querySelectorAll('img').forEach(function(im){im.setAttribute('data-raw',im.getAttribute('src')||'');});\n" +
+    "document.addEventListener('error',function(e){var t=e.target;if(!t||t.tagName!=='IMG')return;" +
+      "var key=t.getAttribute('data-raw');var list=ALT[key]||[key];var i=(parseInt(t.getAttribute('data-i')||'0',10)||0)+1;" +
+      "if(i<list.length){t.setAttribute('data-i',i);t.src=list[i];}},true);\n" +
+    "document.addEventListener('click',function(e){var el=e.target;var a=el&&el.closest?el.closest('a[href^=\"#\"]'):null;if(!a)return;" +
+      "var h=a.getAttribute('href')||'';if(h.length<2)return;e.preventDefault();" +
+      "var id=decodeURIComponent(h.slice(1));var t=document.getElementById(id)||document.getElementsByName(id)[0];if(!t)return;" +
+      "var y=t.getBoundingClientRect().top+(window.pageYOffset||document.documentElement.scrollTop||0)-72;" +
+      "try{parent.postMessage({__bf:'scroll',y:y},'*');}catch(err){}} ,true);\n" +
+    "function H(){return Math.max(document.documentElement.scrollHeight||0,(document.body&&document.body.scrollHeight)||0);}" +
+    "var last=0;function send(){var h=Math.ceil(H());if(h&&Math.abs(h-last)>2){last=h;try{parent.postMessage({__bf:'h',h:h},'*');}catch(err){}}}" +
+    "if(window.ResizeObserver){try{new ResizeObserver(send).observe(document.documentElement);}catch(err){}}" +
+    "if(window.MutationObserver){try{new MutationObserver(send).observe(document.documentElement,{childList:true,subtree:true});}catch(err){}}" +
+    "document.addEventListener('DOMContentLoaded',send);window.addEventListener('load',send);" +
+    "[60,200,500,1200,2500,4500].forEach(function(t){setTimeout(send,t);});setInterval(send,1200);" +
+  "})();<\/script>\n";
 }
-/* 给选择器加作用域：html/body/:root 直接换成作用域，其余前置 */
-function scopeSelectors(sel, scope){
-  return sel.split(",").map(s => {
-    s = s.trim();
-    if(!s) return "";
-    if(s.indexOf(scope) === 0) return s;                       // 已经带作用域
-    const m = s.match(/^(html|body|:root)\b([\s\S]*)$/i);
-    if(m) return (scope + (m[2] || "").trim()) || scope;       // html/body/:root → 作用域本身
-    return scope + " " + s;
-  }).filter(Boolean).join(", ");
-}
-/* 按 ; 切分声明，忽略引号与括号里的分号 */
-function splitDecls(decl){
-  const out = []; let buf = "", inStr = null, depth = 0;
-  for(let i = 0; i < decl.length; i++){
-    const c = decl[i];
-    if(inStr){ buf += c; if(c === "\\"){ buf += decl[++i] || ""; continue; } if(c === inStr) inStr = null; continue; }
-    if(c === '"' || c === "'"){ inStr = c; buf += c; continue; }
-    if(c === "("){ depth++; buf += c; continue; }
-    if(c === ")"){ depth--; buf += c; continue; }
-    if(c === ";" && !depth){ out.push(buf); buf = ""; continue; }
-    buf += c;
-  }
-  if(buf.trim()) out.push(buf);
-  return out;
-}
-/* 选择器是否作用在 html / body / :root 上 —— 加作用域后它们会落到 .md-raw 本身 */
-function isRootSelector(sel){
-  return String(sel).split(",").some(s => /^(html|body|:root)\b/i.test(s.trim()));
-}
-/* 去掉会把正文锁成「独立滚动区」的声明：
-   原样 HTML 常见的 html,body{height:100%;overflow:hidden/auto} 一旦加作用域，
-   就变成 .md-raw{height:100%;overflow:hidden} —— 文章被裁掉、还多出一条内置滚动条。
-   这里直接剔除，让正文高度完全由内容决定，滚动统一交给页面。 */
-function neutralizeRoot(decl){
-  return splitDecls(decl).filter(d => {
-    const m = d.match(/^\s*(?:-[a-z]+-)?([a-z-]+)\s*:\s*([\s\S]*)$/i);
-    if(!m) return true;
-    const prop = m[1].toLowerCase(), val = m[2].trim().toLowerCase();
-    if(["height","min-height","max-height"].includes(prop) && /^(100%|100vh|100dvh|100svh)$/.test(val)) return false;
-    if(["overflow","overflow-x","overflow-y"].includes(prop) && /^(hidden|auto|scroll|clip)$/.test(val)) return false;
-    if(prop === "overscroll-behavior" || prop === "overscroll-behavior-y") return false;
-    if(prop === "position" && val === "fixed") return false;
-    return true;
-  }).join(";");
-}
-/* 把一段 CSS 限定到 scope 内：@media 递归，@keyframes/@font-face 原样保留 */
-function scopeCSS(css, scope){
-  css = String(css || "").replace(/\/\*[\s\S]*?\*\//g, "");
-  let out = "", i = 0;
-  const n = css.length;
-  while(i < n){
-    const c = css[i];
-    if(c === "@"){
-      let j = css.indexOf("{", i);
-      const pre = css.slice(i, j < 0 ? n : j).trim();
-      if(/^@(charset|import|namespace)\b/i.test(pre)){        // 跳过：会影响整站
-        if(j < 0) break;
-        i = cssBlockEnd(css, j); continue;
-      }
-      if(/^@(-webkit-)?keyframes|^@font-face|^@page\b/i.test(pre)){
-        if(j < 0) break;
-        const e2 = cssBlockEnd(css, j);
-        out += css.slice(i, e2) + "\n";                         // 名称类规则保持原样
-        i = e2; continue;
-      }
-      if(j < 0) break;
-      const e3 = cssBlockEnd(css, j);
-      out += pre + "{" + scopeCSS(css.slice(j + 1, e3 - 1), scope) + "}";
-      i = e3; continue;
-    }
-    if(c === "}" || c === ";"){ i++; continue; }
-    const j = css.indexOf("{", i);
-    if(j < 0) break;
-    const sel = css.slice(i, j).trim();
-    const e4 = cssBlockEnd(css, j);
-    if(sel){
-      const decls = css.slice(j + 1, e4 - 1);
-      out += scopeSelectors(sel, scope) + "{" + (isRootSelector(sel) ? neutralizeRoot(decls) : decls) + "}";
-    }
-    i = e4;
-  }
-  return out;
+/* 在 </body> 前插入助手脚本 */
+function injectHelper(doc, alt){
+  const helper = rawFrameHelper(alt);
+  if(/<\/body>/i.test(doc)) return doc.replace(/<\/body>/i, helper + "</body>");
+  return doc + helper;
 }
 
 /* ---------- 元信息解析 ---------- */
@@ -1300,11 +1251,11 @@ function parsePost(name, raw, extra){
       });
       body = raw.replace(c[0], "");
     }
-    rawHtml = body;                       // 保留原始文档（「独立页面打开」仍用源文件）
+    rawHtml = body;                       // 原样文档：交给 iframe 完整渲染
     const pick = htmlPick(raw);
     if(!meta.title) meta.title = pick.title || prettyName(base);
     if(!meta.summary) meta.summary = pick.desc || pick.p;
-    // ① 抽出作者自带的 <style>，稍后加作用域注入
+    // ① 抽出作者自带的 <style>（片段型文章用，塞进 iframe 的 head）
     styles.push(...(body.match(/<style\b[^>]*>([\s\S]*?)<\/style>/gi) || []).map(s => s.replace(/^<style[^>]*>|<\/style>$/gi, "")));
     // ② 抽出外链 CSS（相对路径会在渲染时解析成仓库绝对地址再加载）
     (body.match(/<link\b[^>]*>/gi) || []).forEach(m => {
@@ -1316,8 +1267,6 @@ function parsePost(name, raw, extra){
     const bm = body.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
     body = bm ? bm[1] : body.replace(/<\/?(html|head|body|!doctype)[^>]*>/gi, "");
     body = body.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "").trim();
-    // ④ 内联嵌入前的安全清洗（scripts: true 时才放行脚本）
-    body = sanitizeRawHtml(body, String(meta.scripts || "").toLowerCase() === "true");
   } else {
     const r = parseFrontMatter(raw);
     meta = r.fm; body = r.body;
@@ -1559,7 +1508,7 @@ function projectCfg(){
     exclude: Array.isArray(p.exclude) ? p.exclude : [],
     source: String(p.source || "projects.json"),
     // 快照被视为「新鲜」的时长：超过就去 GitHub 重新取，保证改名、改描述后能跟上
-    refreshMinutes: Math.max(1, Math.min(1440, Number(p.refreshMinutes || cfg.projectsRefreshMinutes || 60))),
+    refreshMinutes: Math.max(1, Math.min(1440, Number(p.refreshMinutes || cfg.projectsRefreshMinutes || 10))),
     // 允许浏览器直连 GitHub 公开接口；关掉后只认构建时生成的快照
     live: p.liveRefresh !== false && cfg.projectsLiveRefresh !== false
   };
@@ -1989,7 +1938,7 @@ function topicsHTML(){
   return shellHTML(h);
 }
 function aboutHTML(){
-  const gh=`https://github.com/${encodeURIComponent(cfg.owner)}`;
+  const gh=`https://github.com/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.owner)}.github.io`;
   let h=headingHTML('HELLO / ABOUT','关于这里','写字，是为了让日子留下痕迹。');
   h+=`<div class="about-panel">
     <div class="about-identity"><span class="about-avatar">${esc((cfg.author||'K').slice(0,1).toUpperCase())}</span><div><strong>${esc(cfg.author||cfg.title)}</strong><span>写作者 · 学习者 · 记录者</span></div></div>
@@ -2031,12 +1980,26 @@ function postHTML(p, r){
         <a href="https://github.com/${cfg.owner}/${cfg.repo}/tree/${cfg.branch}/${cfg.blogDir}" target="_blank" rel="noopener">在 GitHub 上读源文件 ↗</a>
       </div>`;
 
-  // 原样 HTML：与 Markdown 用同一套页面骨架（导航/页脚/滚动/目录都一致），
-  // 只是正文带 .md-raw，并额外给出「独立页面打开」这个 100% 原样的出口。
-  const rawTools = p.isHtml ? `<div class="raw-head">
-          <a class="btn-s" href="./${cfg.blogDir}/${encodeURI(p.name).replace(/#/g,"%23").replace(/\?/g,"%3F")}" target="_blank" rel="noopener">↗ 独立页面打开</a>
+  if(p.isHtml){
+    const standalone = `./${cfg.blogDir}/${encodeURI(p.name).replace(/#/g,"%23").replace(/\?/g,"%3F")}`;
+    return `<div class="post-layout raw">
+      <div class="post-main">
+        <div class="raw-head">
+          <a class="back" style="margin:0" href="#/">← 返回</a>
+          <a class="btn-s" href="${standalone}" target="_blank" rel="noopener">↗ 独立页面打开</a>
+          <button type="button" class="btn-s" id="rawTocBtn" data-raw-toc="true" aria-pressed="false" aria-controls="rawToc">☰ 目录</button>
+          <span class="sp"></span>
           <span class="lb">原样渲染 HTML</span>
-        </div>` : "";
+        </div>
+        <div class="raw-title">
+          <h1>${esc(p.title)}</h1>
+          ${metaLine}
+        </div>
+        <iframe class="raw-frame" id="rawFrame" title="${esc(p.title)}" scrolling="auto"></iframe>
+      </div>
+      <aside class="raw-toc" id="rawToc" aria-label="文章目录"></aside>
+    </div>`;
+  }
 
   return `<div class="post-layout">
     <div class="post-main">
@@ -2044,7 +2007,6 @@ function postHTML(p, r){
       <div class="post-head">
         <h1>${esc(p.title)}</h1>
         ${metaLine}
-        ${rawTools}
       </div>
       ${p.cover ? `<div class="post-cover"><img src="${esc(resolveMedia(p.cover))}" alt=""></div>` : ""}
       <div class="post-divider"></div>
@@ -2058,7 +2020,7 @@ function postHTML(p, r){
         </div>
       </div>
       <details class="toc-mobile" id="tocMobile"><summary>本文目录</summary><div class="toc-mobile-links"></div></details>
-      <div class="md${p.isHtml ? " md-raw" : ""}" id="mdBody">${renderBody(p, r)}</div>
+      <div class="md" id="mdBody">${renderBody(p, r)}</div>
       ${relatedHTML(p)}
       ${foot}
     </div>
@@ -2124,6 +2086,8 @@ function render(){
     }
     clearInjected();
     app.innerHTML = postHTML(p, renderers);
+    document.body.classList.toggle("raw-mode", !!p.isHtml);
+    document.documentElement.classList.toggle("raw-mode", !!p.isHtml);
     document.title = p.title + " · " + cfg.title;
     const md=document.querySelector('meta[name="description"]'); if(md)md.content=p.summary||cfg.description;
     const og=document.querySelector('meta[property="og:title"]'); if(og)og.content=p.title+" · "+cfg.title;
@@ -2131,6 +2095,8 @@ function render(){
     updateActiveNav("");
     afterPost(p);
   } else {
+    document.body.classList.remove("raw-mode");
+    document.documentElement.classList.remove("raw-mode");
     state.topic="";
     let section="home";
     if(h.startsWith("/topic/")) state.topic=decodeURIComponent(h.slice(7));
@@ -2208,31 +2174,113 @@ function rewriteAssets(root){
   });
 }
 
-/* 原样 HTML：把作者自带的 CSS 限定在 .md-raw 内注入，避免污染整站主题 */
-function injectRawStyles(p){
-  (p.styles || []).forEach(css => injectStyle(scopeCSS(css, ".md-raw")));
-  (p.cssLinks || []).forEach(href => injectRawLink(href));
+/* ---------- 原始 HTML：iframe 挂载 ----------
+   说明：iframe 固定等于可视区高度，让文章在自己的视口里滚动
+   —— 与独立打开完全一致（sticky 导航、滚动进度条、vh 布局全部正常）。
+   不做「自动撑高」：文章里若有 vh 单位，撑高会让内容变高、陷入死循环。 */
+function applyFrameHeight(){
+  const fr = $("#rawFrame");
+  if(!fr) return;
+  const top = fr.getBoundingClientRect().top + window.scrollY;
+  fr.style.height = Math.max(420, Math.round(window.innerHeight - top - 14)) + "px";
 }
-/* 外链 CSS：优先取回文本再加作用域。
-   直接挂 <link> 的话，作者写的 html,body{height:100%;overflow:hidden}
-   会套住整个站点（页面滚不动、文章被裁成视口高度）。
-   取不回来（跨域或离线）时才退回 <link>，保证样式不丢。 */
-async function injectRawLink(href){
-  const rp = relToRepoPath(href);
-  const url = rp ? assetURLs(rp)[0] : href;
-  if(!url) return;
-  try{
-    const text = await getLocalText(url, 6000);
-    if(text && text.trim()){ injectStyle(scopeCSS(text, ".md-raw")); return; }
-  }catch(e){}
-  const link = document.createElement("link");
-  link.rel = "stylesheet"; link.href = url; link.id = "raw-style-" + (++styleSeq);
-  document.head.appendChild(link);
+function mountRawFrame(p){
+  const fr = $("#rawFrame");
+  if(!fr) return;
+  const built = buildRawDoc(p);
+  applyFrameHeight();
+  fr.onload = () => { try{ applyFrameHeight(); }catch(e){} buildRawToc(); };
+  fr.srcdoc = injectHelper(built.html, built.alt);
+}
+window.addEventListener("message", e => {
+  const d = e.data;
+  if(!d || d.__bf !== "scroll") return;
+  const fr = $("#rawFrame");
+  if(!fr || !fr.contentWindow || e.source !== fr.contentWindow) return;
+  try{ fr.contentWindow.scrollTo({top: Math.max(0, d.y), behavior:"smooth"}); }catch(err){}
+});
+window.addEventListener("resize", applyFrameHeight);
+
+/* ---------- HTML 原样阅读页目录 ----------
+   iframe 里的标题无法用常规方式取到，这里在 srcdoc 加载完成后读取同域文档，
+   生成一份「浮层目录」：position:fixed，不进入布局流，正文宽度完全不变。 */
+function toggleRawToc(force){
+  const panel = $("#rawToc");
+  if(!panel) return;
+  const btn = $("#rawTocBtn");
+  const on = force === undefined ? !panel.classList.contains("on") : !!force;
+  panel.classList.toggle("on", on);
+  if(btn){
+    btn.classList.toggle("on", on);
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.textContent = on ? "✕ 目录" : "☰ 目录";
+  }
+}
+function rawFrameCtx(){
+  const fr = $("#rawFrame");
+  try{ return fr && fr.contentDocument && fr.contentWindow ? {doc:fr.contentDocument, win:fr.contentWindow} : null; }
+  catch(e){ return null; }
+}
+function scrollRawTo(id){
+  const ctx = rawFrameCtx();
+  if(!ctx) return;
+  const el = ctx.doc.getElementById(id);
+  if(!el) return;
+  const y = el.getBoundingClientRect().top + (ctx.win.pageYOffset || ctx.doc.documentElement.scrollTop || 0) - 16;
+  try{ ctx.win.scrollTo({top:Math.max(0, y), behavior:"smooth"}); }
+  catch(e){ ctx.win.scrollTo(0, Math.max(0, y)); }
+}
+function onRawScroll(){
+  const ctx = rawFrameCtx();
+  const panel = $("#rawToc");
+  if(!ctx || !panel) return;
+  const links = [...panel.querySelectorAll("a")];
+  if(!links.length) return;
+  let active = links[0].dataset.id;
+  links.forEach(a => {
+    const el = ctx.doc.getElementById(a.dataset.id);
+    if(el && el.getBoundingClientRect().top <= 110) active = a.dataset.id;
+  });
+  links.forEach(a => a.classList.toggle("on", a.dataset.id === active));
+}
+function buildRawToc(){
+  const panel = $("#rawToc");
+  if(!panel) return;
+  panel.innerHTML = "";
+  panel.classList.remove("on");
+  const btn = $("#rawTocBtn");
+  const ctx = rawFrameCtx();
+  if(!ctx){
+    panel.innerHTML = '<div class="none">这篇的目录读不出来，点「独立页面打开」也能读完。</div>';
+    if(btn){ btn.disabled = true; btn.textContent = "☰ 目录"; }
+    return;
+  }
+  const hs = [...ctx.doc.querySelectorAll("h1,h2,h3")].filter(el => (el.textContent || "").trim());
+  if(hs.length < 2){
+    panel.innerHTML = '<div class="none">这篇没有小标题，顺着往下读就好。</div>';
+    if(btn){ btn.disabled = true; btn.textContent = "无目录"; }
+    return;
+  }
+  const items = hs.map((el, i) => {
+    if(!el.id) el.id = "raw-sec-" + i;
+    return {id:el.id, level:Number(el.tagName.slice(1)) || 2, text:(el.textContent || "").trim().slice(0, 60)};
+  });
+  panel.innerHTML = '<div class="t">目录 <button type="button" data-raw-toc-close="true" aria-label="关闭目录">×</button></div>' +
+    items.map(it => `<a href="#${esc(it.id)}" data-id="${esc(it.id)}" class="lv${it.level}" title="${esc(it.text)}">${esc(it.text)}</a>`).join("");
+  panel.querySelectorAll("a").forEach(a => { a.onclick = e => { e.preventDefault(); scrollRawTo(a.dataset.id); }; });
+  const close = panel.querySelector("[data-raw-toc-close]");
+  if(close) close.onclick = () => toggleRawToc(false);
+  if(btn){ btn.disabled = false; btn.textContent = "☰ 目录"; }
+  // 宽屏默认展开；窄屏收起，由按钮控制
+  toggleRawToc(window.innerWidth >= 1200);
+  try{ ctx.win.addEventListener("scroll", onRawScroll, {passive:true}); }catch(e){}
+  onRawScroll();
 }
 
 function afterPost(p){
+  // 原始 HTML：整篇塞进 iframe，自带样式/脚本/布局全部原样生效
+  if(p.isHtml){ mountRawFrame(p); return; }
   const body = $("#mdBody");
-  if(p.isHtml) injectRawStyles(p);
   // ① 相对路径资源（图片/附件/文章互链）统一以 blog/ 为根解析
   rewriteAssets(body);
   // ② 可选：执行文章内脚本（需在元信息里写 scripts: true）
@@ -2264,9 +2312,9 @@ function afterPost(p){
   body.querySelectorAll("img").forEach(img => {
     img.onclick = () => { const lb = $("#lb"); lb.querySelector("img").src = img.src; lb.classList.add("on"); };
   });
-  // 目录（原样 HTML 里标题常从 h1 起，所以一并纳入）
+  // 目录
   const toc = $("#toc");
-  const hs = body.querySelectorAll(p.isHtml ? "h1,h2,h3" : "h2,h3");
+  const hs = body.querySelectorAll("h2,h3");
   if(hs.length > 1){
     let html = '<div class="t">目录</div>';
     hs.forEach((el, i) => {
@@ -2344,6 +2392,8 @@ function initUI(){
     if(sort){state.sort=sort.dataset.sort; state.visible=6;render();return;}
     const more=e.target.closest('[data-more]');
     if(more){state.visible+=6;render();return;}
+    const rawToc=e.target.closest('[data-raw-toc]');
+    if(rawToc){toggleRawToc();return;}
     const lang=e.target.closest('[data-lang]');
     if(lang){state.repoLang=lang.dataset.lang||"";render();return;}
     const projRefresh=e.target.closest('[data-proj-refresh]');
