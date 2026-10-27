@@ -9,6 +9,18 @@
   "blogDir": "blog",
   "pageSize": 50,
   "footer": "© 2026 khtao · Built with GitHub Pages",
+  "copyright": {
+    "enabled": true,
+    "holder": "khtao",
+    "since": "2026",
+    "license": "CC BY-NC-ND 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-nc-nd/4.0/",
+    "notice": "未经书面许可，禁止全文转载、抓取搬运、AI 训练集收录及商业化二次分发。",
+    "copyAppend": true,
+    "copyMinLength": 40,
+    "blockImages": false
+  },
+  "blockedBots": [],
   "projects": {
     "enabled": true,
     "featured": [],

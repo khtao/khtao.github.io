@@ -256,6 +256,42 @@ def site_url(root: Path) -> str:
     return base if repo.lower() == f'{owner}.github.io'.lower() else base + quote(repo, safe='') + '/'
 
 
+# 未授权的抓取方：生成式 AI 训练抓取 + SEO 数据聚合抓取。
+# 常规搜索引擎（Google/Bing/Baidu）不受影响，仍正常收录。
+BLOCKED_BOTS = [
+    'GPTBot', 'ChatGPT-User', 'Google-Extended', 'anthropic-ai', 'Claude-Web',
+    'ClaudeBot', 'CCBot', 'Bytespider', 'Amazonbot', 'Applebot-Extended',
+    'meta-externalagent', 'Diffbot', 'Omgilibot', 'Omgili', 'PerplexityBot',
+    'cohere-ai', 'ImagesiftBot', 'Webzio-Extended', 'Timpibot',
+    'SemrushBot', 'AhrefsBot', 'MJ12bot', 'DotBot', 'BLEXBot', 'DataForSeoBot',
+]
+
+
+def build_robots(root: Path, base: str, cfg: dict) -> None:
+    """robots.txt: welcome classic search engines, refuse unauthorised scrapers.
+
+    Extra user agents can be appended via config.json -> blockedBots.
+    """
+    extra = cfg.get('blockedBots') or []
+    bots = [str(b).strip() for b in list(BLOCKED_BOTS) + list(extra)]
+    # dict.fromkeys 去重且保持顺序，避免写出重复的 User-agent 段
+    bots = list(dict.fromkeys([b for b in bots if b]))
+    lines = [
+        '# ' + base,
+        '# 常规搜索引擎欢迎收录；未授权的 AI 训练抓取与 SEO 数据抓取请勿访问。',
+        '# 全文转载、抓取搬运与商业化二次分发均需事先书面授权。',
+        '',
+        'User-agent: *',
+        'Allow: /',
+        'Crawl-delay: 10',
+        '',
+    ]
+    for bot in bots:
+        lines += ['User-agent: ' + bot, 'Disallow: /', '']
+    lines += ['Sitemap: ' + base + 'sitemap.xml', '']
+    (root / 'robots.txt').write_text('\n'.join(lines), encoding='utf-8')
+
+
 def build_feeds(root: Path, manifest: dict) -> None:
     """Generate RSS + sitemap for the hash-routed, dependency-free blog.
 
@@ -297,7 +333,7 @@ def build_feeds(root: Path, manifest: dict) -> None:
     # Articles are hash-routed (not separate crawlable URLs).
     ET.indent(urlset,space='  ')
     (root/'sitemap.xml').write_bytes(ET.tostring(urlset,encoding='utf-8',xml_declaration=True))
-    (root/'robots.txt').write_text('User-agent: *\nAllow: /\n\nSitemap: '+base+'sitemap.xml\n',encoding='utf-8')
+    build_robots(root, base, cfg)
 
 
 def main() -> None:

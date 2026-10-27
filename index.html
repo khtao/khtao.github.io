@@ -10,6 +10,15 @@
 <meta property="og:title" content="Khtao · Blog">
 <meta property="og:description" content="一个用文字对抗遗忘的地方。">
 <link rel="alternate" type="application/rss+xml" title="Khtao Blog RSS" href="./feed.xml">
+<!-- 渲染器已本地化：提前预取，首屏不再依赖境外 CDN 的往返 -->
+<link rel="preload" href="./assets/vendor/marked.min.js" as="script">
+<!-- 版权与抓取策略：声明式，便于搜索引擎与聚合平台识别 -->
+<meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large">
+<meta name="copyright" content="© khtao · 未经许可不得转载">
+<link rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Blog","name":"Khtao","author":{"@type":"Person","name":"khtao","url":"https://github.com/khtao"},"license":"https://creativecommons.org/licenses/by-nc-nd/4.0/","inLanguage":"zh-CN","isAccessibleForFree":true}
+</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%234a5bd6'/%3E%3Ctext x='50' y='68' font-size='56' font-family='sans-serif' font-weight='700' fill='white' text-anchor='middle'%3EK%3C/text%3E%3C/svg%3E">
 <style>
 /* ============ 设计变量 ============ */
@@ -670,6 +679,42 @@ html{scroll-behavior:auto}
 .clear-filters:hover{text-decoration:underline}
 .footer-actions{display:flex;gap:20px;flex-wrap:wrap}
 .footer-actions a:hover{color:var(--accent)}
+
+/* ============ 版权声明 ============ */
+.foot-cr{display:flex;flex-direction:column;gap:4px}
+.foot-legal{font-size:12.5px;color:var(--fg-soft);line-height:1.6}
+.foot-legal a{color:var(--fg-mid);border-bottom:1px dashed var(--line)}
+.foot-legal a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+.foot-legal strong{color:var(--fg-mid);font-weight:600}
+.cr-line{margin-top:8px;font-size:12px;color:var(--fg-soft);opacity:.85}
+.cr-box{
+  margin:34px 0 0;padding:16px 18px;border-radius:var(--radius);
+  border:1px solid var(--line);border-left:3px solid var(--accent);
+  background:var(--bg-soft);font-size:13px;line-height:1.75;
+}
+.cr-head{display:flex;align-items:center;gap:7px;color:var(--fg-mid);font-size:13px}
+.cr-head svg{fill:var(--accent);flex:none}
+.cr-head strong{font-weight:700;letter-spacing:.02em}
+.cr-tag{
+  margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+  background:var(--accent-soft);color:var(--accent);font-weight:600;letter-spacing:.02em;
+}
+.cr-meta{margin:12px 0 0;display:grid;gap:6px}
+.cr-meta>div{display:grid;grid-template-columns:52px 1fr;gap:10px;align-items:baseline}
+.cr-meta dt{margin:0;font-size:12px;color:var(--fg-soft)}
+.cr-meta dd{margin:0;color:var(--fg-mid);word-break:break-all}
+.cr-meta dd a{color:var(--accent);border-bottom:1px solid transparent}
+.cr-meta dd a:hover{border-bottom-color:var(--accent)}
+.cr-notice{margin:12px 0 0;padding-top:11px;border-top:1px dashed var(--line);color:var(--fg-soft);font-size:12.5px}
+.cr-toast{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:80;
+  background:var(--fg);color:var(--bg);padding:9px 18px;border-radius:999px;
+  font-size:13px;box-shadow:var(--shadow);pointer-events:none;
+  opacity:0;transition:opacity .2s ease;
+}
+@media (max-width:640px){
+  .cr-meta>div{grid-template-columns:44px 1fr}
+}
 .reading-tools{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0 20px;margin-bottom:10px;border-bottom:1px solid var(--line-soft)}
 .reading-label{display:flex;align-items:center;gap:7px;color:var(--fg-soft);font-size:11px;letter-spacing:.08em}
 .reading-dot{width:5px;height:5px;border-radius:50%;background:var(--accent)}
@@ -921,7 +966,10 @@ html{scroll-behavior:auto}
 <main id="app"><div class="wrap"><div class="skel" style="margin-top:40px"><i style="width:38%"></i></div></div></main>
 
 <footer><div class="foot">
-  <span id="footText">© 2026 khtao · Built with GitHub Pages</span>
+  <div class="foot-cr">
+    <span id="footText">© 2026 khtao · Built with GitHub Pages</span>
+    <span class="foot-legal" id="footLegal"></span>
+  </div>
   <div class="footer-actions"><a href="./feed.xml" title="订阅博客 RSS">RSS 订阅 ↗</a><a id="footGithub" href="https://github.com/khtao/khtao.github.io" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div>
 </div></footer>
 
@@ -945,7 +993,20 @@ const DEFAULT_CFG = {
   title:"Khtao", subtitle:"记录技术、产品与生活", description:"一个用文字对抗遗忘的地方。",
   author:"khtao", owner:"khtao", repo:"khtao.github.io", branch:"main",
   blogDir:"blog", pageSize:50, notice:"欢迎来访。这里会持续更新笔记和思考。", footer:"© 2026 khtao · Built with GitHub Pages",
-  projects:{enabled:true, featured:[], exclude:["khtao.github.io"], source:"projects.json", refreshMinutes:60, liveRefresh:true}
+  projects:{enabled:true, featured:[], exclude:["khtao.github.io"], source:"projects.json", refreshMinutes:60, liveRefresh:true},
+  // 版权声明：所有文案都可在 config.json 里覆盖，关掉只需 enabled:false
+  copyright:{
+    enabled:true,
+    holder:"",                 // 留空则用 author
+    since:"",                  // 起始年份，留空则用当前年
+    license:"CC BY-NC-ND 4.0",
+    licenseUrl:"https://creativecommons.org/licenses/by-nc-nd/4.0/",
+    notice:"未经书面许可，禁止全文转载、抓取搬运、AI 训练集收录及商业化二次分发。",
+    // 复制正文时自动追加出处（摘引不受影响：少于阈值不追加）
+    copyAppend:true,
+    copyMinLength:40,
+    blockImages:false          // true = 屏蔽图片右键另存（默认关，避免误伤正常读者）
+  }
 };
 let cfg = Object.assign({}, DEFAULT_CFG);
 const CACHE_KEY = "khtao_blog_cache_v3";
@@ -964,11 +1025,13 @@ const safeStore = {
   get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
   set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 };
-async function getLocalText(url, timeout=10000){
+async function getLocalText(url, timeout=10000, cache="no-store"){
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), timeout);
   try{
-    const r = await fetch(url, {signal:ctl.signal, cache:"no-store"});
+    // cache 由调用方决定：索引要绝对新鲜（no-store），文章正文带 sha 版本号、
+    // 内容不变时走 HTTP 缓存，回访不必把整篇文章重新下载一遍。
+    const r = await fetch(url, {signal:ctl.signal, cache});
     if(!r.ok) throw new Error("HTTP_"+r.status);
     return await r.text();
   } finally { clearTimeout(timer); }
@@ -995,6 +1058,12 @@ async function loadConfig(){
   const b = $(".brand");
   if(b) b.innerHTML = `<span class="brand-icon" aria-hidden="true">✦</span>${esc(cfg.title)}<small>Notes</small>`;
   $("#footText").textContent = cfg.footer;
+  const fl = $("#footLegal");
+  if(fl){
+    const c = crCfg();
+    fl.innerHTML = (c.enabled === false) ? "" :
+      `本博客内容除特别声明外均采用 <a href="${esc(c.licenseUrl)}" target="_blank" rel="noopener">${esc(c.license)}</a> 许可 · <strong>未经许可不得转载</strong>`;
+  }
   const gh = $("#footGithub");
   if(gh) gh.href = `https://github.com/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}`;
   // 项目页可以在 config.json 里整体关闭：关闭时导航入口一并隐藏
@@ -1240,23 +1309,58 @@ function parsePost(name, raw, extra){
 }
 
 /* ---------- Markdown 渲染（marked 优先，内置解析器兜底） ---------- */
-function loadScript(src){
+function loadScript(src, timeout=6000){
   return new Promise(res => {
     const s = document.createElement("script");
     s.src = src; s.async = true;
-    s.onload = () => res(true);
-    s.onerror = () => res(false);
-    setTimeout(() => res(false), 6000);
+    let done = false;
+    const finish = v => { if(!done){ done = true; res(v); } };
+    s.onload = () => finish(true);
+    s.onerror = () => finish(false);
+    setTimeout(() => finish(false), timeout);
     document.head.appendChild(s);
   });
 }
+/* 依次尝试若干来源，取第一个加载成功的。本地 vendor 命中时通常 <100ms。 */
+async function loadFirst(srcs, timeout){
+  for(const src of srcs){
+    if(await loadScript(src, timeout)) return src;
+  }
+  return null;
+}
+/* 渲染器来源：本地 vendor 优先，jsDelivr 仅作兜底。
+   原实现每页都等两个境外 CDN 脚本（最坏 6s 超时），期间文章只能用内置的
+   降级 Markdown 解析器渲染、脚本到位后再整页重绘一次 —— 国内网络下这段
+   “降级 → 重绘”的抖动几乎是常态。本地化后渲染链路不再依赖境外网络。 */
+const VENDOR_SRC = {
+  marked: "./assets/vendor/marked.min.js",
+  hljs:   "./assets/vendor/highlight.min.js"
+};
+const CDN_SRC = {
+  marked: "https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js",
+  hljs:   "https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/highlight.min.js"
+};
+/* 代码高亮是增强项而非渲染前提：122KB 的 highlight.js 不该挤占首屏带宽。
+   先只取 marked 保证文章能渲染，高亮留到浏览器空闲时再补。 */
+function loadHLJSWhenIdle(){
+  const run = async () => {
+    const b = await loadFirst([VENDOR_SRC.hljs, CDN_SRC.hljs], 6000);
+    if(!(b && window.hljs)) return;
+    renderers.hljs = true;
+    // 补高亮当前已经渲染出来的代码块（首屏那次渲染时它可能还没到位）
+    document.querySelectorAll("#mdBody pre code, .md pre code").forEach(code => {
+      try{ window.hljs.highlightElement(code); }catch(e){}
+    });
+  };
+  if(typeof requestIdleCallback === "function") requestIdleCallback(() => run(), {timeout:3000});
+  else setTimeout(run, 1200);
+}
 async function ensureRenderers(){
-  const [a,b] = await Promise.all([
-    loadScript("https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"),
-    loadScript("https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/highlight.min.js")
-  ]);
+  const a = await loadFirst([VENDOR_SRC.marked, CDN_SRC.marked], 4000);
   if(a && window.marked){ window.marked.setOptions({gfm:true, breaks:false}); }
-  return {marked: a && window.marked, hljs: b && window.hljs};
+  renderers.marked = !!(a && window.marked);
+  loadHLJSWhenIdle();
+  return renderers;   // 同一对象引用：高亮就绪后 .hljs 会自动变为 true
 }
 function mdFallback(src){
   const blocks = [];
@@ -1403,7 +1507,8 @@ async function refresh(force=false){
   let failed=0;
   await pool(out.filter(p=>p._need),4,async p=>{
     try{
-      const raw=await getLocalText(localRepoUrl(p.path)+"?v="+encodeURIComponent(p.sha||Date.now()),10000);
+      // URL 带 sha：文章一改 URL 就变，旧缓存自然失效，因此可以安全复用。
+      const raw=await getLocalText(localRepoUrl(p.path)+"?v="+encodeURIComponent(p.sha||Date.now()),10000,"default");
       Object.assign(p,parsePost(p.name,raw,p._meta));
       delete p._need;
     }catch(e){
@@ -1896,6 +2001,93 @@ function relatedHTML(p){
   if(!newer && !older)return '';
   return `<nav class="post-related" aria-label="相邻文章">${newer?`<a href="${postURL(newer)}"><small>← 更新的一篇</small><strong>${esc(newer.title)}</strong></a>`:'<span></span>'}${older?`<a href="${postURL(older)}"><small>更早的一篇 →</small><strong>${esc(older.title)}</strong></a>`:'<span></span>'}</nav>`;
 }
+/* ---------- 版权声明 ----------
+   三层：页脚常驻（全站）+ 文末声明框（每篇）+ 复制时自动追加出处。
+   文案、许可协议、是否拦截图片右键都可在 config.json 的 copyright 段里改。 */
+function crCfg(){
+  const c = Object.assign({}, DEFAULT_CFG.copyright, cfg.copyright || {});
+  if(!c.holder) c.holder = cfg.author || cfg.title;
+  if(!c.since) c.since = String(new Date().getFullYear());
+  return c;
+}
+function crYears(c){
+  const now = new Date().getFullYear();
+  const s = parseInt(c.since, 10);
+  return (s && s < now && now - s < 100) ? (s + "–" + now) : String(now);
+}
+function postURL(p){
+  return location.origin + location.pathname + "#/p/" + encodeURIComponent(p.name);
+}
+/* 文末完整声明框 */
+function copyrightHTML(p){
+  const c = crCfg();
+  if(c.enabled === false) return "";
+  const url = postURL(p);
+  return `<section class="cr-box" aria-label="版权声明">
+    <div class="cr-head">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 1.6a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8z"/></svg>
+      <strong>版权声明</strong>
+      <span class="cr-tag">${esc(c.license)}</span>
+    </div>
+    <dl class="cr-meta">
+      <div><dt>作者</dt><dd>${esc(c.holder)}</dd></div>
+      <div><dt>标题</dt><dd>${esc(p.title)}</dd></div>
+      <div><dt>原文</dt><dd><a href="${esc(url)}">${esc(url)}</a></dd></div>
+      <div><dt>许可</dt><dd><a href="${esc(c.licenseUrl)}" target="_blank" rel="noopener">${esc(c.license)}</a></dd></div>
+    </dl>
+    <p class="cr-notice">${esc(c.notice)} 合理引用请保留作者署名与原文链接。</p>
+  </section>`;
+}
+/* 标题下的单行提示：不打断阅读，但一眼可见 */
+function copyrightLine(p){
+  const c = crCfg();
+  if(c.enabled === false) return "";
+  return `<div class="cr-line">© ${esc(crYears(c))} ${esc(c.holder)} · 未经许可不得转载</div>`;
+}
+/* 自足的轻提示：不依赖页面里其他 toast 实现的定义顺序 */
+let crToastTimer;
+function crToast(msg){
+  let el = document.getElementById("crToast");
+  if(!el){
+    el = document.createElement("div");
+    el.id = "crToast"; el.className = "cr-toast";
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.opacity = "1";
+  clearTimeout(crToastTimer);
+  crToastTimer = setTimeout(() => { el.style.opacity = "0"; }, 2200);
+}
+/* 复制正文时自动带上出处；短摘引不受影响 */
+function initCopyrightGuard(){
+  document.addEventListener("copy", e => {
+    const c = crCfg();
+    if(c.enabled === false || c.copyAppend === false) return;
+    const sel = String(window.getSelection() || "").trim();
+    if(sel.length < (parseInt(c.copyMinLength, 10) || 40)) return;
+    const link = location.href;
+    const name = "";
+    let tail = "\n\n—— 摘自《" + (document.title.split(" · ")[0] || cfg.title) + "》\n" + link;
+    if(c.notice) tail += "\n（" + c.notice + "）";
+    try{
+      if(e.clipboardData){
+        e.clipboardData.setData("text/plain", sel + tail);
+        e.preventDefault();
+      }
+    }catch(err){ /* 浏览器不允许改写剪贴板时静默放行 */ }
+  });
+  // 可选：屏蔽图片右键另存（默认关闭，避免误伤正常读者）
+  document.addEventListener("contextmenu", e => {
+    const c = crCfg();
+    if(c.enabled === false || !c.blockImages) return;
+    const t = e.target;
+    if(t && t.tagName === "IMG"){
+      e.preventDefault();
+      crToast("图片受版权保护，请勿另存或二次分发");
+    }
+  });
+}
+
 function postHTML(p, r){
   const mins = Math.max(1, Math.round(p.words / 400));
   const metaLine = `<div class="post-meta">
@@ -1923,10 +2115,11 @@ function postHTML(p, r){
           <span class="sp"></span>
           <span class="lb">原样渲染 HTML</span>
         </div>
-        <div class="raw-title"><h1>${esc(p.title)}</h1>${metaLine}</div>
+        <div class="raw-title"><h1>${esc(p.title)}</h1>${metaLine}${copyrightLine(p)}</div>
         <iframe id="rawFrame" class="raw-frame" src="${src}" scrolling="no"
           title="${esc(p.title)}" loading="eager" referrerpolicy="no-referrer"></iframe>
         <p class="raw-tip">这页按作者原样渲染。若你的浏览器禁用了同源 iframe，可点上方「独立页面打开」。</p>
+        ${copyrightHTML(p)}
         ${relatedHTML(p)}
         ${foot}
       </div>
@@ -1940,6 +2133,7 @@ function postHTML(p, r){
       <div class="post-head">
         <h1>${esc(p.title)}</h1>
         ${metaLine}
+        ${copyrightLine(p)}
       </div>
       ${p.cover ? `<div class="post-cover"><img src="${esc(resolveMedia(p.cover))}" alt=""></div>` : ""}
       <div class="post-divider"></div>
@@ -1954,6 +2148,7 @@ function postHTML(p, r){
       </div>
       <details class="toc-mobile" id="tocMobile"><summary>本文目录</summary><div class="toc-mobile-links"></div></details>
       <div class="md" id="mdBody">${renderBody(p, r)}</div>
+      ${copyrightHTML(p)}
       ${relatedHTML(p)}
       ${foot}
     </div>
@@ -2296,12 +2491,59 @@ function initRawFrame(){
     freezeViewportUnits(d, window.innerHeight || 900);
     watchFrameHeight(fr, d);
     fixFrameLinks(d);
+    fixFrameImages(d);
     buildRawToc(d, fr);
   };
   fr.addEventListener("load", setup);
   // 已经缓存好的 iframe 不会再触发 load，这里直接补一次
   if(fr.contentDocument && fr.contentDocument.readyState === "complete") setup();
   else setTimeout(() => { if(fr.contentDocument && fr.contentDocument.readyState === "complete") setup(); }, 400);
+}
+
+/* ---------- 图片体积治理：WebP 升级 + 原生懒加载 ----------
+   一篇 50 图的游记原本要在首屏拉取 ~11MB 原图。两件事把首屏降到几百 KB：
+   ① 构建期脚本生成 .webp 孪生文件，浏览器支持就换用（不支持/缺失自动回退原图）；
+   ② 给每张图补 loading="lazy"，视口外的图不进网络队列。
+   iframe 内的原样 HTML 文章走同一套逻辑（见 fixFrameImages）。 */
+let WEBP_OK = null;
+function webpSupported(){
+  if(WEBP_OK !== null) return WEBP_OK;
+  try{
+    const c = document.createElement("canvas");
+    c.width = c.height = 1;
+    WEBP_OK = c.toDataURL("image/webp").indexOf("data:image/webp") === 0;
+  }catch(e){ WEBP_OK = false; }
+  return WEBP_OK;
+}
+function tuneImage(img, eager){
+  if(!img || img.dataset.mediaTuned) return;
+  img.dataset.mediaTuned = "1";
+  // 首屏几张立刻加载，其余交给浏览器原生的视口判定。
+  img.setAttribute("loading", eager ? "eager" : "lazy");
+  img.setAttribute("decoding", "async");
+  if(eager) img.setAttribute("fetchpriority", "high");
+  const src = img.getAttribute("src") || "";
+  if(!/\.(jpe?g|png)$/i.test(src) || !webpSupported()) return;
+  const webp = src.replace(/\.(jpe?g|png)$/i, ".webp");
+  // WebP 缺失（例如本地预览时没跑过优化脚本）就回退到原图，不会裂图。
+  img.addEventListener("error", function onerr(){
+    img.removeEventListener("error", onerr);
+    if(img.getAttribute("src") !== src) img.setAttribute("src", src);
+  });
+  img.setAttribute("src", webp);
+}
+/* 文章正文/封面：前 2 张立即加载，其余懒加载 */
+function tuneBodyImages(scope, eagerCount){
+  if(!scope) return;
+  const imgs = scope.querySelectorAll("img");
+  imgs.forEach((img, i) => tuneImage(img, i < (eagerCount || 0)));
+}
+/* 原样 HTML 在 iframe 里渲染，拿不到父页的 body，单独处理一次 */
+function fixFrameImages(d){
+  if(!d) return;
+  try{
+    d.querySelectorAll("img").forEach((img, i) => tuneImage(img, i < 2));
+  }catch(e){}
 }
 
 function afterPost(p){
@@ -2338,7 +2580,8 @@ function afterPost(p){
   });
   // 外链新窗口
   body.querySelectorAll("a[href^=http]").forEach(a => { a.target = "_blank"; a.rel = "noopener"; });
-  // 图片灯箱
+  // 图片灯箱（先做体积治理，再绑定交互）
+  tuneBodyImages(body, 2);
   body.querySelectorAll("img").forEach(img => {
     img.onclick = () => { const lb = $("#lb"); lb.querySelector("img").src = img.src; lb.classList.add("on"); };
   });
@@ -2498,10 +2741,11 @@ function initUI(){
     state.generated = c.generated || "";
     render();
   }
+  initCopyrightGuard();
   // 首屏索引同步不受外部 Markdown 高亮 CDN 影响。
   const renderersPending = ensureRenderers();
   await refresh(false);
-  renderers = await renderersPending;
+  await renderersPending;   // renderers 是同一引用，高亮就绪后自动生效
   if(location.hash.startsWith("#/p/")) render();
   onScroll();
   /* 每 5 分钟从站点自己的索引同步一次；包括删除最后一篇文章的情况。 */
