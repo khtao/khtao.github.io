@@ -2015,14 +2015,25 @@ function crYears(c){
   const s = parseInt(c.since, 10);
   return (s && s < now && now - s < 100) ? (s + "–" + now) : String(now);
 }
-function postURL(p){
+/* 绝对地址只用于版权声明与复制溯源，页面内导航继续用 postURL() 的相对哈希路由。
+   （这里不能叫 postURL：同名函数声明会被提升覆盖，把全站链接都改成绝对地址） */
+function postAbsoluteURL(p){
   return location.origin + location.pathname + "#/p/" + encodeURIComponent(p.name);
+}
+/* URL 里中文必须是 %XX 编码，但给人看的文字要还原成中文。
+   解码失败（文件名里本就含 %）时原样返回，绝不抛错。 */
+function prettyURL(url){
+  try{
+    const d = decodeURIComponent(url);
+    // 只信“没有残留 %XX”的结果，避免二次解码把合法内容弄坏
+    return /%[0-9A-Fa-f]{2}/.test(d) ? url : d;
+  }catch(e){ return url; }
 }
 /* 文末完整声明框 */
 function copyrightHTML(p){
   const c = crCfg();
   if(c.enabled === false) return "";
-  const url = postURL(p);
+  const url = postAbsoluteURL(p);
   return `<section class="cr-box" aria-label="版权声明">
     <div class="cr-head">
       <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 1.6a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8z"/></svg>
@@ -2032,7 +2043,7 @@ function copyrightHTML(p){
     <dl class="cr-meta">
       <div><dt>作者</dt><dd>${esc(c.holder)}</dd></div>
       <div><dt>标题</dt><dd>${esc(p.title)}</dd></div>
-      <div><dt>原文</dt><dd><a href="${esc(url)}">${esc(url)}</a></dd></div>
+      <div><dt>原文</dt><dd><a href="${esc(url)}">${esc(prettyURL(url))}</a></dd></div>
       <div><dt>许可</dt><dd><a href="${esc(c.licenseUrl)}" target="_blank" rel="noopener">${esc(c.license)}</a></dd></div>
     </dl>
     <p class="cr-notice">${esc(c.notice)} 合理引用请保留作者署名与原文链接。</p>
@@ -2065,8 +2076,8 @@ function initCopyrightGuard(){
     if(c.enabled === false || c.copyAppend === false) return;
     const sel = String(window.getSelection() || "").trim();
     if(sel.length < (parseInt(c.copyMinLength, 10) || 40)) return;
-    const link = location.href;
-    const name = "";
+    // 粘贴出去是给人看的：中文还原显示，读起来才像一条出处
+    const link = prettyURL(location.href);
     let tail = "\n\n—— 摘自《" + (document.title.split(" · ")[0] || cfg.title) + "》\n" + link;
     if(c.notice) tail += "\n（" + c.notice + "）";
     try{
@@ -2679,7 +2690,8 @@ function initUI(){
       safeStore.set('khtao_reading_size',String(n));applyReadingSize(n);showToast('正文字号 '+n+'px');return;
     }
     if(e.target.closest('[data-share]')){
-      const text=window.location.href;
+      // 中文还原，粘出去能直接看懂；粘贴到浏览器地址栏照样能打开
+      const text=prettyURL(window.location.href);
       if(navigator.clipboard && navigator.clipboard.writeText){
         navigator.clipboard.writeText(text).then(()=>showToast('文章链接已复制')).catch(()=>showToast('复制失败，请使用浏览器地址栏复制'));
       }else showToast('可从浏览器地址栏复制文章链接');
