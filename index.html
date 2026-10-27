@@ -863,7 +863,12 @@ html{scroll-behavior:auto}
 
 /* ===== v6 · GitHub 项目页 ===== */
 .proj-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:22px 0 6px;}
-.proj-toolbar .chip{background:var(--paper);}
+.proj-toolbar .chip{background:var(--paper);border-color:var(--line);}
+.proj-toolbar .chip:hover{border-color:var(--accent);color:var(--accent);}
+/* 选中态必须显式覆盖上面的底色，否则会出现白底白字 */
+.proj-toolbar .chip.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;}
+[data-theme="dark"] .proj-toolbar .chip.on{background:var(--accent);border-color:var(--accent);color:#0e1117;}
+.proj-toolbar .chip.on .n{opacity:.75;}
 .proj-stats{font-size:13px;color:var(--fg-soft);margin:20px 0 0;}
 .proj-stats strong{color:var(--accent);}
 .proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:14px;margin:20px 0 40px;}
@@ -1567,7 +1572,7 @@ async function loadProjects(force=false){
     state.reposSyncedAt = Date.now();
     safeStore.set(PROJECT_CACHE_KEY, JSON.stringify({ts:state.reposSyncedAt, repos}));
   }catch(e){
-    state.reposError = "暂时没能读取 GitHub 仓库列表。";
+    state.reposError = "暂时没能取回仓库列表。";
     state.reposState = state.repos.length ? "ready" : "error";
   }
   paintProjects();
@@ -1592,7 +1597,7 @@ function featuredRepos(){
 function projectCard(r){
   const url = r.html_url || ("https://github.com/" + (r.full_name || r.name));
   const desc = r.description ? r.description.slice(0, 120)
-    : (r.pending ? "仓库信息加载中…" : "这个仓库还没有写简介。");
+    : (r.pending ? "正在赶来…" : "还没来得及写一句介绍。");
   return `<a class="proj-card" href="${esc(url)}" target="_blank" rel="noopener noreferrer">
     <div class="proj-top"><span class="proj-name" title="${esc(r.name)}">${esc(r.name)}</span>
       ${r.archived ? '<span class="proj-flag">已归档</span>' : ""}
@@ -1607,14 +1612,14 @@ function projectCard(r){
 }
 function projectsHTML(){
   const pc = projectCfg();
-  let h = headingHTML('OPEN SOURCE / PROJECTS','开源项目','这里只收录我自己创建的仓库，fork 的项目不计入。');
+  let h = headingHTML('OPEN SOURCE / PROJECTS','开源项目','写过的代码，也值得被看见。');
   h += statusHTML();
   if(!pc.enabled){
-    h += `<div class="empty"><div class="big" aria-hidden="true">✦</div><h2>项目展示已关闭</h2><p>在 config.json 里把 projects.enabled 设为 true 即可开启。</p></div>`;
+    h += `<div class="empty"><div class="big" aria-hidden="true">✦</div><h2>这里暂时空着</h2><p>在 config.json 里把 projects.enabled 打开，作品就会回来。</p></div>`;
     return shellHTML(h);
   }
   if(state.reposState === "loading" && !state.repos.length){
-    h += `<div class="proj-stats">正在读取 GitHub 仓库…</div><div class="proj-skel"><i></i><i></i><i></i></div>`;
+    h += `<div class="proj-stats">正在把仓库一一拾起…</div><div class="proj-skel"><i></i><i></i><i></i></div>`;
     return shellHTML(h);
   }
   if(state.reposState === "error"){
@@ -1625,7 +1630,7 @@ function projectsHTML(){
   const shown = state.repoLang ? all.filter(r => (r.language || "Other") === state.repoLang) : all;
   const stars = all.reduce((s, r) => s + (r.stars || 0), 0);
   if(all.length){
-    h += `<div class="proj-stats">共 <strong>${all.length}</strong> 个自建仓库 · 累计 <strong>${esc(num(stars))}</strong> 个 Star</div>`;
+    h += `<div class="proj-stats"><strong>${all.length}</strong> 个仓库 · <strong>${esc(num(stars))}</strong> 颗星</div>`;
     if(langs.length > 1){
       h += `<div class="proj-toolbar" aria-label="按语言筛选">
         <a class="chip ${state.repoLang ? "" : "on"}" href="#/projects" data-lang="">全部 <span class="n">${all.length}</span></a>
@@ -1633,11 +1638,10 @@ function projectsHTML(){
       </div>`;
     }
     h += shown.length ? `<div class="proj-grid">${shown.map(projectCard).join("")}</div>`
-      : `<div class="empty"><div class="big" aria-hidden="true">✦</div><h2>这个语言下还没有仓库</h2></div>`;
+      : `<div class="empty"><div class="big" aria-hidden="true">✦</div><h2>这种语言下还没有作品</h2></div>`;
   } else if(state.reposState !== "error"){
-    h += `<div class="empty"><div class="big" aria-hidden="true">✦</div><h2>暂时没有仓库</h2><p>GitHub 上还没有公开的非 fork 仓库。</p></div>`;
+    h += `<div class="empty"><div class="big" aria-hidden="true">✦</div><h2>还没有仓库</h2><p>等第一个念头落地成代码。</p></div>`;
   }
-  h += `<p class="page-tip">数据来自 <a href="https://github.com/${encodeURIComponent(cfg.owner)}" target="_blank" rel="noopener noreferrer">GitHub</a>，fork 与私有仓库已自动排除。在 <code>config.json</code> 的 <code>projects.featured</code> 里写上仓库名（如 <code>owner/repo</code>），即可指定首页展示的项目；留空则自动展示 Star 最高的 ${pc.count} 个。希望构建时生成离线快照，可运行 <code>scripts/build_projects.py</code>。</p>`;
   return shellHTML(h);
 }
 function homeProjectsHTML(){
@@ -1647,7 +1651,7 @@ function homeProjectsHTML(){
   const title = pc.featured.length ? "精选项目" : "热门项目";
   const body = list.length ? list.map(projectCard).join("")
     : (state.reposState === "error"
-      ? '<div class="feed-placeholder">项目列表暂时读不出来，可稍后到「项目」页重试。</div>'
+      ? '<div class="feed-placeholder">作品还在路上，稍后去「项目」页看看。</div>'
       : '<div class="proj-skel"><i></i><i></i></div>');
   return `<section class="home-projects"><div class="feed-heading">
       <div><div class="feed-kicker">OPEN SOURCE / FEATURED</div><h2>${title} <span>${list.length}</span></h2></div>
@@ -1660,7 +1664,7 @@ function paintProjects(){
   if(box){
     const list = featuredRepos();
     box.innerHTML = list.length ? list.map(projectCard).join("")
-      : (state.reposState === "error" ? '<div class="feed-placeholder">项目列表暂时读不出来，可稍后到「项目」页重试。</div>' : "");
+      : (state.reposState === "error" ? '<div class="feed-placeholder">作品还在路上，稍后去「项目」页看看。</div>' : "");
     const head = box.parentElement && box.parentElement.querySelector(".feed-heading h2 span");
     if(head) head.textContent = String(list.length);
   }
@@ -1695,13 +1699,13 @@ function highlight(text, q){
 /* 只有真正缺失索引时才提示；空文章列表是一种正常状态。 */
 function statusHTML(){
   if(state.error === "INDEX_UNAVAILABLE"){
-    return `<div class="banner soft" role="status"><span>文章索引尚未就绪。请确认已上传 blog/index.json，并启用自动更新工作流。</span><button onclick="refresh(true)">重新加载</button></div>`;
+    return `<div class="banner soft" role="status"><span>文章索引还没生成好。提交之后由 Actions 自动整理，稍等一会儿。</span><button onclick="refresh(true)">重新加载</button></div>`;
   }
   if(state.error){
     return `<div class="banner soft" role="status"><span>${esc(state.error)}</span><button onclick="refresh(true)">重试</button></div>`;
   }
   if(state.offline && state.posts.length){
-    return `<div class="banner soft" role="status"><span>当前显示上次同步的文章，站点索引暂时无法更新。</span><button onclick="refresh(true)">重新加载</button></div>`;
+    return `<div class="banner soft" role="status"><span>暂时连不上索引，先读着上次拿到的那些。</span><button onclick="refresh(true)">重新加载</button></div>`;
   }
   return "";
 }
@@ -1747,10 +1751,10 @@ function sidebarHTML(){
       <div class="side-tags">${tags.map(([t,n])=>`<a href="${topicURL(t)}">${esc(t)} <span>${n}</span></a>`).join("")}</div>
     </section>` : ''}
     <div class="side-card subscription-card"><div class="side-title"><span class="side-title-icon">↗</span> 保持联系</div>
-      <p>文章更新时，使用 RSS 第一时间阅读。无需注册，也不需要邮件订阅。</p>
+      <p>新写的字，会顺着 RSS 找到你。不必注册，也不用留下邮箱。</p>
       <a href="./feed.xml" class="subscribe-link">订阅 RSS <span aria-hidden="true">↗</span></a>
     </div>
-    <div class="side-sign">Keep learning. Keep writing. ✦</div>
+    <div class="side-sign">保持好奇，保持记录。 ✦</div>
   </aside>`;
 }
 function shellHTML(main){ return `<div class="wrap site-shell"><div class="primary-column">${main}</div>${sidebarHTML()}</div>`; }
@@ -1761,7 +1765,7 @@ function postCard(p,q=""){
       <h2 class="post-title">${highlight(p.title,q)}</h2>
       ${p.summary ? `<p class="post-sum">${highlight(p.summary.slice(0,140),q)}</p>` : ""}
       <div class="post-tags">${p.tags.slice(0,3).map(t=>`<span class="tag-mini">${esc(t)}</span>`).join("")}
-       <span class="read-time">${Math.max(1,Math.ceil(p.words/400))} 分钟阅读 <span aria-hidden="true">↗</span></span></div>
+       <span class="read-time">${Math.max(1,Math.ceil(p.words/400))} 分钟 <span aria-hidden="true">↗</span></span></div>
     </div>
   </a>`;
 }
@@ -1771,7 +1775,7 @@ function featuredHTML(p){
       <h2>${esc(p.title)}</h2>
       <p>${esc((p.summary||'打开阅读这篇文章').slice(0,115))}</p>
       <div class="feature-foot"><span>${esc(fmtDate(p.created)||'最近更新')}</span><span class="dot"></span>
-        <span>${Math.max(1,Math.ceil(p.words/400))} 分钟阅读</span><span class="featured-arrow" aria-hidden="true">↗</span></div>
+        <span>${Math.max(1,Math.ceil(p.words/400))} 分钟</span><span class="featured-arrow" aria-hidden="true">↗</span></div>
     </div>
     <div class="featured-art ${p.cover?'has-cover':''}">${p.cover?`<img src="${esc(resolveMedia(p.cover))}" alt="">`:
       `<span class="art-paper-line art-line-1"></span><span class="art-paper-line art-line-2"></span><span class="art-orbit art-orbit-one"></span><span class="art-orbit art-orbit-two"></span><span class="art-symbol">K<span class="art-mini">/ NOTES</span></span>`}</div>
@@ -1789,7 +1793,7 @@ function homeHTML(){
     <div class="eyebrow"><span class="eyebrow-dot"></span>DIGITAL GARDEN · NOTES & IDEAS</div>
     <h1>${esc(cfg.subtitle||cfg.title)}<span class="hero-star" aria-hidden="true">✳</span></h1>
     <p>${esc(cfg.description)}</p>
-    <div class="hero-bottom"><span class="hero-rule" aria-hidden="true"></span><span>持续记录，慢慢生长</span><span class="dot"></span><span>${state.posts.length} 篇文章</span></div>
+    <div class="hero-bottom"><span class="hero-rule" aria-hidden="true"></span><span>慢慢写，慢慢长</span><span class="dot"></span><span>${state.posts.length} 篇文章</span></div>
   </section>`;
   h+=statusHTML();
   if(state.loading){
@@ -1811,22 +1815,22 @@ function homeHTML(){
       h+=`<div class="filter-info"><strong>${esc(active)}</strong><span>${all.length} 篇结果</span><button type="button" class="clear-filters" data-clear="true">清除筛选 ×</button></div>`;
     }
     if(!shown.length){
-      h+=`<div class="empty"><div class="big" aria-hidden="true">✦</div><h2>${state.loading?'正在加载':state.posts.length?'暂时没有符合条件的文章':'这里还是一片空白'}</h2><p>${state.posts.length?'尝试新的关键词，或查看其他标签。':'下一篇文章，正在路上。'}</p></div>`;
+      h+=`<div class="empty"><div class="big" aria-hidden="true">✦</div><h2>${state.loading?'正在翻找':state.posts.length?'这里没有找到':'这里还是一片旷野'}</h2><p>${state.posts.length?'换一个词，也许就遇见了。':'下一篇，正在来的路上。'}</p></div>`;
     }else h+=`<div class="post-list">${shown.map(p=>postCard(p,q)).join('')}</div>`;
   }
   if(normal) h += homeProjectsHTML();
-  if(all.length>shown.length) h+=`<div class="loadmore-area"><button class="loadmore" data-more="true">继续阅读更多文章 <span>${shown.length} / ${all.length}</span> ↘</button></div>`;
+  if(all.length>shown.length) h+=`<div class="loadmore-area"><button class="loadmore" data-more="true">再往下读一段 <span>${shown.length} / ${all.length}</span> ↘</button></div>`;
   return shellHTML(h);
 }
 function archiveHTML(){
-  let h=headingHTML('ALL WRITING / ARCHIVE','文章归档','按时间整理每一次记录与思考。');
+  let h=headingHTML('ALL WRITING / ARCHIVE','文章归档','把散落的日子，按年份重新收拢。');
   h+=statusHTML();
   if(state.loading) h+='<div class="skel"><i style="width:75%"></i></div>';
-  else if(!state.posts.length) h+='<div class="empty"><div class="big">✦</div><h2>暂无文章归档</h2></div>';
+  else if(!state.posts.length) h+='<div class="empty"><div class="big">✦</div><h2>还没有可以归档的文字</h2><p>第一篇，往往最难开始。</p></div>';
   else{
     const group=new Map();
     state.posts.forEach(p=>{const year=(p.created||'未标注日期').slice(0,4);if(!group.has(year))group.set(year,[]);group.get(year).push(p);});
-    h+=`<div class="archive-total">共收录 <strong>${state.posts.length}</strong> 篇文章</div>`;
+    h+=`<div class="archive-total"><strong>${state.posts.length}</strong> 篇文章，落在时间里</div>`;
     for(const [year,posts] of group){
       h+=`<section class="archive-year"><h2>${esc(year)} <span>${posts.length} 篇</span></h2><div class="archive-items">`;
       h+=posts.map(p=>`<a href="${postURL(p)}"><span class="archive-day">${esc((p.created||'').slice(5).replace('-','/'))||'—'}</span><span class="archive-name">${esc(p.title)}</span><span class="archive-cat">${esc(p.category||'未分类')}</span></a>`).join('');
@@ -1839,13 +1843,13 @@ function archiveHTML(){
 function topicsHTML(){
   const topics=allTopics();
   const cs=allCategories();
-  let h=headingHTML('DISCOVER / TOPICS','文章话题','分类与标签在同一处：从一个关键词，进入一批文章。')+statusHTML();
+  let h=headingHTML('DISCOVER / TOPICS','文章话题','一个词，通向一批文字。')+statusHTML();
   if(state.loading){
     h+='<div class="skel"><i style="width:40%"></i><div style="height:10px"></div><i style="width:70%;height:20px"></i></div>';
   } else if(!topics.length){
-    h+='<div class="empty"><div class="big" aria-hidden="true">✦</div><h2>还没有话题</h2><p>给文章写上 category 或 tags，这里会自动出现。</p></div>';
+    h+='<div class="empty"><div class="big" aria-hidden="true">✦</div><h2>还没有话题</h2><p>给文章写上分类或标签，它们会自己长出来。</p></div>';
   } else {
-    h+=`<div class="topic-summary">共 <strong>${topics.length}</strong> 个话题 · 其中 <strong>${cs.length}</strong> 个是主分类 · 点击任意话题即可筛选文章</div>`;
+    h+=`<div class="topic-summary">${topics.length} 个话题 · 点一个词，就落进一批文字里</div>`;
     h+=`<div class="topic-block"><div class="list-title">主分类 / CATEGORIES</div>
       <div class="category-grid">${cs.map(([c,n],i)=>`<a class="category-card" href="${topicURL(c)}"><span class="category-glyph">${['✳','◇','⌘','✦'][i%4]}</span><span class="category-label">${esc(c)}</span><small>${n} 篇文章</small><b aria-hidden="true">↗</b></a>`).join('')}</div></div>`;
     h+=`<div class="topic-block"><div class="list-title">全部话题 / TAGS & CATEGORIES</div>
@@ -1855,14 +1859,14 @@ function topicsHTML(){
 }
 function aboutHTML(){
   const gh=`https://github.com/${encodeURIComponent(cfg.owner)}`;
-  let h=headingHTML('HELLO / ABOUT','关于这个博客','在这里，技术与日常都值得被认真记录。');
+  let h=headingHTML('HELLO / ABOUT','关于这里','写字，是为了让日子留下痕迹。');
   h+=`<div class="about-panel">
     <div class="about-identity"><span class="about-avatar">${esc((cfg.author||'K').slice(0,1).toUpperCase())}</span><div><strong>${esc(cfg.author||cfg.title)}</strong><span>写作者 · 学习者 · 记录者</span></div></div>
     <h2>你好，欢迎来到 ${esc(cfg.title)}。</h2>
     <p>${esc(cfg.about||cfg.description)}</p>
-    <h3>关于写作</h3>
-    <p>文章支持 Markdown 和独立 HTML。只需将文件放进 <code>blog/</code> 目录，GitHub Actions 会生成文章索引并通过 GitHub Pages 自动发布。</p>
-    <h3>找到我</h3><p><a class="about-link" href="${gh}" target="_blank" rel="noopener noreferrer">在 GitHub 继续交流 ↗</a></p>
+    <h3>关于写字</h3>
+    <p>把 Markdown 或 HTML 放进 <code>blog/</code>，剩下的交给时间。</p>
+    <h3>在别处</h3><p><a class="about-link" href="${gh}" target="_blank" rel="noopener noreferrer">在 GitHub 继续聊 ↗</a></p>
     <div class="about-quote">“${esc(cfg.description)}”</div>
   </div>`;
   return shellHTML(h);
@@ -1880,20 +1884,20 @@ function relatedHTML(p){
   const i=state.posts.findIndex(x=>x.name===p.name);
   const newer=i>0?state.posts[i-1]:null, older=i>=0?state.posts[i+1]:null;
   if(!newer && !older)return '';
-  return `<nav class="post-related" aria-label="相邻文章">${newer?`<a href="${postURL(newer)}"><small>← 较新文章</small><strong>${esc(newer.title)}</strong></a>`:'<span></span>'}${older?`<a href="${postURL(older)}"><small>较早文章 →</small><strong>${esc(older.title)}</strong></a>`:'<span></span>'}</nav>`;
+  return `<nav class="post-related" aria-label="相邻文章">${newer?`<a href="${postURL(newer)}"><small>← 更新的一篇</small><strong>${esc(newer.title)}</strong></a>`:'<span></span>'}${older?`<a href="${postURL(older)}"><small>更早的一篇 →</small><strong>${esc(older.title)}</strong></a>`:'<span></span>'}</nav>`;
 }
 function postHTML(p, r){
   const mins = Math.max(1, Math.round(p.words / 400));
   const metaLine = `<div class="post-meta">
-          ${p.created ? `<span>上传于 ${esc(fmtDate(p.created))}</span>` : ""}
+          ${p.created ? `<span>写于 ${esc(fmtDate(p.created))}</span>` : ""}
           ${p.updated && p.updated !== p.created ? `<span class="dot"></span><span>修订于 ${esc(fmtDate(p.updated))}</span>` : ""}
           <span class="dot"></span><span>约 ${mins} 分钟 · ${p.words} 字</span>
           ${p.category && p.category!=="未分类" ? `<span class="dot"></span><a class="tag-mini" href="${topicURL(p.category)}">${esc(p.category)}</a>` : ""}
           ${p.tags.length ? `<span class="dot"></span>${p.tags.map(t => `<a class="tag-mini" href="${topicURL(t)}">${esc(t)}</a>`).join(" ")}` : ""}
         </div>`;
   const foot = `<div class="post-foot">
-        <a href="#/">← 返回全部文章</a>
-        <a href="https://github.com/${cfg.owner}/${cfg.repo}/tree/${cfg.branch}/${cfg.blogDir}" target="_blank" rel="noopener">在 GitHub 上查看源文件 ↗</a>
+        <a href="#/">← 回到文章列表</a>
+        <a href="https://github.com/${cfg.owner}/${cfg.repo}/tree/${cfg.branch}/${cfg.blogDir}" target="_blank" rel="noopener">在 GitHub 上读源文件 ↗</a>
       </div>`;
 
   if(p.isHtml){
@@ -1919,7 +1923,7 @@ function postHTML(p, r){
 
   return `<div class="post-layout">
     <div class="post-main">
-      <a class="back" href="#/">← 返回全部文章</a>
+      <a class="back" href="#/">← 回到文章列表</a>
       <div class="post-head">
         <h1>${esc(p.title)}</h1>
         ${metaLine}
@@ -1993,7 +1997,7 @@ function render(){
       if(state.loading){
         app.innerHTML = `<div class="wrap"><div class="skel" style="margin-top:40px"><i style="width:40%"></i></div></div>`;
       } else {
-        app.innerHTML = `<div class="wrap"><div class="empty"><div class="big">404</div><div>找不到这篇文章</div>
+        app.innerHTML = `<div class="wrap"><div class="empty"><div class="big">404</div><div>这一页风吹走了</div>
           <div style="margin-top:6px;font-size:13px;opacity:.75">${esc(name)}</div>
           ${suggestHTML(name)}
           <div style="margin-top:18px"><a class="chip" href="#/">返回首页</a></div></div></div>`;
@@ -2167,13 +2171,13 @@ function buildRawToc(){
   const btn = $("#rawTocBtn");
   const ctx = rawFrameCtx();
   if(!ctx){
-    panel.innerHTML = '<div class="none">目录需要同域渲染才能读取，也可以点击「独立页面打开」阅读全文。</div>';
+    panel.innerHTML = '<div class="none">这篇的目录读不出来，点「独立页面打开」也能读完。</div>';
     if(btn){ btn.disabled = true; btn.textContent = "☰ 目录"; }
     return;
   }
   const hs = [...ctx.doc.querySelectorAll("h1,h2,h3")].filter(el => (el.textContent || "").trim());
   if(hs.length < 2){
-    panel.innerHTML = '<div class="none">这篇文章里没有可提取的小标题。</div>';
+    panel.innerHTML = '<div class="none">这篇没有小标题，顺着往下读就好。</div>';
     if(btn){ btn.disabled = true; btn.textContent = "无目录"; }
     return;
   }
