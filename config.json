@@ -12,9 +12,11 @@
   "projects": {
     "enabled": true,
     "featured": [],
-    "featuredCount": 3,
+    "featuredCount": 4,
     "exclude": [
-      "khtao.github.io"
+      "khtao.github.io",
+      "github.com/khtao/pytorch-CycleGAN-for-stain",
+      ""
     ],
     "source": "projects.json",
     "refreshMinutes": 60,
