@@ -37,6 +37,11 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+      - name: Install image tooling
+        # 图片优化依赖 Pillow；装不上也不能让构建失败（脚本会自行降级跳过）。
+        run: python3 -m pip install --quiet Pillow || echo "Pillow unavailable, keeping originals"
+      - name: Optimize images (WebP twins + recompress)
+        run: python3 scripts/optimize_images.py
       - name: Build index from article files and git history
         run: |
           mkdir -p blog
@@ -57,6 +62,9 @@ jobs:
           # Always create .nojekyll: GitHub web uploads may omit hidden files.
           touch _site/.nojekyll
           cp -R blog _site/blog
+          # 本地化的渲染器（marked / highlight.js）：index.html 靠它们摆脱境外 CDN
+          if [ -d assets ]; then cp -R assets _site/assets; fi
+          test -f _site/assets/vendor/marked.min.js
           # projects.json 是可选产物：存在才一起发布，缺失时前端会自行回退。
           if [ -f projects.json ]; then
             cp projects.json _site/projects.json
