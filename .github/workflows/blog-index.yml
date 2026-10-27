@@ -7,7 +7,7 @@ on:
       - 'blog/**'
       - 'index.html'
       - 'config.json'
-      - 'scripts/build_index.py'
+      - 'scripts/**'
       - '.github/workflows/blog-index.yml'
   workflow_dispatch:
 
@@ -37,6 +37,13 @@ jobs:
         run: |
           mkdir -p blog
           python3 scripts/build_index.py
+      # 项目页的离线快照：只收录本人创建的仓库，fork 与私有仓库自动排除。
+      # 读取失败时脚本静默跳过（不落盘），项目页会回退到浏览器直连 GitHub，
+      # 因此这里不能用 --strict，也不能让构建失败。
+      - name: Build projects snapshot
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/build_projects.py
       - name: Prepare static website output
         shell: bash
         run: |
@@ -46,6 +53,13 @@ jobs:
           # Always create .nojekyll: GitHub web uploads may omit hidden files.
           touch _site/.nojekyll
           cp -R blog _site/blog
+          # projects.json 是可选产物：存在才一起发布，缺失时前端会自行回退。
+          if [ -f projects.json ]; then
+            cp projects.json _site/projects.json
+            python3 -m json.tool _site/projects.json > /dev/null
+          else
+            echo "::warning::projects.json 未生成，项目页将回退到浏览器直连 GitHub"
+          fi
           test -f _site/index.html
           test -f _site/blog/index.json
           python3 -m json.tool _site/blog/index.json > /dev/null
