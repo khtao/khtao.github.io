@@ -467,6 +467,20 @@ body{background:var(--bg);}
 .side-title a:hover{color:var(--accent);}
 .side-title-icon{color:var(--accent);font-size:17px;}
 .note-card{background:linear-gradient(120deg,var(--accent-soft),transparent 96%),var(--paper);}
+/* 整块卡片作为外链：section 换成 a 之后要自己补回块级与配色 */
+.note-link{display:block;text-decoration:none;color:inherit;cursor:pointer;
+  transition:transform .18s,border-color .18s,box-shadow .18s;}
+.note-link:hover{transform:translateY(-2px);border-color:var(--accent);
+  box-shadow:0 10px 24px rgba(28,35,65,.07);}
+[data-theme="dark"] .note-link:hover{box-shadow:0 10px 26px rgba(0,0,0,.22);}
+.note-link:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+.note-link .side-title-icon{transition:transform .18s;}
+.note-link:hover .side-title-icon{transform:rotate(12deg) scale(1.08);}
+.note-link-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin-top:12px;padding-top:11px;border-top:1px dashed var(--line);
+  font-size:11.5px;font-weight:700;letter-spacing:.02em;color:var(--accent);}
+.note-link-foot span:last-child{font-size:15px;transition:transform .18s;}
+.note-link:hover .note-link-foot span:last-child{transform:translate(2px,-2px);}
 .note-card p{font-size:12.5px;line-height:1.85;color:var(--fg-mid);margin:0;}
 .side-recent{display:grid;gap:1px;}
 .side-recent a{padding:9px 0;border-top:1px solid var(--line-soft);display:flex;flex-direction:column;gap:3px;}
@@ -997,6 +1011,16 @@ const DEFAULT_CFG = {
   author:"khtao", owner:"khtao", repo:"khtao.github.io", branch:"main",
   blogDir:"blog", pageSize:50, notice:"欢迎来访。这里会持续更新笔记和思考。", footer:"© 2026 khtao · Built with GitHub Pages",
   projects:{enabled:true, featured:[], exclude:["khtao.github.io"], source:"projects.json", refreshMinutes:60, liveRefresh:true},
+  // 「一句话」卡片：可整体变成指向 Google Scholar 的入口。
+  // 留空 url 或 enabled:false 时退回原来的纯文字卡片。
+  scholar:{
+    enabled:true,
+    url:"",                                     // 例：https://scholar.google.com/citations?hl=zh-CN&user=xxxx
+    title:"一句话",                              // 卡片标题，留空则用「一句话」
+    text:"",                                    // 卡片正文，留空则用 notice
+    label:"Google Scholar",                     // 底部链接文字
+    linkText:""                                 // 预留：底部右侧的补充说明
+  },
   // 版权声明：所有文案都可在 config.json 里覆盖，关掉只需 enabled:false
   copyright:{
     enabled:true,
@@ -1887,6 +1911,37 @@ function allTopics(){
 }
 function topicURL(t){ return "#/topic/"+encodeURIComponent(t); }
 function postURL(p){ return "#/p/"+encodeURIComponent(p.name); }
+/* 「一句话」卡片。配置了 scholar.url 就整块变成外链入口，
+   否则保持原来的纯文字卡片 —— 没配学者主页的人不该看到死链。 */
+function scholarCfg(){
+  const s = cfg.scholar || {};
+  const url = String(s.url || "").trim();
+  // 只放行 http(s)，避免 config 里被塞进 javascript: 之类的伪协议
+  const safe = /^https?:\/\//i.test(url);
+  return {
+    enabled: s.enabled !== false && !!url && safe,
+    url: safe ? url : "",
+    title: String(s.title || "").trim() || "一句话",
+    text: String(s.text || cfg.notice || cfg.description).trim(),
+    label: String(s.label || "").trim() || "Google Scholar",
+    linkText: String(s.linkText || "").trim()
+  };
+}
+
+function scholarCardHTML(){
+  const s = scholarCfg();
+  const head = `<div class="side-title"><span class="side-title-icon" aria-hidden="true">✳</span> ${esc(s.title)}</div>`;
+  const body = `<p>${esc(s.text)}</p>`;
+  if(!s.enabled){
+    return `<section class="side-card note-card">${head}${body}</section>`;
+  }
+  return `<a class="side-card note-card note-link" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer"
+    aria-label="${esc(s.title)}：${esc(s.text)}（在 ${esc(s.label)} 打开）">
+    ${head}${body}
+    <span class="note-link-foot"><span>${esc(s.label)}${s.linkText ? " · " + esc(s.linkText) : ""}</span><span aria-hidden="true">↗</span></span>
+  </a>`;
+}
+
 function sidebarHTML(){
   const tags=allTopics().slice(0,12);
   const latest=[...state.posts].sort((a,b)=>(b.updated||b.created||"").localeCompare(a.updated||a.created||"")).slice(0,4);
@@ -1902,10 +1957,7 @@ function sidebarHTML(){
       </div>
       <a class="profile-follow" href="https://github.com/${encodeURIComponent(cfg.owner)}" target="_blank" rel="noopener noreferrer">GitHub · Follow me <span aria-hidden="true">↗</span></a>
     </section>
-    <section class="side-card note-card">
-      <div class="side-title"><span class="side-title-icon" aria-hidden="true">✳</span> 一句话</div>
-      <p>${esc(cfg.notice||cfg.description)}</p>
-    </section>
+    ${scholarCardHTML()}
     ${latest.length ? `<section class="side-card">
       <div class="side-title">最近更新 <a href="#/archive">全部 ↗</a></div>
       <div class="side-recent">${latest.map(p=>`<a href="${postURL(p)}"><span>${esc(p.title)}</span><small>${esc(fmtDate(p.updated||p.created))}</small></a>`).join("")}</div>

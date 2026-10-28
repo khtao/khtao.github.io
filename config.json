@@ -21,6 +21,14 @@
     "blockImages": false
   },
   "blockedBots": [],
+  "scholar": {
+    "enabled": true,
+    "url": "https://scholar.google.com/citations?hl=zh-CN&user=yc0N2dIAAAAJ",
+    "title": "一句话",
+    "text": "",
+    "label": "Google Scholar",
+    "linkText": ""
+  },
   "projects": {
     "enabled": true,
     "featured": [],
