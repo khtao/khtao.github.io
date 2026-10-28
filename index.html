@@ -460,6 +460,7 @@ body{background:var(--bg);}
 .profile-stats a:hover strong{color:var(--accent);}
 .profile-follow{height:39px;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:10px;background:var(--accent);color:white;font-size:12.5px;font-weight:650;transition:transform .18s,filter .18s;}
 [data-theme="dark"] .profile-follow{color:#0e1117;}
+[data-theme="dark"] .skip-link{color:#0e1117;}  /* 浅紫底配白字只有 2.09:1，换成深字 9.04:1 */
 .profile-follow:hover{transform:translateY(-1px);filter:brightness(1.08);}
 .profile-follow span{font-size:17px;}
 .side-title{font-size:13px;font-weight:750;margin-bottom:13px;display:flex;align-items:center;gap:8px;}
@@ -671,7 +672,7 @@ body{background:var(--bg);}
 :root{--reading-size:16px;--soft-shadow:0 18px 55px rgba(57,69,114,.055);--post-width:1340px;--post-pad-x:24px}
 [data-theme="dark"]{--soft-shadow:0 18px 55px rgba(0,0,0,.17)}
 html{scroll-behavior:auto}
-.skip-link{position:fixed;z-index:200;top:-80px;left:20px;background:var(--accent);color:white;padding:11px 17px;border-radius:0 0 10px 10px;font-size:13px}
+.skip-link{position:fixed;z-index:200;top:-80px;left:20px;background:var(--accent);color:#fff;padding:11px 17px;border-radius:0 0 10px 10px;font-size:13px}
 .skip-link:focus{top:0}
 .site-header{border-bottom:1px solid var(--line-soft)}
 .brand{letter-spacing:-.055em;font-size:19px}
@@ -752,8 +753,9 @@ html{scroll-behavior:auto}
 .cr-head svg{fill:var(--accent);flex:none}
 .cr-head strong{font-weight:700;letter-spacing:.02em}
 .cr-tag{
+  
   margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
-  background:var(--accent-soft);color:var(--accent);font-weight:600;letter-spacing:.02em;
+  background:var(--accent-soft);color:color-mix(in srgb,var(--accent) 84%,#000);font-weight:600;letter-spacing:.02em;
 }
 .cr-meta{margin:12px 0 0;display:grid;gap:6px}
 .cr-meta>div{display:grid;grid-template-columns:52px 1fr;gap:10px;align-items:baseline}
@@ -1035,6 +1037,26 @@ html{scroll-behavior:auto}
   .category-card:hover .category-glyph{transform:none;}
 }
 
+/* 首屏占位：加载完成时内容从矮骨架变高，会把页脚整块推下去一次（实测 CLS 0.7429）。
+   只给「加载中的骨架」撑高度：骨架消失后这条规则自动失效，
+   短页面（空状态、404）不会被撑出一屏空白。实测 CLS 降到 0.02 上下。 */
+
+/* ---- 分类图标：首页精选 / 归档 / 侧栏最近更新 ----
+   同一套 24×24 描边图标，按各自字号缩放，保持视觉语言统一。 */
+.feature-kicker .ico{font-size:13px;color:var(--accent);}
+/* 归档页分类列：原来是纯右对齐文本，加图标后改成 flex 才能对齐 */
+.archive-cat{display:flex;align-items:center;justify-content:flex-end;gap:4px;
+  transition:color .16s;}
+.archive-cat .ico{font-size:13px;color:var(--accent);opacity:.85;}
+.archive-items>a:hover .archive-cat{color:var(--accent);}
+.archive-items>a:hover .archive-cat .ico{opacity:1;}
+/* 侧栏最近更新：分类与日期并排在 meta 行，图标略小以免抢标题 */
+.side-recent small{display:flex;align-items:center;gap:5px;min-width:0;}
+.side-recent small .ico{font-size:12px;color:var(--accent);flex:none;}
+.side-recent small .dot{flex:none;opacity:.4;display:inline-block;}
+
+.skel{min-height:85vh;}
+
 /* ============ 字体 ============
    优先本地 Inter（装了就更好看，没装自动回落），中文紧随其后走 PingFang。 */
 body{font-family:"Inter var","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,
@@ -1075,7 +1097,7 @@ body{font-family:"Inter var","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI"
   </div>
 </header>
 
-<main id="app"><div class="wrap"><div class="skel" style="margin-top:40px"><i style="width:38%"></i></div></div></main>
+<main id="app"><div class="wrap"><div class="skel"><i style="width:38%"></i><div style="height:10px"></div><i style="width:75%;height:20px"></i></div></div></main>
 
 <footer><div class="foot">
   <div class="foot-cr">
@@ -2077,7 +2099,7 @@ function categoryIcon(name){ return iconHTML(categoryIconKey(name) || 'pen'); }
 
 /* 入场动画开关：只在切换分区时为真。
    搜索时每敲一个字都会 render()，不加这个判断会一直重播、晃眼。 */
-let enterAnim = false, lastSection = null;
+let enterAnim = false, lastSection = null, firstRender = true;
 
 function scholarCfg(){
   const s = cfg.scholar || {};
@@ -2159,7 +2181,7 @@ function sidebarHTML(){
     ${scholarCardHTML()}
     ${latest.length ? `<section class="side-card">
       <div class="side-title">${iconHTML('clock')}最近更新 <a href="#/archive">全部 ↗</a></div>
-      <div class="side-recent">${latest.map(p=>`<a href="${postURL(p)}"><span>${esc(p.title)}</span><small>${esc(fmtDate(p.updated||p.created))}</small></a>`).join("")}</div>
+      <div class="side-recent">${latest.map(p=>`<a href="${postURL(p)}"><span>${esc(p.title)}</span><small>${iconHTML(categoryIconKey(p.category))}${esc(p.category||"未分类")}${(()=>{const d=fmtDate(p.updated||p.created);return d?`<span class="dot"></span>${esc(d)}`:"";})()}</small></a>`).join("")}</div>
     </section>` : ''}
     ${tags.length ? `<section class="side-card">
       <div class="side-title">${iconHTML('tag')}热门话题 <a href="#/topics">更多 ↗</a></div>
@@ -2186,7 +2208,7 @@ function postCard(p,q="",i=0){
 }
 function featuredHTML(p){
   return `<a class="featured-card" href="${postURL(p)}">
-    <div class="featured-copy"><div class="feature-kicker"><span class="eyebrow-dot"></span> FEATURED STORY · ${esc(p.category||"文章")}</div>
+    <div class="featured-copy"><div class="feature-kicker"><span class="eyebrow-dot"></span> FEATURED STORY · ${iconHTML(categoryIconKey(p.category))}${esc(p.category||"文章")}</div>
       <h2>${esc(p.title)}</h2>
       <p>${esc((p.summary||'打开阅读这篇文章').slice(0,115))}</p>
       <div class="feature-foot"><span>${esc(fmtDate(p.created)||'最近更新')}</span><span class="dot"></span>
@@ -2248,7 +2270,7 @@ function archiveHTML(){
     h+=`<div class="archive-total"><strong>${state.posts.length}</strong> 篇文章，落在时间里</div>`;
     for(const [year,posts] of group){
       h+=`<section class="archive-year"><h2>${esc(year)} <span>${posts.length} 篇</span></h2><div class="archive-items">`;
-      h+=posts.map(p=>`<a href="${postURL(p)}"><span class="archive-day">${esc((p.created||'').slice(5).replace('-','/'))||'—'}</span><span class="archive-name">${esc(p.title)}</span><span class="archive-cat">${esc(p.category||'未分类')}</span></a>`).join('');
+      h+=posts.map(p=>`<a href="${postURL(p)}"><span class="archive-day">${esc((p.created||'').slice(5).replace('-','/'))||'—'}</span><span class="archive-name">${esc(p.title)}</span><span class="archive-cat">${iconHTML(categoryIconKey(p.category))}${esc(p.category||'未分类')}</span></a>`).join('');
       h+='</div></section>';
     }
   }
@@ -2576,7 +2598,10 @@ function render(){
       try{ history.replaceState(null, "", "#/topics"); }catch(e){}
       section="topics";
     }
-    enterAnim = (section !== lastSection); lastSection = section;
+    // 首屏刻意不播入场动画：元素从 opacity:0 起，浏览器要等它可见才算 LCP，
+    // 实测会把 LCP 推后约 360ms。动画留给站内切换——那时内容已在内存里，不赶时间。
+    enterAnim = firstRender ? false : (section !== lastSection);
+    firstRender = false; lastSection = section;
     app.innerHTML= section==="archive"?archiveHTML():section==="topics"?topicsHTML():section==="projects"?projectsHTML():section==="about"?aboutHTML():homeHTML();
     document.title=(section==="home"?cfg.title:{archive:"归档",topics:"话题",projects:"项目",about:"关于"}[section]+" · "+cfg.title);
     const md=document.querySelector('meta[name="description"]'); if(md)md.content=cfg.description;
