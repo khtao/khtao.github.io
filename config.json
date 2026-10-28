@@ -24,10 +24,16 @@
   "scholar": {
     "enabled": true,
     "url": "https://scholar.google.com/citations?hl=zh-CN&user=yc0N2dIAAAAJ",
-    "title": "学术主页",
-    "text": "收录我的学术论文与引用记录",
-    "label": "Google Scholar",
-    "linkText": ""
+    "scholarTitle": "学术主页",
+    "scholarText": "收录我的学术论文与引用记录，持续更新中。",
+    "scholarLabel": "Google Scholar",
+    "ctaText": "查看论文列表",
+    "linkText": "",
+    "stats": {
+      "papers": "",
+      "citations": "",
+      "hindex": ""
+    }
   },
   "projects": {
     "enabled": true,

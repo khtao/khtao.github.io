@@ -481,6 +481,46 @@ body{background:var(--bg);}
   font-size:11.5px;font-weight:700;letter-spacing:.02em;color:var(--accent);}
 .note-link-foot span:last-child{font-size:15px;transition:transform .18s;}
 .note-link:hover .note-link-foot span:last-child{transform:translate(2px,-2px);}
+
+/* ---- 学术主页卡片：品牌徽标 + 可选指标 + 明确的行动号召 ---- */
+.scholar-card{position:relative;overflow:hidden;
+  background:linear-gradient(135deg,var(--accent-soft),transparent 68%),var(--paper);}
+/* 右上角柔光，hover 时轻微扩散，给静态卡片一点呼吸感 */
+.scholar-glow{position:absolute;top:-46px;right:-34px;width:130px;height:130px;border-radius:50%;
+  background:radial-gradient(circle,var(--accent-soft),transparent 68%);
+  opacity:.85;pointer-events:none;transition:transform .45s ease,opacity .3s;}
+.scholar-card:hover .scholar-glow{transform:scale(1.32) translate(-8px,8px);opacity:1;}
+.scholar-head{position:relative;display:flex;align-items:center;gap:11px;}
+.scholar-badge{flex:none;width:35px;height:35px;border-radius:11px;display:grid;place-items:center;
+  background:var(--accent);color:#fff;box-shadow:0 6px 15px rgba(74,91,214,.26);
+  transition:transform .24s cubic-bezier(.34,1.4,.64,1);}
+[data-theme="dark"] .scholar-badge{color:#0e1117;box-shadow:0 6px 16px rgba(0,0,0,.34);}
+.scholar-card:hover .scholar-badge{transform:translateY(-2px) rotate(-7deg) scale(1.06);}
+.scholar-heading{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.scholar-title{font-size:13.5px;font-weight:750;letter-spacing:-.01em;color:var(--fg);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+/* 来源标识用 accent：既呼应徽标形成品牌感，也顺带满足对比度
+   （站点 --fg-soft 在浅色下只有 3.91:1，10.5px 小字不达标） */
+.scholar-source{font-size:10.5px;font-weight:650;letter-spacing:.03em;color:var(--accent);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.note-card .scholar-text{margin:11px 0 0;}
+/* 指标行：条数不定，用列自适应均分 */
+.scholar-stats{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;
+  margin-top:12px;padding-top:11px;border-top:1px dashed var(--line);position:relative;}
+.scholar-stats span{display:flex;flex-direction:column;gap:1px;min-width:0;}
+.scholar-stats strong{font-size:15px;font-weight:750;letter-spacing:-.02em;color:var(--fg);
+  font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+/* 同理用 --fg-mid 而非 --fg-soft：小字也要够 4.5:1 */
+.scholar-stats small{font-size:10.5px;color:var(--fg-mid);}
+.scholar-cta{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin-top:12px;padding-top:11px;border-top:1px dashed var(--line);
+  font-size:11.5px;font-weight:700;letter-spacing:.02em;color:var(--accent);}
+.scholar-cta i{font-style:normal;font-size:14px;transition:transform .2s;}
+.scholar-card:hover .scholar-cta i{transform:translate(3px,-3px);}
+@media (prefers-reduced-motion:reduce){
+  .scholar-glow,.scholar-badge,.scholar-cta i{transition:none;}
+  .scholar-card:hover .scholar-glow,.scholar-card:hover .scholar-badge,.scholar-card:hover .scholar-cta i{transform:none;}
+}
 .note-card p{font-size:12.5px;line-height:1.85;color:var(--fg-mid);margin:0;}
 .side-recent{display:grid;gap:1px;}
 .side-recent a{padding:9px 0;border-top:1px solid var(--line-soft);display:flex;flex-direction:column;gap:3px;}
@@ -1016,10 +1056,17 @@ const DEFAULT_CFG = {
   scholar:{
     enabled:true,
     url:"",                                     // 例：https://scholar.google.com/citations?hl=zh-CN&user=xxxx
-    title:"一句话",                              // 卡片标题，留空则用「一句话」
-    text:"",                                    // 卡片正文，留空则用 notice
-    label:"Google Scholar",                     // 底部链接文字
-    linkText:""                                 // 预留：底部右侧的补充说明
+    title:"学术主页",                            // 卡片标题（旧字段，仍兼容）
+    text:"",                                    // 卡片正文，留空则用下面的 scholarText
+    label:"Google Scholar",                     // 来源标识（旧字段，仍兼容）
+    linkText:"",                                // 标题右侧的补充说明，如「共 12 篇」
+    scholarTitle:"学术主页",
+    scholarText:"收录我的学术论文与引用记录，持续更新中。",
+    scholarLabel:"Google Scholar",
+    ctaText:"查看论文列表",
+    // 指标为可选：不填就不显示这一行，绝不编造数字。
+    // 想展示就手工填（ Scholar 抓取不可靠，见 README）。
+    stats:{papers:"", citations:"", hindex:""}
   },
   // 版权声明：所有文案都可在 config.json 里覆盖，关掉只需 enabled:false
   copyright:{
@@ -1918,27 +1965,60 @@ function scholarCfg(){
   const url = String(s.url || "").trim();
   // 只放行 http(s)，避免 config 里被塞进 javascript: 之类的伪协议
   const safe = /^https?:\/\//i.test(url);
+  // 新字段名优先，旧字段名（title/text/label）继续兼容，避免改配置就失效
+  const title = String(s.scholarTitle || s.title || "").trim();
+  const text  = String(s.scholarText  || s.text  || "").trim();
+  const label = String(s.scholarLabel || s.label || "").trim();
   return {
     enabled: s.enabled !== false && !!url && safe,
     url: safe ? url : "",
-    title: String(s.title || "").trim() || "一句话",
-    text: String(s.text || cfg.notice || cfg.description).trim(),
-    label: String(s.label || "").trim() || "Google Scholar",
-    linkText: String(s.linkText || "").trim()
+    title: title || "学术主页",
+    text: text || cfg.notice || cfg.description,
+    label: label || "Google Scholar",
+    linkText: String(s.linkText || "").trim(),
+    ctaText: String(s.ctaText || "").trim() || "查看论文列表"
   };
 }
 
+/* 指标行：全部可选。没填就不显示这一行——宁可少一行，也不编造数字。 */
+function scholarStats(){
+  const raw = (cfg.scholar && cfg.scholar.stats) || {};
+  const defs = [['papers','论文'], ['citations','引用'], ['hindex','h-index']];
+  const out = [];
+  for(const [k, label] of defs){
+    const v = raw[k];
+    if(v === undefined || v === null || String(v).trim() === '') continue;
+    // 只取短数字/短文本，防止配置里塞进一整段把布局撑坏
+    out.push({label, value: String(v).trim().slice(0, 10)});
+  }
+  return out;
+}
+
+const SCHOLAR_ICON = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2 9l10 5 10-5-10-5Z"/><path d="M5 11.6V17c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-5.4"/><path d="M22 9.2v5"/></svg>';
+
 function scholarCardHTML(){
   const s = scholarCfg();
-  const head = `<div class="side-title"><span class="side-title-icon" aria-hidden="true">✳</span> ${esc(s.title)}</div>`;
-  const body = `<p>${esc(s.text)}</p>`;
+  const fallbackHead = `<div class="side-title"><span class="side-title-icon" aria-hidden="true">✳</span> ${esc(s.title)}</div>`;
+  const fallbackBody = `<p>${esc(s.text)}</p>`;
   if(!s.enabled){
-    return `<section class="side-card note-card">${head}${body}</section>`;
+    return `<section class="side-card note-card">${fallbackHead}${fallbackBody}</section>`;
   }
-  return `<a class="side-card note-card note-link" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer"
+  const stats = scholarStats();
+  const statsHTML = stats.length ? `<div class="scholar-stats">${stats.map(x=>
+    `<span><strong>${esc(x.value)}</strong><small>${esc(x.label)}</small></span>`).join('')}</div>` : '';
+  return `<a class="side-card note-card note-link scholar-card" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer"
     aria-label="${esc(s.title)}：${esc(s.text)}（在 ${esc(s.label)} 打开）">
-    ${head}${body}
-    <span class="note-link-foot"><span>${esc(s.label)}${s.linkText ? " · " + esc(s.linkText) : ""}</span><span aria-hidden="true">↗</span></span>
+    <span class="scholar-glow" aria-hidden="true"></span>
+    <span class="scholar-head">
+      <span class="scholar-badge">${SCHOLAR_ICON}</span>
+      <span class="scholar-heading">
+        <span class="scholar-title">${esc(s.title)}</span>
+        <span class="scholar-source">${esc(s.label)}${s.linkText ? " · " + esc(s.linkText) : ""}</span>
+      </span>
+    </span>
+    <p class="scholar-text">${esc(s.text)}</p>
+    ${statsHTML}
+    <span class="scholar-cta"><span>${esc(s.ctaText)}</span><i aria-hidden="true">↗</i></span>
   </a>`;
 }
 
