@@ -1054,19 +1054,25 @@ html{scroll-behavior:auto}
 /* ---- 列表头图标：与标题基线对齐，不抢标题的分量 ---- */
 .feed-heading h2 .ico{font-size:19px;color:var(--accent);margin-right:7px;vertical-align:-2px;}
 /* 日期移入标签栏后，文章卡片只剩一列内容，不必再留左侧日期列 */
-/* 左侧列：日期已并入标签栏，这里改放分类徽标 */
-.post-item{display:grid;grid-template-columns:44px minmax(0,1fr);gap:18px;align-items:start;}
-.post-badge{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;
+/* 左侧列：日期已并入标签栏，这里改放分类徽标。
+   纵向居中对齐——卡片高度不一时，徽标跟着内容居中而不是贴顶。 */
+.post-item{display:grid;grid-template-columns:70px minmax(0,1fr);gap:22px;align-items:center;}
+.post-badge{width:70px;height:70px;border-radius:20px;display:grid;place-items:center;
   background:var(--accent);color:#fff;flex:none;
   transition:transform .28s cubic-bezier(.34,1.4,.64,1);}
-.post-badge .ico{font-size:24px;}
+.post-badge .ico{font-size:38px;}
 .post-item:hover .post-badge{transform:translateY(-2px) scale(1.06);}
 [data-theme="dark"] .post-badge{color:#0e1117;}
 .post-body{min-width:0;}
+@media(max-width:900px){
+  .post-item{grid-template-columns:56px minmax(0,1fr);gap:18px;}
+  .post-badge{width:56px;height:56px;border-radius:16px;}
+  .post-badge .ico{font-size:30px;}
+}
 @media(max-width:560px){
-  .post-item{grid-template-columns:34px minmax(0,1fr);gap:12px;}
-  .post-badge{width:34px;height:34px;border-radius:10px;}
-  .post-badge .ico{font-size:19px;}
+  .post-item{grid-template-columns:42px minmax(0,1fr);gap:13px;}
+  .post-badge{width:42px;height:42px;border-radius:13px;}
+  .post-badge .ico{font-size:23px;}
 }
 .post-kicker{display:flex;align-items:center;flex-wrap:wrap;gap:2px;}
 .post-kicker .kicker-sep{color:var(--line);padding:0 5px;}
