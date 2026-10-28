@@ -19,8 +19,12 @@ from email.utils import format_datetime
 from urllib.parse import quote
 from xml.etree import ElementTree as ET
 
+import infer_meta          # 无头信息文章的分类 / 标签 / 摘要推断
+
 EXT = {'.md', '.markdown', '.htm', '.html'}
 SUMMARY_LIMIT = 160
+# 首段至少这么长才够当摘要；短于此就改用全文选句
+SUMMARY_MIN_PICK = 24
 SKIP_HTML = {'script', 'style', 'nav', 'footer', 'noscript', 'svg'}
 
 
@@ -272,8 +276,38 @@ def build(root: Path, blogdir: str = 'blog') -> dict:
             picked_title, picked_summary, plain = md_pick(body)
         if str(meta.get('draft', '')).lower() in {'true', 'yes', '1'}:
             continue
-        title = meta.get('title') or picked_title or name_title(path.name)
-        summary = (meta.get('summary') or meta.get('description') or picked_summary or plain)[:SUMMARY_LIMIT]
+        # HTML 是否自带 <meta name="description">：有则它算作者显式给的描述
+        has_meta_desc = bool(re.search(
+            r'<meta\b[^>]*?(?:name|property)\s*=\s*["\'](?:description|og:description)["\']',
+            raw, re.I))
+        title = str(meta.get('title') or picked_title or name_title(path.name)).strip()
+        # 推断只在有字段缺失时才跑：完整 front-matter 的文章不必白做一遍
+        # 全文 n-gram 统计（那是 infer_meta 里最贵的一步）。
+        need_infer = not (meta.get('category') and meta.get('tags')
+                          and (meta.get('summary') or meta.get('description')))
+        inf = infer_meta.analyze(title, plain, path.name) if need_infer else None
+
+        # 分类：不再一律「未分类」。词典命中优先，否则用全文最高频的实词，
+        # 再不行退到「随笔」——至少仍是一个可点击的话题。
+        category = str(meta.get('category') or (inf['category'] if inf else '')
+                       or infer_meta.FALLBACK_CATEGORY).strip()
+        tags = meta.get('tags') or (inf['tags'] if inf else []) or []
+        # 摘要优先级：
+        #   ① front-matter / 注释里写的 summary
+        #   ② HTML 的 <meta name="description"> —— SEO 描述是作者显式给的，
+        #      哪怕只有几个字也该尊重，不能因为"太短"就被全文选句顶掉
+        #   ③ 正文首段（够长的话）
+        #   ④ 都不行时才动用全文选句
+        if meta.get('summary') or meta.get('description'):
+            summary = meta.get('summary') or meta.get('description')
+        elif has_meta_desc and picked_summary:
+            summary = picked_summary
+        elif len(picked_summary) >= SUMMARY_MIN_PICK:
+            summary = picked_summary
+        else:
+            summary = (inf['summary'] if inf else '') or picked_summary or plain
+        summary = str(summary)[:SUMMARY_LIMIT]
+
         created_git, updated_git = git_dates(root, path, bulk, renamed)
         created = text_date(next((meta[k] for k in ('date','created','published','created_at') if meta.get(k)), '')) or created_git or file_name_date(path.name)
         updated = text_date(next((meta[k] for k in ('updated','modified','last_modified_at','updated_at') if meta.get(k)), '')) or updated_git or created
@@ -281,9 +315,9 @@ def build(root: Path, blogdir: str = 'blog') -> dict:
         files.append({
             'name':path.name,'path':path.relative_to(root).as_posix(),
             'sha':hashlib.sha256(path.read_bytes()).hexdigest(),
-            'title':str(title).strip(), 'created':created, 'updated':updated,
-            'summary':str(summary).strip(), 'tags':meta.get('tags') or [],
-            'category':str(meta.get('category') or '未分类').strip(),
+            'title':title, 'created':created, 'updated':updated,
+            'summary':summary.strip(), 'tags':tags,
+            'category':category,
             'cover':meta.get('cover') or '', 'words':len(re.sub(r'\s+', '', plain)),
         })
     files.sort(key=lambda p:(p['created'],p['name']), reverse=True)
