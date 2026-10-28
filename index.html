@@ -1050,9 +1050,30 @@ html{scroll-behavior:auto}
 .archive-cat .ico{font-size:13px;color:var(--accent);opacity:.85;}
 .archive-items>a:hover .archive-cat{color:var(--accent);}
 .archive-items>a:hover .archive-cat .ico{opacity:1;}
-/* 侧栏最近更新：分类与日期并排在 meta 行，图标略小以免抢标题 */
+
+/* ---- 列表头图标：与标题基线对齐，不抢标题的分量 ---- */
+.feed-heading h2 .ico{font-size:19px;color:var(--accent);margin-right:7px;vertical-align:-2px;}
+/* 日期移入标签栏后，文章卡片只剩一列内容，不必再留左侧日期列 */
+/* 左侧列：日期已并入标签栏，这里改放分类徽标 */
+.post-item{display:grid;grid-template-columns:44px minmax(0,1fr);gap:18px;align-items:start;}
+.post-badge{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;
+  background:var(--accent);color:#fff;flex:none;
+  transition:transform .28s cubic-bezier(.34,1.4,.64,1);}
+.post-badge .ico{font-size:24px;}
+.post-item:hover .post-badge{transform:translateY(-2px) scale(1.06);}
+[data-theme="dark"] .post-badge{color:#0e1117;}
+.post-body{min-width:0;}
+@media(max-width:560px){
+  .post-item{grid-template-columns:34px minmax(0,1fr);gap:12px;}
+  .post-badge{width:34px;height:34px;border-radius:10px;}
+  .post-badge .ico{font-size:19px;}
+}
+.post-kicker{display:flex;align-items:center;flex-wrap:wrap;gap:2px;}
+.post-kicker .kicker-sep{color:var(--line);padding:0 5px;}
+.post-kicker .kicker-date{color:var(--fg-soft);}
+.post-kicker .kicker-date em{font-style:normal;opacity:.78;margin-left:6px;}
+/* 侧栏「最近更新」的 meta 行：分类 + 日期，不使用图标 */
 .side-recent small{display:flex;align-items:center;gap:5px;min-width:0;}
-.side-recent small .ico{font-size:12px;color:var(--accent);flex:none;}
 .side-recent small .dot{flex:none;opacity:.4;display:inline-block;}
 
 .skel{min-height:85vh;}
@@ -2181,7 +2202,7 @@ function sidebarHTML(){
     ${scholarCardHTML()}
     ${latest.length ? `<section class="side-card">
       <div class="side-title">${iconHTML('clock')}最近更新 <a href="#/archive">全部 ↗</a></div>
-      <div class="side-recent">${latest.map(p=>`<a href="${postURL(p)}"><span>${esc(p.title)}</span><small>${iconHTML(categoryIconKey(p.category))}${esc(p.category||"未分类")}${(()=>{const d=fmtDate(p.updated||p.created);return d?`<span class="dot"></span>${esc(d)}`:"";})()}</small></a>`).join("")}</div>
+      <div class="side-recent">${latest.map(p=>`<a href="${postURL(p)}"><span>${esc(p.title)}</span><small>${esc(p.category||"未分类")}${(()=>{const d=fmtDate(p.updated||p.created);return d?`<span class="dot"></span>${esc(d)}`:"";})()}</small></a>`).join("")}</div>
     </section>` : ''}
     ${tags.length ? `<section class="side-card">
       <div class="side-title">${iconHTML('tag')}热门话题 <a href="#/topics">更多 ↗</a></div>
@@ -2195,16 +2216,22 @@ function sidebarHTML(){
   </aside>`;
 }
 function shellHTML(main){ return `<div class="wrap site-shell"><div class="primary-column">${main}</div>${sidebarHTML()}</div>`; }
+/* 日期已并入标签栏，不再单独占一列。
+   完全没有日期时整段不渲染，避免留下一个孤立的「·」分隔符。 */
+function postDateSeg(p){
+  const d = fmtDate(p.created);
+  const u = (p.updated && p.updated !== p.created) ? fmtDate(p.updated) : "";
+  if(!d && !u) return "";
+  return `<span class="kicker-sep" aria-hidden="true">·</span>` +
+    `<span class="kicker-date">${esc(d || "—")}${u ? `<em>修订 ${esc(u)}</em>` : ""}</span>`;
+}
+
 function postCard(p,q="",i=0){
-  return `<a class="post-item" href="${postURL(p)}" style="--i:${Math.min(i,10)}">
-    <div class="post-date">${esc(fmtDate(p.created)||"—")}${p.updated && p.updated!==p.created ? `<em>修订 ${esc(fmtDate(p.updated))}</em>` : ""}</div>
-    <div><div class="post-kicker">${iconHTML(categoryIconKey(p.category))}${esc(p.category||"未分类")} <span aria-hidden="true">/</span> ${p.isHtml?'HTML':'Markdown'}</div>
+  return `<a class="post-item" href="${postURL(p)}" style="--i:${Math.min(i,10)}"><div class="post-badge" aria-hidden="true">${categoryIcon(p.category)}</div><div class="post-body"><div class="post-kicker">${iconHTML(categoryIconKey(p.category))}${esc(p.category||"未分类")} <span aria-hidden="true">/</span> ${p.isHtml?'HTML':'Markdown'}${postDateSeg(p)}</div>
       <h2 class="post-title">${highlight(p.title,q)}</h2>
       ${p.summary ? `<p class="post-sum">${highlight(p.summary.slice(0,140),q)}</p>` : ""}
       <div class="post-tags">${p.tags.slice(0,3).map(t=>`<span class="tag-mini">${esc(t)}</span>`).join("")}
-       <span class="read-time">${Math.max(1,Math.ceil(p.words/400))} 分钟 <span aria-hidden="true">↗</span></span></div>
-    </div>
-  </a>`;
+       <span class="read-time">${Math.max(1,Math.ceil(p.words/400))} 分钟 <span aria-hidden="true">↗</span></span></div></div></a>`;
 }
 function featuredHTML(p){
   return `<a class="featured-card" href="${postURL(p)}">
