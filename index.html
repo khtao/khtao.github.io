@@ -24,7 +24,7 @@
 /* ============ 设计变量 ============ */
 :root{
   --bg:#ffffff; --bg-soft:#f6f7f9; --hover-bg:#f4f5f8;
-  --fg:#16181d; --fg-mid:#4c5158; --fg-soft:#6f747e;
+  --fg:#000000; --fg-mid:#15171c; --fg-soft:#464d5c;
   --line:#e9eaee; --line-soft:#f1f2f5;
   --accent:#4a5bd6; --accent-soft:rgba(74,91,214,.09);
   --card:#ffffff; --shadow:0 1px 2px rgba(16,24,40,.04), 0 8px 24px rgba(16,24,40,.06);
@@ -34,7 +34,7 @@
 }
 [data-theme="dark"]{
   --bg:#0e1117; --bg-soft:#151a22; --hover-bg:#181d26;
-  --fg:#e7e9ee; --fg-mid:#b0b6c0; --fg-soft:#7c838f;
+  --fg:#fbfbff; --fg-mid:#e2e5f1; --fg-soft:#a8afc5;
   --line:#232935; --line-soft:#1c222c;
   --accent:#93a5ff; --accent-soft:rgba(147,165,255,.14);
   --card:#131822; --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.28);
@@ -332,14 +332,14 @@ footer{border-top:1px solid var(--line);margin-top:40px;}
 /* ============ v3 · editorial refinement ============ */
 :root{
   --bg:#fcfcfe; --bg-soft:#f3f4f9; --hover-bg:#f4f5fb;
-  --fg:#202335; --fg-mid:#485064; --fg-soft:#788195;
+  --fg:#000000; --fg-mid:#15171c; --fg-soft:#464d5c;
   --line:#e6e8f0; --line-soft:#eceef4;
   --accent:#5b5bd6; --accent-soft:rgba(91,91,214,.085);
   --card:#ffffff; --radius:18px;
 }
 [data-theme="dark"]{
   --bg:#0f121b; --bg-soft:#171c29; --hover-bg:#1b2130;
-  --fg:#eceefa; --fg-mid:#bbc0d1; --fg-soft:#858da3;
+  --fg:#fbfbff; --fg-mid:#e2e5f1; --fg-soft:#a8afc5;
   --line:#293043; --line-soft:#21283a;
   --accent:#a6adff; --accent-soft:rgba(166,173,255,.12);
   --card:#171c29;
@@ -989,6 +989,61 @@ html{scroll-behavior:auto}
   .proj-grid{grid-template-columns:1fr;}
 }
 
+
+/* ============ 图标系统：全套内联 SVG，同一套描边语言 ============
+   24×24 视框 · stroke-width 1.9 · 圆角端点 · currentColor 取色。
+   不引图标库：多一个外部请求就多一份不确定性，而这里只需要十几个图形。 */
+.ico{display:inline-flex;flex:none;align-items:center;justify-content:center;vertical-align:-.14em;}
+.ico svg{width:1em;height:1em;display:block;overflow:visible;}
+.side-title .ico{font-size:16px;color:var(--accent);}
+.stat-ico{display:block;height:15px;margin:0 auto 4px;font-size:14px;color:var(--accent);opacity:.9;
+  transition:transform .22s cubic-bezier(.34,1.4,.64,1);}
+.profile-stats a:hover .stat-ico{transform:translateY(-2px) scale(1.14);}
+.post-kicker .ico{font-size:12px;margin-right:3px;vertical-align:-.16em;}
+.subscribe-link .ico{font-size:14px;margin-right:1px;}
+.topic-wall .ico{font-size:14px;color:var(--accent);}
+
+/* 分类卡片的图标：柔光底盘 + hover 微交互 */
+.category-glyph{position:relative;display:inline-flex;align-items:center;justify-content:center;
+  width:46px;height:46px;border-radius:14px;font-size:24px;color:var(--accent);line-height:1;
+  background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 14%,transparent);
+  transition:transform .3s cubic-bezier(.34,1.4,.64,1),background .22s,border-color .22s;}
+.category-card:hover .category-glyph{transform:translateY(-3px) scale(1.08) rotate(-5deg);
+  background:color-mix(in srgb,var(--accent) 15%,transparent);
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent);}
+.category-glyph::after{content:"";position:absolute;inset:-7px;border-radius:20px;
+  background:radial-gradient(circle,var(--accent-soft),transparent 70%);
+  opacity:0;transition:opacity .28s;pointer-events:none;}
+.category-card:hover .category-glyph::after{opacity:1;}
+
+/* ============ 动画 ============
+   入场错峰只在「切换分区」时播放：搜索时每敲一个字都重播会晃眼。 */
+@keyframes riseIn{from{opacity:0;transform:translateY(11px)}to{opacity:1;transform:none}}
+.enter>*{animation:riseIn .44s cubic-bezier(.22,.85,.32,1) backwards;
+  animation-delay:calc(var(--i,0)*42ms);}
+@keyframes softPulse{0%,100%{box-shadow:0 0 0 4px var(--accent-soft)}
+  50%{box-shadow:0 0 0 7px var(--accent-soft)}}
+.eyebrow-dot{animation:softPulse 2.8s ease-in-out infinite;}
+.topic-wall>a>span:first-child{display:inline-block;transition:transform .2s,color .2s;}
+.topic-wall>a:hover>span:first-child{transform:translateY(-1px) scale(1.15);color:var(--accent);}
+.subscribe-link{transition:transform .2s,gap .2s;}
+.subscribe-link:hover{text-decoration:none;transform:translateX(2px);}
+.profile-follow:hover{transform:translateY(-2px);}
+@media (prefers-reduced-motion:reduce){
+  .enter>*{animation:none!important;}
+  .eyebrow-dot{animation:none;}
+  .category-card:hover .category-glyph{transform:none;}
+}
+
+/* ============ 字体 ============
+   优先本地 Inter（装了就更好看，没装自动回落），中文紧随其后走 PingFang。 */
+body{font-family:"Inter var","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,
+  "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC","Source Han Sans SC",sans-serif;
+  font-feature-settings:"kern" 1,"liga" 1,"calt" 1;
+  font-optical-sizing:auto;-moz-osx-font-smoothing:grayscale;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+.post-title,.category-label,.featured-card h2,.featured-card h3{text-wrap:balance;}
+.post-sum,.profile-desc,.hero p,.md p{text-wrap:pretty;}
 </style>
 </head>
 <body>
@@ -1960,6 +2015,70 @@ function topicURL(t){ return "#/topic/"+encodeURIComponent(t); }
 function postURL(p){ return "#/p/"+encodeURIComponent(p.name); }
 /* 「一句话」卡片。配置了 scholar.url 就整块变成外链入口，
    否则保持原来的纯文字卡片 —— 没配学者主页的人不该看到死链。 */
+/* ---------- 图标：全部内联 SVG，共用一套描边风格 ----------
+   24×24 视框、stroke-width 1.9、圆角端点、currentColor 取色 —— 与学者徽标同一语言。
+   刻意不引图标库：多一个外部请求就多一份不确定性，而这里只需要十几个图形。 */
+const ICONS = {
+  travel:'<path d="M3 18l5.5-8 3.5 4.5L15 11l6 7"/><circle cx="17.5" cy="6.4" r="2.4"/>',
+  code:'<path d="m8.5 6.5-5 5.5 5 5.5"/><path d="m15.5 6.5 5 5.5-5 5.5"/>',
+  camera:'<path d="M3 8.6A2.6 2.6 0 0 1 5.6 6h1.6l1.2-2h6.2l1.2 2h1.6A2.6 2.6 0 0 1 20.4 8.6v7.2a2.6 2.6 0 0 1-2.6 2.6H5.6A2.6 2.6 0 0 1 3 15.8Z"/><circle cx="11.7" cy="12" r="3.3"/>',
+  food:'<path d="M6 3v7.5a2.2 2.2 0 0 0 4.4 0V3"/><path d="M8.2 12.6V21"/><path d="M16.4 3c-1.7 0-2.7 1.3-2.7 3.2s1 3.4 2.7 3.4 2.7-1.5 2.7-3.4S18.1 3 16.4 3Z"/><path d="M16.4 9.6V21"/>',
+  book:'<path d="M12 6.7c-1.6-1.6-3.7-2.3-8-2.3v13.4c4.3 0 6.4.7 8 2.3 1.6-1.6 3.7-2.3 8-2.3V4.4c-4.3 0-6.4.7-8 2.3Z"/><path d="M12 6.7v13.4"/>',
+  film:'<rect x="3" y="4.6" width="18" height="14.8" rx="2.6"/><path d="M3 9.4h18M3 14.6h18"/><path d="M7.6 4.6v14.8M16.4 4.6v14.8"/>',
+  game:'<rect x="2.6" y="7" width="18.8" height="10.8" rx="4"/><path d="M7.2 10.6v3.6M5.4 12.4h3.6"/><circle cx="15.9" cy="11.4" r=".95"/><circle cx="18.2" cy="13.8" r=".95"/>',
+  fitness:'<path d="M3.6 9.4v5.2M20.4 9.4v5.2M7 6.2v11.6M17 6.2v11.6M7 12h10"/>',
+  chart:'<path d="M4 19.4h16"/><path d="m5.4 15.2 4.4-5 3.4 3 4.8-6"/><path d="M14.4 7.2h4v4"/>',
+  briefcase:'<rect x="3" y="7.4" width="18" height="12.2" rx="2.6"/><path d="M9 7.4V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.4"/><path d="M3 12.6h18"/>',
+  cap:'<path d="M12 4 2 9l10 5 10-5-10-5Z"/><path d="M5 11.6V17c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-5.4"/><path d="M22 9.2v5"/>',
+  phone:'<rect x="6.4" y="2.6" width="11.2" height="18.8" rx="3"/><path d="M10.4 5.4h3.2"/><path d="M12 18.2h.01"/>',
+  home:'<path d="m3 10.4 9-6.8 9 6.8"/><path d="M5.6 9.4V20h12.8V9.4"/><path d="M10 20v-5.6h4V20"/>',
+  pen:'<path d="M15.6 3.6 20.4 8.4 8.6 20.2l-5 .2.2-5Z"/><path d="m14.2 5 4.8 4.8"/>',
+  clock:'<circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12l3.3 2"/>',
+  tag:'<path d="M3.6 11.4V4.6a1 1 0 0 1 1-1h6.8a1 1 0 0 1 .7.3l8.2 8.2a1 1 0 0 1 0 1.4l-6.8 6.8a1 1 0 0 1-1.4 0L3.9 12.1a1 1 0 0 1-.3-.7Z"/><circle cx="7.6" cy="7.6" r="1.25"/>',
+  rss:'<circle cx="5.2" cy="18.2" r="1.7"/><path d="M4.2 10.6a7.6 7.6 0 0 1 7.6 7.6"/><path d="M4.2 5.4A12.8 12.8 0 0 1 17 18.2"/>',
+  doc:'<path d="M13.6 3.4H7a2 2 0 0 0-2 2v13.2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9Z"/><path d="M13.6 3.4V9H19"/><path d="M8.6 13h6.8M8.6 16.4h4.4"/>',
+  box:'<path d="M20.4 8.2 12 3.6 3.6 8.2v7.6L12 20.4l8.4-4.6Z"/><path d="m3.6 8.2 8.4 4.8 8.4-4.8"/><path d="M12 13v7.4"/>'
+};
+
+function iconHTML(name, cls){
+  const d = ICONS[name];
+  if(!d) return '';
+  return '<span class="ico' + (cls ? ' ' + cls : '') + '" aria-hidden="true">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+    'stroke-linecap="round" stroke-linejoin="round">' + d + '</svg></span>';
+}
+
+/* 分类 → 图标。按关键词匹配，这样作者自定义的分类名（如「建站教程」）
+   也能落到合适的图形上，而不是死板的白名单。 */
+const CATEGORY_ICON_RULES = [
+  [/旅行|旅游|游记|出行|自驾|度假|景点|户外/, 'travel'],
+  [/技术|编程|开发|代码|部署|建站|教程|前端|后端|运维|架构|算法|软件|服务器|Git/i, 'code'],
+  [/摄影|拍照|影像|相片|镜头/, 'camera'],
+  [/美食|菜谱|探店|料理|烘焙/, 'food'],
+  [/读书|书评|阅读|书籍/, 'book'],
+  [/影视|电影|剧集|纪录片|影评|观剧/, 'film'],
+  [/游戏|手游|端游/, 'game'],
+  [/健身|运动|训练|跑步|减脂|增肌/, 'fitness'],
+  [/理财|投资|基金|股票|财务|经济/, 'chart'],
+  [/职场|工作|面试|简历|职业|求职/, 'briefcase'],
+  [/教育|学习|考研|课程|教学/, 'cap'],
+  [/数码|评测|手机|硬件|设备|开箱/, 'phone'],
+  [/生活|日常|家居|收纳|装修|杂记/, 'home'],
+  [/随笔|随想|杂谈|感想|笔记/, 'pen']
+];
+/** 返回图标 key；认不出来返回 ''（调用方决定要不要兜底） */
+function categoryIconKey(name){
+  const n = String(name || '');
+  for(const [re, k] of CATEGORY_ICON_RULES){ if(re.test(n)) return k; }
+  return '';
+}
+/** 分类卡片用：认不出来也给一支笔，保证整排卡片视觉一致 */
+function categoryIcon(name){ return iconHTML(categoryIconKey(name) || 'pen'); }
+
+/* 入场动画开关：只在切换分区时为真。
+   搜索时每敲一个字都会 render()，不加这个判断会一直重播、晃眼。 */
+let enterAnim = false, lastSection = null;
+
 function scholarCfg(){
   const s = cfg.scholar || {};
   const url = String(s.url || "").trim();
@@ -2031,33 +2150,33 @@ function sidebarHTML(){
       <div class="profile-name">${esc(cfg.author||cfg.title)}</div>
       <p class="profile-desc">${esc(cfg.description)}</p>
       <div class="profile-stats">
-        <a href="#/archive"><strong>${state.posts.length}</strong><span>文章</span></a>
-        <a href="#/topics"><strong>${allTopics().length}</strong><span>话题</span></a>
-        <a href="#/projects"><strong id="statProjects">${state.repos.length || "—"}</strong><span>项目</span></a>
+        <a href="#/archive">${iconHTML('doc','stat-ico')}<strong>${state.posts.length}</strong><span>文章</span></a>
+        <a href="#/topics">${iconHTML('tag','stat-ico')}<strong>${allTopics().length}</strong><span>话题</span></a>
+        <a href="#/projects">${iconHTML('box','stat-ico')}<strong id="statProjects">${state.repos.length || "—"}</strong><span>项目</span></a>
       </div>
       <a class="profile-follow" href="https://github.com/${encodeURIComponent(cfg.owner)}" target="_blank" rel="noopener noreferrer">GitHub · Follow me <span aria-hidden="true">↗</span></a>
     </section>
     ${scholarCardHTML()}
     ${latest.length ? `<section class="side-card">
-      <div class="side-title">最近更新 <a href="#/archive">全部 ↗</a></div>
+      <div class="side-title">${iconHTML('clock')}最近更新 <a href="#/archive">全部 ↗</a></div>
       <div class="side-recent">${latest.map(p=>`<a href="${postURL(p)}"><span>${esc(p.title)}</span><small>${esc(fmtDate(p.updated||p.created))}</small></a>`).join("")}</div>
     </section>` : ''}
     ${tags.length ? `<section class="side-card">
-      <div class="side-title">热门话题 <a href="#/topics">更多 ↗</a></div>
+      <div class="side-title">${iconHTML('tag')}热门话题 <a href="#/topics">更多 ↗</a></div>
       <div class="side-tags">${tags.map(([t,n])=>`<a href="${topicURL(t)}">${esc(t)} <span>${n}</span></a>`).join("")}</div>
     </section>` : ''}
-    <div class="side-card subscription-card"><div class="side-title"><span class="side-title-icon">↗</span> 保持联系</div>
+    <div class="side-card subscription-card"><div class="side-title">${iconHTML('rss')}保持联系</div>
       <p>新写的字，会顺着 RSS 找到你。不必注册，也不用留下邮箱。</p>
-      <a href="./feed.xml" class="subscribe-link">订阅 RSS <span aria-hidden="true">↗</span></a>
+      <a href="./feed.xml" class="subscribe-link">${iconHTML('rss')}订阅 RSS <span aria-hidden="true">↗</span></a>
     </div>
     <div class="side-sign">保持好奇，保持记录。 ✦</div>
   </aside>`;
 }
 function shellHTML(main){ return `<div class="wrap site-shell"><div class="primary-column">${main}</div>${sidebarHTML()}</div>`; }
-function postCard(p,q=""){
-  return `<a class="post-item" href="${postURL(p)}">
+function postCard(p,q="",i=0){
+  return `<a class="post-item" href="${postURL(p)}" style="--i:${Math.min(i,10)}">
     <div class="post-date">${esc(fmtDate(p.created)||"—")}${p.updated && p.updated!==p.created ? `<em>修订 ${esc(fmtDate(p.updated))}</em>` : ""}</div>
-    <div><div class="post-kicker">${esc(p.category||"未分类")} <span aria-hidden="true">/</span> ${p.isHtml?'HTML':'Markdown'}</div>
+    <div><div class="post-kicker">${iconHTML(categoryIconKey(p.category))}${esc(p.category||"未分类")} <span aria-hidden="true">/</span> ${p.isHtml?'HTML':'Markdown'}</div>
       <h2 class="post-title">${highlight(p.title,q)}</h2>
       ${p.summary ? `<p class="post-sum">${highlight(p.summary.slice(0,140),q)}</p>` : ""}
       <div class="post-tags">${p.tags.slice(0,3).map(t=>`<span class="tag-mini">${esc(t)}</span>`).join("")}
@@ -2103,7 +2222,7 @@ function homeHTML(){
     h+=featuredHTML(shown[0]);
     h+=`<div class="feed-heading"><div><div class="feed-kicker">THE JOURNAL / ALL NOTES</div><h2>最近文章 <span>${Math.max(0,all.length-1)}</span></h2></div>
       <div class="feed-toolbar" aria-label="文章排序"><button data-sort="new" class="${state.sort==='new'?'selected':''}" aria-pressed="${state.sort==='new'}">最新发布</button><button data-sort="updated" class="${state.sort==='updated'?'selected':''}" aria-pressed="${state.sort==='updated'}">最近修订</button></div></div>`;
-    if(shown.length>1) h+=`<div class="post-list">${shown.slice(1).map(p=>postCard(p)).join("")}</div>`;
+    if(shown.length>1) h+=`<div class="post-list${enterAnim?" enter":""}">${shown.slice(1).map((p,i)=>postCard(p,"",i)).join("")}</div>`;
     else h+=`<p class="feed-placeholder">新的故事正在慢慢写下。</p>`;
   } else {
     if(state.topic || q){
@@ -2112,7 +2231,7 @@ function homeHTML(){
     }
     if(!shown.length){
       h+=`<div class="empty"><div class="big" aria-hidden="true">✦</div><h2>${state.loading?'正在翻找':state.posts.length?'这里没有找到':'这里还是一片旷野'}</h2><p>${state.posts.length?'换一个词，也许就遇见了。':'下一篇，正在来的路上。'}</p></div>`;
-    }else h+=`<div class="post-list">${shown.map(p=>postCard(p,q)).join('')}</div>`;
+    }else h+=`<div class="post-list${enterAnim?" enter":""}">${shown.map((p,i)=>postCard(p,q,i)).join('')}</div>`;
   }
   if(normal) h += homeProjectsHTML();
   if(all.length>shown.length) h+=`<div class="loadmore-area"><button class="loadmore" data-more="true">再往下读一段 <span>${shown.length} / ${all.length}</span> ↘</button></div>`;
@@ -2147,9 +2266,9 @@ function topicsHTML(){
   } else {
     h+=`<div class="topic-summary">${topics.length} 个话题 · 点一个词，就落进一批文字里</div>`;
     h+=`<div class="topic-block"><div class="list-title">主分类 / CATEGORIES</div>
-      <div class="category-grid">${cs.map(([c,n],i)=>`<a class="category-card" href="${topicURL(c)}"><span class="category-glyph">${['✳','◇','⌘','✦'][i%4]}</span><span class="category-label">${esc(c)}</span><small>${n} 篇文章</small><b aria-hidden="true">↗</b></a>`).join('')}</div></div>`;
+      <div class="category-grid${enterAnim?" enter":""}">${cs.map(([c,n],i)=>`<a class="category-card" href="${topicURL(c)}" style="--i:${Math.min(i,10)}"><span class="category-glyph">${categoryIcon(c)}</span><span class="category-label">${esc(c)}</span><small>${n} 篇文章</small><b aria-hidden="true">↗</b></a>`).join('')}</div></div>`;
     h+=`<div class="topic-block"><div class="list-title">全部话题 / TAGS & CATEGORIES</div>
-      <div class="topic-wall">${topics.map(([t,n])=>`<a href="${topicURL(t)}"><span>#</span> ${esc(t)}<small>${n}</small></a>`).join('')}</div></div>`;
+      <div class="topic-wall${enterAnim?" enter":""}">${topics.map(([t,n],i)=>{const k=categoryIconKey(t);return `<a href="${topicURL(t)}" style="--i:${Math.min(i,10)}">${k?iconHTML(k):'<span>#</span>'} ${esc(t)}<small>${n}</small></a>`;}).join('')}</div></div>`;
   }
   return shellHTML(h);
 }
@@ -2439,6 +2558,7 @@ function render(){
     const md=document.querySelector('meta[name="description"]'); if(md)md.content=p.summary||cfg.description;
     const og=document.querySelector('meta[property="og:title"]'); if(og)og.content=p.title+" · "+cfg.title;
     const ogd=document.querySelector('meta[property="og:description"]'); if(ogd)ogd.content=p.summary||cfg.description;
+    enterAnim = false; lastSection = null;
     updateActiveNav("");
     afterPost(p);
   } else {
@@ -2456,6 +2576,7 @@ function render(){
       try{ history.replaceState(null, "", "#/topics"); }catch(e){}
       section="topics";
     }
+    enterAnim = (section !== lastSection); lastSection = section;
     app.innerHTML= section==="archive"?archiveHTML():section==="topics"?topicsHTML():section==="projects"?projectsHTML():section==="about"?aboutHTML():homeHTML();
     document.title=(section==="home"?cfg.title:{archive:"归档",topics:"话题",projects:"项目",about:"关于"}[section]+" · "+cfg.title);
     const md=document.querySelector('meta[name="description"]'); if(md)md.content=cfg.description;
