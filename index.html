@@ -2963,6 +2963,76 @@ function tuneBodyImages(scope, eagerCount){
    loading="lazy" 完全失效 —— 一篇 51 图的游记仍会一次性拉完 11MB。
    所以这里改成：先抽走 src，再由父页面按**父视口**位置决定何时装回去。
    图片容器 .ph 是固定 aspect-ratio，抽走 src 不会让布局塌陷。 */
+/* ---------- 图片固有尺寸表（构建期生成） ----------
+   原样 HTML 在 iframe 里渲染，父页面只能从 iframe 内部量高度。
+   图片没下载完时高度是 0，于是 50 图的文章会让 iframe 高度陆陆续续
+   跳 50 次才稳 —— 读者脚下一直在动。
+   build 期脚本已把每张图的真实宽高量好写进 blog/image-sizes.json，
+   这里读出来给图片设 aspect-ratio：图还没下载，准确高度就已经撑好了。
+   拿不到（文件缺失 / 没装 Pillow / 首次访问）就退回老路子，不影响可用性。 */
+let IMG_SIZES = {};                 // 当前文章的 {src: [w,h]}
+let IMG_SIZES_READY = {};           // 文章名 -> Promise，避免重复拉取
+let IMG_SIZES_LOADED = false;
+function loadImageSizes(name){
+  IMG_SIZES = {}; IMG_SIZES_LOADED = false;
+  const key = "imgsz:" + name;
+  try{
+    const cached = sessionStorage.getItem(key);
+    if(cached){ IMG_SIZES = JSON.parse(cached) || {}; IMG_SIZES_LOADED = true; return Promise.resolve(); }
+  }catch(e){}
+  const dir = String(cfg.blogDir || "blog").replace(/^\/+|\/+$/g, "");
+  return fetch(localRepoUrl(dir + "/image-sizes.json"), {cache:"force-cache"})
+    .then(r => r.ok ? r.json() : null)
+    .then(j => {
+      const a = (j && j.articles) || {};
+      const own = a[name] || {};
+      IMG_SIZES = own; IMG_SIZES_LOADED = true;
+      try{ sessionStorage.setItem(key, JSON.stringify(own)); }catch(e){}
+    })
+    .catch(() => { IMG_SIZES = {}; IMG_SIZES_LOADED = true; });   // 拿不到就当没有
+}
+/* 查一张图的固有尺寸。src 可能与表里写的大小写/编码不同，做几次宽松匹配。 */
+function imgSizeOf(src){
+  if(!src || !IMG_SIZES) return null;
+  const s = String(src).split("?")[0].split("#")[0];
+  if(IMG_SIZES[s]) return IMG_SIZES[s];
+  for(const k in IMG_SIZES){
+    if(k === s || decodeURIComponent(k) === decodeURIComponent(s)) return IMG_SIZES[k];
+  }
+  return null;
+}
+/* 用固有尺寸把高度提前撑出来。
+   返回 true 表示撑好了（不用再锁 getBoundingClientRect 的实测值）。 */
+function reserveImageSize(img, src){
+  const wh = imgSizeOf(src);
+  if(!wh || !(wh[0] > 0 && wh[1] > 0)) return false;
+  // aspect-ratio 让浏览器用 CSS 宽度算出高度；width/height 属性再兜一层
+  img.style.aspectRatio = wh[0] + " / " + wh[1];
+  img.setAttribute("width", wh[0]);
+  img.setAttribute("height", wh[1]);
+  // 若文章没给图片限定宽度（只有 img{max-width:100%} 这类），
+  // 占位图是 1×1，不撑满就会塌成一个小方块 —— 这里补上宽度约束。
+  const cs = img.ownerDocument && img.ownerDocument.defaultView
+    ? img.ownerDocument.defaultView.getComputedStyle(img) : null;
+  if(cs && cs.display !== "none"){
+    const w = parseFloat(cs.width) || 0;
+    if(w < 8){ img.style.width = "100%"; img.style.height = "auto"; }
+  }
+  return true;
+}
+/* 尺寸属性**永久保留**，加载完成后也不移除。
+   这是 Google 推荐的 CLS 防护做法：aspect-ratio 写的是图片真实比例，
+   留着它天经地义，且能保证版面永久稳定 ——
+   · 加载成功：真实图片按同一比例显示，高度一致，不跳动
+   · 加载失败：框还在，不会塌成 alt 文本那点高度
+   · 图片日后被替换：尺寸变了也不会突然撑塌整页
+   移除反而有害：实测释放后每张图回缩约 5px，50 图就是 250px 的缓慢漂移。 */
+function releaseReserve(img){
+  // 保留 aspect-ratio / width / height，只清掉内部标记。
+  // 仍保留此函数是为了让调用点语义清晰（并便于测试断言这条行为）。
+  if(img) delete img.dataset.reserved;
+}
+
 let frameLazy = {items:[], fr:null, raf:0, measured:false};
 const BLANK_IMG = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 function resetFrameLazy(){
@@ -3011,8 +3081,10 @@ function pumpFrameLazy(){
           const unlock = () => { it.img.style.height = ""; delete it.img.dataset.lockH; };
           it.img.addEventListener("load", unlock, {once:true});
           it.img.addEventListener("error", unlock, {once:true});
+        } else if(it.img.dataset.reserved){
+          releaseReserve(it.img);
         } else {
-          unlocked++;   // 没锁高度：加载后会把后面的内容顶下去
+          unlocked++;   // 既没锁高度也没尺寸：加载后会把后面的内容顶下去
         }
         it.img.setAttribute("src", src);
         loaded++;
@@ -3052,19 +3124,30 @@ function fixFrameImages(d, fr){
       if(!img.getAttribute("data-full")) img.setAttribute("data-full", src);
       img.setAttribute("decoding", "async");
       img.removeAttribute("loading");           // 原生 lazy 在这里无效，交给父页面
+      // 先用构建期量好的尺寸把准确高度撑出来，再决定要不要抽走 src。
+      // 这样 iframe 高度一次算准，不必等图片下载完才陆陆续续变高。
+      const reserved = reserveImageSize(img, src);
+      if(reserved) img.dataset.reserved = "1";
       const next = mediaSrc(src);
       if(i < 6){                                // 首屏一屏左右，直接给真图
         if(next !== src) guardWebp(img);
         img.setAttribute("src", next);
+        // 首屏图不走懒加载队列，也要在就位后清掉撑高用的属性，
+        // 否则会一直挂着 aspect-ratio 和 width/height。
+        if(reserved) releaseReserve(img);
       } else {
         // 抽走 src 前先锁住当前高度。若文章没给图片固定高度容器
         // （本仓库两篇碰巧都有，但作者新写的未必），换成 1x1 占位会让
         // 版面塌成 1px —— 滚动时脚下剧烈跳动。锁定后位置纹丝不动。
+        // 已经用 aspect-ratio 撑好高度的，位置纹丝不动，不必再锁死 px；
+        // 量不到的（容器没给高度、也没尺寸数据）才退回到锁定实测值。
         let hh = 0;
-        try{ hh = img.getBoundingClientRect().height; }catch(e){}
-        if(hh > 4){
-          img.style.height = hh + "px";
-          img.dataset.lockH = "1";
+        if(!reserved){
+          try{ hh = img.getBoundingClientRect().height; }catch(e){}
+          if(hh > 4){
+            img.style.height = hh + "px";
+            img.dataset.lockH = "1";
+          }
         }
         img.setAttribute("data-lazysrc", next);
         img.setAttribute("src", BLANK_IMG);     // 透明占位，避免破图图标
@@ -3086,7 +3169,11 @@ function afterPost(p){
   const body = $("#mdBody");
   if(p.isHtml){
     stopRawWatch();
-    initRawFrame();
+    // 先把图片尺寸表取回来再渲染 iframe：setup 时就能给每张图撑好高度，
+    // iframe 高度一次算准。取不到也不阻塞——catch 里已置为「没有尺寸」。
+    const startRaw = () => initRawFrame();
+    if(IMG_SIZES_READY && IMG_SIZES_READY[p.name]) startRaw();
+    else (IMG_SIZES_READY[p.name] = loadImageSizes(p.name)).then(startRaw, startRaw);
     return;
   }
   // 封面在 mdBody 之外，单独治理：它在首屏，立即加载但换 WebP
