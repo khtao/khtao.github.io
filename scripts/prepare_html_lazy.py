@@ -17,31 +17,45 @@ SRC = re.compile(r'(?<![\w:-])src\s*=\s*(["\'])(.*?)\1', re.I|re.S)
 STAGED = re.compile(r'\bdata-khtao-src\s*=', re.I)
 MARKER = 'data-khtao-lazy-bootstrap'
 BOOTSTRAP = r'''<script data-khtao-lazy-bootstrap>
-/* Standalone article fallback; parent reader provides outer-viewport loading. */
+/* Same-origin reader manages the outer viewport; standalone pages manage their own. */
 (function(){
-  var images=[].slice.call(document.querySelectorAll('img[data-khtao-src]'));
-  if(!images.length)return;
+  var staged=[].slice.call(document.querySelectorAll('img[data-khtao-src]'));
+  if(!staged.length)return;
   function reveal(img){
-    var src=img.getAttribute('data-khtao-src');
-    if(!src)return;
+    var original=img.getAttribute('data-khtao-src');
+    if(!original)return;
     img.removeAttribute('data-khtao-src');
-    img.loading='lazy';img.decoding='async';img.src=src;
+    img.loading='lazy';img.decoding='async';
+    // Standalone posts previously requested 11.45MB of JPEGs rather than the
+    // already-published 7.54MB WebP set. Try WebP, with a per-image JPEG fallback.
+    var preferred=/\.(?:jpe?g|png)$/i.test(original) ? original.replace(/\.(?:jpe?g|png)$/i,'.webp') : original;
+    if(preferred!==original){
+      img.addEventListener('error',function failed(){
+        img.removeEventListener('error',failed);
+        if(img.getAttribute('src')!==original)img.src=original;
+      },{once:true});
+    }
+    img.src=preferred;
   }
   function standalone(){
-    images=images.filter(function(img){return !!img.getAttribute('data-khtao-src');});
-    if(!images.length)return;
-    if(!('IntersectionObserver' in window)){images.forEach(reveal);return;}
+    staged=staged.filter(function(img){return !!img.getAttribute('data-khtao-src');});
+    if(!staged.length)return;
+    if(!('IntersectionObserver' in window)){staged.forEach(reveal);return;}
     var io=new IntersectionObserver(function(entries){entries.forEach(function(e){
       if(e.isIntersecting){io.unobserve(e.target);reveal(e.target);}
     });},{rootMargin:'850px 0px',threshold:0});
-    images.forEach(function(img){io.observe(img);});
+    staged.forEach(function(img){io.observe(img);});
   }
-  var embedded=false;
-  try{embedded=window.parent!==window && window.parent.location.origin===location.origin;}
-  catch(e){embedded=false;}
-  if(embedded){
-    // The reader starts within 100ms; if it fails, never leave pictures blank.
-    setTimeout(function(){if(!window.__KHTAO_PARENT_LAZY_READY__)standalone();},1800);
+  var insideThisReader=false;
+  try{
+    insideThisReader=!!(window.frameElement && window.frameElement.id==='rawFrame' &&
+      window.parent.document.getElementById('rawFrame')===window.frameElement);
+  }catch(e){}
+  if(insideThisReader){
+    // On slow devices the parent can start late: a 1.8 s fallback formerly
+    // ran *inside a full-height iframe* and could unlock the entire photo set.
+    // Give the parent enough time to initialize, but recover if it never does.
+    setTimeout(function(){if(!window.__KHTAO_PARENT_LAZY_READY__)standalone();},6000);
   }else standalone();
 })();
 </script>'''
@@ -81,6 +95,11 @@ def prepare(path:Path, sizes:dict)->int:
             count[0]+=1
         return tag
     revised=IMG_TAG.sub(sub,text)
+    if already_bootstrapped:
+        # HTML was optimized by a previous release; refresh only our own script.
+        marker_script=re.compile(r'<script\s+data-khtao-lazy-bootstrap>[\s\S]*?</script>',re.I)
+        revised, replaced=marker_script.subn(lambda _: BOOTSTRAP,revised,count=1)
+        if replaced!=1: raise ValueError(f'Malformed lazy bootstrap: {path}')
     if count[0] and not already_bootstrapped and '</body>' in revised.lower():
         revised=re.sub(r'</body\s*>',BOOTSTRAP+'\n</body>',revised,count=1,flags=re.I)
     if revised!=text:path.write_text(revised,encoding='utf-8')

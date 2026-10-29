@@ -37,3 +37,22 @@ class HTMLStageTest(unittest.TestCase):
   self.assertNotIn('data-khtao-lazy-bootstrap',self.p.read_text())
 
 if __name__=='__main__':unittest.main()
+
+class HTMLStageUpgradeTest(unittest.TestCase):
+ def setUp(self):
+  self.tmp=tempfile.TemporaryDirectory(); self.p=Path(self.tmp.name)/'legacy.html'
+ def tearDown(self):self.tmp.cleanup()
+ def test_upgrade_legacy_script_preserving_staged_images(self):
+  self.p.write_text('<html><body><img src="a.jpg"><img src="b.jpg"><img src="c.jpg"></body></html>')
+  self.assertEqual(prepare(self.p,{}),1)
+  s=self.p.read_text(); old='<script data-khtao-lazy-bootstrap>OLD_SCRIPT</script>'
+  s=__import__('re').sub(r'<script\s+data-khtao-lazy-bootstrap>[\s\S]*?</script>',old,s)
+  self.p.write_text(s)
+  self.assertEqual(prepare(self.p,{}),0)
+  upgraded=self.p.read_text()
+  self.assertNotIn('OLD_SCRIPT',upgraded)
+  self.assertIn('img.src=preferred',upgraded)
+  self.assertEqual(upgraded.count('data-khtao-lazy-bootstrap'),1)
+  self.assertEqual(upgraded.count('data-khtao-src='),1)
+  self.assertEqual(prepare(self.p,{}),0)
+  self.assertEqual(self.p.read_text(),upgraded)
