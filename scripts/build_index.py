@@ -435,7 +435,21 @@ def main() -> None:
     data=build(root,args.blog_dir)
     out=root / args.blog_dir / 'index.json'
     out.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+    # 全文搜索索引按需下载：首页只加载轻量 blog/index.json。
+    # 对 HTML 提取文本而非图片 Base64，保留跨全部文章的正文搜索能力。
+    searchable=[]
+    for item in data["files"]:
+        source=root / item["path"]
+        raw=source.read_text(encoding="utf-8-sig")
+        if source.suffix.lower() in {".htm", ".html"}:
+            _, _, plain=html_pick(raw)
+        else:
+            _, body=frontmatter(raw)
+            _, _, plain=md_pick(body)
+        searchable.append({"name":item["name"],"sha":item["sha"],"text":plain})
+    search_file=root / args.blog_dir / "search-index.json"
+    search_file.write_text(json.dumps({"version":1,"files":searchable},ensure_ascii=False,separators=(",",":"))+'\n',encoding="utf8")
     build_feeds(root, data)
-    print(f'Created {out}: {len(data["files"])} posts; feed.xml and sitemap.xml generated')
+    print(f'Created {out}: {len(data["files"])} posts; search-index.json, feed.xml and sitemap.xml generated')
 
 if __name__=='__main__': main()

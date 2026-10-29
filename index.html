@@ -250,6 +250,7 @@ mark{background:var(--accent-soft);color:var(--accent);border-radius:3px;padding
 /* 高度由 JS 按文章真实长度写入；overflow:hidden 兜住最后 1–2px 的取整误差 */
 .raw-frame{display:block;width:100%;border:0;background:#fff;border-radius:12px;
   border:1px solid var(--line-soft);box-shadow:var(--soft-shadow);overflow:hidden;}
+.raw-status{padding:12px 14px;margin:10px 0;border-radius:10px;border:1px solid var(--line);background:var(--bg-soft);color:var(--fg-soft);font-size:13px;}
 .raw-tip{font-size:12px;color:var(--fg-soft);padding:10px 2px 0;}
 /* 目录浮层：不占布局，展开收起都不改变正文宽度 */
 .raw-toc{position:fixed;top:76px;right:18px;z-index:45;width:216px;max-height:calc(100vh - 140px);
@@ -1187,7 +1188,7 @@ const DEFAULT_CFG = {
   }
 };
 let cfg = Object.assign({}, DEFAULT_CFG);
-const CACHE_KEY = "khtao_blog_cache_v3";
+const CACHE_KEY = "khtao_blog_cache_v4";
 const PROJECT_CACHE_KEY = "khtao_projects_v1";
 const PROJECT_TTL = 6 * 60 * 60 * 1000;
 const state = {
@@ -1628,29 +1629,24 @@ function readCache(){
    写不下时逐级退让：先少存几篇正文，再退到只存元数据（仍能秒出列表，
    正文按需拉取），绝不静默失败 —— 否则"秒开"会悄悄失效且无从察觉。 */
 function writeCache(){
-  // localStorage 配额通常按 UTF-16 字符计（约 5M）。字符串远超就别白写一次：
-  // 失败的 setItem 本身也很慢，7 次尝试能把主线程卡住几百毫秒。
-  const LIMIT = 2000000;
-  const pack = (posts, withBody) => JSON.stringify({
+  // 每次必须保存全部文章目录；旧版按前10/3篇截断，弱网回访会看不到其他文章。
+  // HTML 正文由 iframe + HTTP 缓存按需获取，不应重复塞入 localStorage。
+  const LIMIT = 1500000;
+  const pack = (withBody) => JSON.stringify({
     ts:state.syncedAt, branch:cfg.branch, generated:state.generated,
-    posts:posts.map(p => ({
+    posts:state.posts.map(p => ({
       name:p.name, sha:p.sha, path:p.path,
       meta:{title:p.title,created:p.created,updated:p.updated,tags:p.tags,summary:p.summary,
         cover:p.cover,category:p.category,draft:p.draft,isHtml:p.isHtml,words:p.words,
-        autoTitle:p.autoTitle,autoSummary:p.autoSummary,scripts:p.scripts,rawHtml:p.rawHtml},
-      raw:withBody ? p.body : undefined
+        autoTitle:p.autoTitle,autoSummary:p.autoSummary,scripts:p.scripts},
+      raw:withBody && !p.isHtml && p.body && p.body.length < 160000 ? p.body : undefined
     }))
   });
-  const full = pack(state.posts, true);
+  const full = pack(true);
   if(full.length <= LIMIT && safeStore.set(CACHE_KEY, full)) return;
-  // 超了就少存几篇正文，再不行只留元数据（列表仍能秒出，正文按需拉取）
-  for(const n of [10, 3]){
-    if(n >= state.posts.length) continue;
-    const part = pack(state.posts.slice(0, n), true);
-    if(part.length <= LIMIT && safeStore.set(CACHE_KEY, part)) return;
-  }
-  if(safeStore.set(CACHE_KEY, pack(state.posts, false))) return;
-  safeStore.del(CACHE_KEY);   // 连元数据都放不下：清掉，别留半截旧缓存
+  const metaOnly = pack(false);
+  if(metaOnly.length <= LIMIT && safeStore.set(CACHE_KEY, metaOnly)) return;
+  safeStore.del(CACHE_KEY);
 }
 function hydrate(c){
   return c.posts.map(p => Object.assign(
@@ -1667,94 +1663,108 @@ function postsSignature(){
        + "#" + state.generated;
 }
 
+/* 索引里已经包含卡片所需的标题/摘要/标签/日期，首页无需请求文章全文。
+   HTML 文件尤其不应在目录阶段被下载：2.7MB 的内嵌图片会使首屏阻塞。 */
+function postFromIndex(f, old){
+  const m=f.meta || {};
+  const p=old && old.sha === f.sha ? old : {
+    name:f.name, path:f.path, sha:f.sha, isHtml:/\.html?$/i.test(f.name),
+    body:"", plain:"", rawHtml:"", scripts:false, autoTitle:false, autoSummary:false
+  };
+  p.name=f.name; p.path=f.path; p.sha=f.sha;
+  p.title=String(m.title||p.title||prettyName(f.name));
+  p.summary=String(m.summary||p.summary||"");
+  p.created=String(m.created||p.created||"");
+  p.updated=String(m.updated||p.updated||"");
+  p.date=p.created;
+  p.tags=Array.isArray(m.tags)?m.tags:(p.tags||[]);
+  p.category=String(m.category||p.category||"未分类");
+  p.cover=String(m.cover||p.cover||"");
+  p.words=Number(m.words)||p.words||0;
+  p.draft=!!m.draft;
+  return p;
+}
+function currentPostIs(p){
+  if(!location.hash.startsWith("#/p/")) return false;
+  try{ return decodeURIComponent(location.hash.slice(4)) === p.name; }
+  catch(e){ return false; }
+}
+/* 正文仅在文章被打开时取；失败可重试，失败不会删除首页的文章卡片。 */
+async function loadPostBody(p){
+  if(!p || p.isHtml || p.body || p._loading) return;
+  p._failed=false; p._loading=true;
+  try{
+    const raw=await getLocalText(localRepoUrl(p.path)+"?v="+encodeURIComponent(p.sha||"current"),20000,"default");
+    // 元信息仍以最新索引为准；只从原文填回正文和可搜索的纯文本。
+    const parsed=parsePost(p.name,raw,{});
+    p.body=parsed.body; p.plain=parsed.plain; p.scripts=parsed.scripts;
+    p._failed=false;
+    if(currentPostIs(p)) render();
+    writeCache();
+  }catch(e){
+    p._failed=true;
+    if(currentPostIs(p)) render();
+  }finally{ p._loading=false; }
+}
+/* 全文搜索索引仅在用户搜索时获取，保留 HTML + Markdown 全文检索。
+   它与文章目录分离，不会在首页冷启动下载任何正文。 */
+let searchIndexPromise=null;
+let searchIndexGeneration="";
+async function fillSearchText(){
+  if(!state.q.trim() || searchIndexGeneration===state.generated) return;
+  if(searchIndexPromise) return searchIndexPromise;
+  const generation=state.generated;
+  searchIndexPromise=(async()=>{
+    try{
+      const path=cfg.blogDir.replace(/^\/+|\/+$/g,"")+"/search-index.json";
+      const j=JSON.parse(await getLocalText(localRepoUrl(path)+"?v="+encodeURIComponent(generation||"1"),12000,"default"));
+      if(!j || !Array.isArray(j.files)) throw new Error("INVALID_SEARCH_INDEX");
+      const entries=new Map(j.files.map(x=>[x.name,x]));
+      for(const p of state.posts){
+        const entry=entries.get(p.name);
+        if(entry && entry.sha===p.sha) p.plain=String(entry.text||"");
+      }
+      searchIndexGeneration=generation;
+    }catch(e){
+      // 旧部署没有 search-index.json 时，降级后台加载 Markdown 以保留部分全文搜索。
+      await pool(state.posts.filter(p=>!p.isHtml&&!p.body),2,p=>loadPostBody(p));
+    }
+    if(state.q.trim() && !location.hash.startsWith("#/p/"))render();
+  })().finally(()=>{searchIndexPromise=null;});
+  return searchIndexPromise;
+}
 async function refresh(force=false){
-  const seq = ++syncSequence;
-  const prevSig = postsSignature();
-  const prevHadList = state.hasList;
-  // 只在真正需要时才重绘 / 落盘。注意用「值」而不是函数：
-  // 写成 const changed = () => ... 后再调用两次，等于把 O(n) 的指纹拼接跑两遍。
-  // 两个 return 分支互斥，各自只求值一次。
-  state.refreshing = true;
-  const wasLoading = state.loading;
-  if(!state.hasList) state.loading = true;
-  // 只在真的要切换骨架屏时重绘；静默同步不打扰读者
-  if(state.loading !== wasLoading) render();
+  const seq=++syncSequence;
+  const prevSig=postsSignature();
+  const hadList=state.hasList;
+  const wasOffline=state.offline;
+  const wasError=state.error;
+  if(!state.hasList){state.loading=true;render();}
+  state.refreshing=true;
   let got;
-  try { got = await fetchList(); }
+  try{ got=await fetchList(); }
   catch(e){
-    if(seq !== syncSequence) return;
-    state.refreshing = false;
-    state.loading = false;
-    state.offline = true;
-    // 错误只描述「站点索引」；不再错误地归因于 GitHub API 频率限制。
-    state.error = state.hasList ? "" : "INDEX_UNAVAILABLE";
+    if(seq!==syncSequence) return;
+    state.refreshing=false;state.loading=false;state.offline=true;
+    state.error=state.hasList?"":"INDEX_UNAVAILABLE";
     render();
     return;
   }
-  if(seq !== syncSequence) return;
-  const old = new Map(state.posts.map(p => [p.name,p]));
-  const out = [];
-  for(const f of got.files){
-    const m = f.meta || {};
-    const prev = old.get(f.name);
-    // body 为空串说明这份缓存是配额不足时的降级产物，正文得重新拉取
-    if(!force && prev && prev.sha === f.sha && prev.body){
-      // 从最新索引更新日期，确保已更改的提交日期能够同步。
-      if(m.created) prev.created = m.created;
-      if(m.updated) prev.updated = m.updated;
-      if(m.category) prev.category = m.category;
-      if(m.summary && prev.autoSummary) prev.summary = m.summary;
-      prev.date = prev.created;
-      out.push(prev);
-    }else{
-      out.push({name:f.name,path:f.path,sha:f.sha,_need:true,_meta:m});
-    }
-  }
-  // 一旦新索引返回零文章，就丢弃旧缓存，不允许被删除的文章复活。
-  if(!out.length){
-    state.posts=[];
-    state.hasList=true;
-    state.generated=got.generated;
-    state.loading=false;
-    state.refreshing=false;
-    state.offline=false;
-    state.error="";
-    state.syncedAt=Date.now();
-    // 内容没变就别重写缓存：JSON.stringify 全文 + localStorage 写盘都是
-    // 同步阻塞主线程的，每 5 分钟白做一次纯属浪费。
-    const dirty = force || !prevHadList || postsSignature() !== prevSig;
-    if(dirty){ writeCache(); render(); }
-    return;
-  }
-  let failed=0;
-  await pool(out.filter(p=>p._need),4,async p=>{
-    try{
-      // URL 带 sha：文章一改 URL 就变，旧缓存自然失效，因此可以安全复用。
-      const raw=await getLocalText(localRepoUrl(p.path)+"?v="+encodeURIComponent(p.sha||Date.now()),10000,"default");
-      Object.assign(p,parsePost(p.name,raw,p._meta));
-      delete p._need;
-    }catch(e){
-      failed++;
-      const prev=old.get(p.name);
-      if(prev){
-        Object.assign(p,prev);
-        delete p._need;
-      }else p._dead=true;
-    }
-  });
-  if(seq !== syncSequence) return;
-  state.posts=out.filter(p=>!p._dead&&!p.draft&&p.body!==undefined)
+  if(seq!==syncSequence) return;
+  const old=new Map(state.posts.map(p=>[p.name,p]));
+  state.posts=got.files.map(f=>postFromIndex(f,old.get(f.name)))
+    .filter(p=>!p.draft)
     .sort((a,b)=>(b.created||"").localeCompare(a.created||"")||b.name.localeCompare(a.name));
-  state.hasList=true;
-  state.generated=got.generated;
-  state.loading=false;
-  state.refreshing=false;
-  state.offline=false;
-  state.error=failed ? failed + " 篇文章正文暂时无法加载，其他文章可以正常阅读。" : "";
-  state.syncedAt=Date.now();
-  // 内容没变就不重绘、也不重写缓存：force（手动点刷新）与首次加载仍然照常执行
-  const dirty = force || !prevHadList || postsSignature() !== prevSig;
-  if(dirty){ writeCache(); render(); }
+  state.hasList=true;state.generated=got.generated;state.loading=false;
+  state.refreshing=false;state.offline=false;state.error="";state.syncedAt=Date.now();
+  const changed=force||!hadList||postsSignature()!==prevSig||wasOffline||!!wasError;
+  if(changed){writeCache();render();}
+  // 避免首页刷新时反复重建已经加载的 HTML iframe。
+  if(location.hash.startsWith("#/p/")){
+    try{const p=findPost(decodeURIComponent(location.hash.slice(4)));
+      if(p&&!p.isHtml&&!p.body)loadPostBody(p);
+    }catch(e){}
+  }else if(state.q.trim())fillSearchText();
 }
 
 /* ---------- GitHub 项目：仅本人创建的仓库，fork 一律排除 ---------- */
@@ -2038,7 +2048,7 @@ function highlight(text, q){
 /* 只有真正缺失索引时才提示；空文章列表是一种正常状态。 */
 function statusHTML(){
   if(state.error === "INDEX_UNAVAILABLE"){
-    return `<div class="banner soft" role="status"><span>文章索引还没生成好。提交之后由 Actions 自动整理，稍等一会儿。</span><button onclick="refresh(true)">重新加载</button></div>`;
+    return `<div class="banner soft" role="status"><span>文章目录暂时无法获取，请检查网络连接后重试。</span><button onclick="refresh(true)">重新加载</button></div>`;
   }
   if(state.error){
     return `<div class="banner soft" role="status"><span>${esc(state.error)}</span><button onclick="refresh(true)">重试</button></div>`;
@@ -2477,7 +2487,8 @@ function initCopyrightGuard(){
 /* 缓存配额不足时正文可能还没回填，这时要给提示而不是一片空白 */
 function bodyHTML(p, r){
   if(p.isHtml || p.body) return `<div class="md" id="mdBody">${renderBody(p, r)}</div>`;
-  return `<div class="md md-wait">正文正在载入…</div>`;
+  if(p._failed) return `<div class="md md-wait" role="status">网络不稳定，正文暂时未能载入。<button class="btn-s" type="button" data-post-retry="true">重试正文</button></div>`;
+  return `<div class="md md-wait" role="status">正文正在加载…</div>`;
 }
 
 function postHTML(p, r){
@@ -2508,6 +2519,7 @@ function postHTML(p, r){
           <span class="lb">原样渲染 HTML</span>
         </div>
         <div class="raw-title"><h1>${esc(p.title)}</h1>${metaLine}${copyrightLine(p)}</div>
+        <div class="raw-status" id="rawLoadStatus" role="status"><span id="rawLoadMessage">HTML 正文正在加载… 网络较慢时可使用上方链接独立打开。</span><button type="button" class="ghost" id="rawRetry" style="display:none;margin-left:12px;padding:5px 10px;border:1px solid var(--line);border-radius:6px">重试加载</button></div>
         <iframe id="rawFrame" class="raw-frame" src="${src}" scrolling="no"
           title="${esc(p.title)}" loading="eager" referrerpolicy="no-referrer"></iframe>
         <p class="raw-tip">这页按作者原样渲染。若你的浏览器禁用了同源 iframe，可点上方「独立页面打开」。</p>
@@ -2616,6 +2628,7 @@ function render(){
     enterAnim = false; lastSection = null;
     updateActiveNav("");
     afterPost(p);
+    if(!p.isHtml && !p.body && !p._failed)loadPostBody(p);
   } else {
     state.topic="";
     let section="home";
@@ -2876,30 +2889,63 @@ function fixFrameLinks(d){
   });
 }
 function initRawFrame(){
-  const fr = document.getElementById("rawFrame");
-  if(!fr) return;
-  let done = false;
-  const setup = () => {
-    let d = null;
-    try{ d = fr.contentDocument; }catch(e){ return; }
-    // about:blank 或空文档不算：等真正的 load 事件
-    if(!d || !d.body || !d.body.childElementCount) return;
-    if(d.location && d.location.href === "about:blank") return;
-    if(done) return;
-    done = true;
-    injectFrameStyle(d);
-    freezeViewportUnits(d, window.innerHeight || 900);
-    watchFrameHeight(fr, d);
-    fixFrameLinks(d);
-    fixFrameImages(d, fr);
-    // 原样 HTML 在 iframe 里，父页的 copy 监听够不着，单独挂一份
-    try{ if(d.defaultView) crAttachCopy(d.defaultView); }catch(e){}
-    buildRawToc(d, fr);
+  const fr=document.getElementById("rawFrame");
+  if(!fr)return;
+  let done=false, elapsed=0;
+  const showStatus=msg=>{
+    const el=document.getElementById("rawLoadMessage");
+    if(el) el.textContent=msg;
+    const retry=document.getElementById("rawRetry");
+    if(retry) retry.style.display = "inline-block";
   };
-  fr.addEventListener("load", setup);
-  // 已经缓存好的 iframe 不会再触发 load，这里直接补一次
-  if(fr.contentDocument && fr.contentDocument.readyState === "complete") setup();
-  else setTimeout(() => { if(fr.contentDocument && fr.contentDocument.readyState === "complete") setup(); }, 400);
+  const retry=document.getElementById("rawRetry");
+  if(retry) retry.onclick=()=>{
+    if(!fr.isConnected) return;
+    // Reinitialize listeners and bust a transient HTTP/CDN error cache.
+    const u=new URL(fr.getAttribute("src"),location.href);
+    u.searchParams.set("retry",Date.now());
+    stopRawWatch();
+    fr.src=u.href;
+    const el=document.getElementById("rawLoadMessage");
+    if(el)el.textContent="正在重新连接 HTML 正文…";
+    retry.style.display="none";
+    initRawFrame();
+  };
+  const setup=()=>{
+    let d;
+    try{d=fr.contentDocument;}catch(e){return;}
+    if(!d||!d.body||!d.body.childElementCount||d.readyState==="loading")return;
+    if(d.location && d.location.href==="about:blank")return;
+    if(done)return;
+    // 常见的 GitHub Pages 404 页面不应算成文章加载成功。
+    if((d.title||"").includes("404") && d.body.textContent.includes("Not Found")){
+      showStatus("HTML 文件不存在或暂时无法访问，请检查文章路径并重试。");return;
+    }
+    done=true;
+    const status=document.getElementById("rawLoadStatus");
+    if(status)status.remove();
+    injectFrameStyle(d);
+    freezeViewportUnits(d,window.innerHeight||900);
+    watchFrameHeight(fr,d);
+    fixFrameLinks(d);
+    fixFrameImages(d,fr);
+    try{if(d.defaultView)crAttachCopy(d.defaultView);}catch(e){}
+    buildRawToc(d,fr);
+  };
+  // iframe.load 会等待子图片，51张图片的长文可能迟迟不触发。
+  // DOM 一旦可读就提前运行懒加载治理与高度测量。
+  const poll=setInterval(()=>{
+    elapsed+=100;
+    setup();
+    if(done||elapsed>=30000){
+      clearInterval(poll);
+      if(!done)showStatus("加载超时，请检查网络，或点击上方「独立页面打开」阅读。");
+    }
+  },100);
+  rawObservers.push(()=>clearInterval(poll));
+  fr.addEventListener("load",setup);
+  fr.addEventListener("error",()=>showStatus("HTML 文章暂时无法加载，请重新打开或独立查看。"));
+  setup();
 }
 
 /* ---------- 图片体积治理：WebP 升级 + 原生懒加载 ----------
@@ -2971,6 +3017,7 @@ function tuneBodyImages(scope, eagerCount){
    这里读出来给图片设 aspect-ratio：图还没下载，准确高度就已经撑好了。
    拿不到（文件缺失 / 没装 Pillow / 首次访问）就退回老路子，不影响可用性。 */
 let IMG_SIZES = {};                 // 当前文章的 {src: [w,h]}
+const IMG_SIZES_BY_POST = {};      // 回看不同 HTML 文章时不能复用上一篇的尺寸表
 let IMG_SIZES_READY = {};           // 文章名 -> Promise，避免重复拉取
 let IMG_SIZES_LOADED = false;
 function loadImageSizes(name){
@@ -2978,18 +3025,24 @@ function loadImageSizes(name){
   const key = "imgsz:" + name;
   try{
     const cached = sessionStorage.getItem(key);
-    if(cached){ IMG_SIZES = JSON.parse(cached) || {}; IMG_SIZES_LOADED = true; return Promise.resolve(); }
+    if(cached){ IMG_SIZES = JSON.parse(cached) || {}; IMG_SIZES_BY_POST[name]=IMG_SIZES; IMG_SIZES_LOADED = true; return Promise.resolve(); }
   }catch(e){}
   const dir = String(cfg.blogDir || "blog").replace(/^\/+|\/+$/g, "");
-  return fetch(localRepoUrl(dir + "/image-sizes.json"), {cache:"force-cache"})
+  const ctl=new AbortController();
+  const timer=setTimeout(()=>ctl.abort(),3500);
+  return fetch(localRepoUrl(dir + "/image-sizes.json"), {cache:"force-cache",signal:ctl.signal})
     .then(r => r.ok ? r.json() : null)
     .then(j => {
       const a = (j && j.articles) || {};
       const own = a[name] || {};
-      IMG_SIZES = own; IMG_SIZES_LOADED = true;
+      IMG_SIZES = own; IMG_SIZES_BY_POST[name]=own; IMG_SIZES_LOADED = true;
       try{ sessionStorage.setItem(key, JSON.stringify(own)); }catch(e){}
     })
-    .catch(() => { IMG_SIZES = {}; IMG_SIZES_LOADED = true; });   // 拿不到就当没有
+    .catch(() => {
+      IMG_SIZES = {}; IMG_SIZES_BY_POST[name]={}; IMG_SIZES_LOADED = true;
+      // 弱网超时后允许下次打开文章重试获取尺寸表。
+      delete IMG_SIZES_READY[name];
+    }).finally(()=>clearTimeout(timer));   // 拿不到就当没有
 }
 /* 查一张图的固有尺寸。src 可能与表里写的大小写/编码不同，做几次宽松匹配。 */
 function imgSizeOf(src){
@@ -3086,6 +3139,7 @@ function pumpFrameLazy(){
         } else {
           unlocked++;   // 既没锁高度也没尺寸：加载后会把后面的内容顶下去
         }
+        it.img.removeAttribute("data-khtao-src");
         it.img.setAttribute("src", src);
         loaded++;
       }
@@ -3116,7 +3170,10 @@ function fixFrameImages(d, fr){
     resetFrameLazy();
     frameLazy.fr = fr;
     d.querySelectorAll("img").forEach((img, i) => {
-      const src = img.getAttribute("src");
+      // Build-time staging leaves real offscreen URLs in data-khtao-src,
+      // preventing downloads even before the iframe DOM becomes accessible.
+      const staged = img.getAttribute("data-khtao-src");
+      const src = staged || img.getAttribute("src");
       if(!src) return;
       img.setAttribute("data-origsrc", src);
       // 文章自带的灯箱常读 data-full。若作者没写、灯箱又退化成读 img.src，
@@ -3129,7 +3186,7 @@ function fixFrameImages(d, fr){
       const reserved = reserveImageSize(img, src);
       if(reserved) img.dataset.reserved = "1";
       const next = mediaSrc(src);
-      if(i < 6){                                // 首屏一屏左右，直接给真图
+      if(i < 2){                                // 只抢首屏两张图的带宽，其他交给父级视口懒加载
         if(next !== src) guardWebp(img);
         img.setAttribute("src", next);
         // 首屏图不走懒加载队列，也要在就位后清掉撑高用的属性，
@@ -3150,7 +3207,8 @@ function fixFrameImages(d, fr){
           }
         }
         img.setAttribute("data-lazysrc", next);
-        img.setAttribute("src", BLANK_IMG);     // 透明占位，避免破图图标
+        // No network request: staged HTML already has a 1px placeholder.
+        if(!staged) img.setAttribute("src", BLANK_IMG);
         frameLazy.items.push({img, top:0, h:0});
       }
     });
@@ -3162,18 +3220,34 @@ function fixFrameImages(d, fr){
       resetFrameLazy();
     });
     scheduleFrameLazy();
-  }catch(e){}
+    // The article's standalone fallback checks this flag after 1.8s.
+    if(d.defaultView) d.defaultView.__KHTAO_PARENT_LAZY_READY__ = true;
+  }catch(e){
+    // Do not strand the article's staged images on an unexpected error.
+    try{ if(d.defaultView) d.defaultView.__KHTAO_PARENT_LAZY_READY__ = false; }catch(_){}
+  }
 }
 
 function afterPost(p){
   const body = $("#mdBody");
+  // 元数据先展示时 Markdown 正文尚未获取，等待异步补全即可。
+  if(!body && !p.isHtml) return;
   if(p.isHtml){
     stopRawWatch();
-    // 先把图片尺寸表取回来再渲染 iframe：setup 时就能给每张图撑好高度，
-    // iframe 高度一次算准。取不到也不阻塞——catch 里已置为「没有尺寸」。
-    const startRaw = () => initRawFrame();
-    if(IMG_SIZES_READY && IMG_SIZES_READY[p.name]) startRaw();
-    else (IMG_SIZES_READY[p.name] = loadImageSizes(p.name)).then(startRaw, startRaw);
+    // Crucial weak-network fix: never hold iframe lazy-load initialization
+    // behind an optional image-sizes JSON fetch (up to 3.5s previously).
+    IMG_SIZES = IMG_SIZES_BY_POST[p.name] || {};
+    initRawFrame();
+    const ready = IMG_SIZES_READY[p.name] ||
+      (IMG_SIZES_READY[p.name] = loadImageSizes(p.name));
+    ready.then(() => {
+      if(!currentPostIs(p)) return;
+      IMG_SIZES = IMG_SIZES_BY_POST[p.name] || {};
+      const fr = document.getElementById("rawFrame");
+      if(fr && fr.contentDocument) {
+        try{ fitFrame(fr, fr.contentDocument); }catch(e){}
+      }
+    }).catch(() => {});
     return;
   }
   // 封面在 mdBody 之外，单独治理：它在首屏，立即加载但换 WebP
@@ -3306,6 +3380,13 @@ function initUI(){
       loadProjects(true).finally(()=>{ projRefresh.disabled=false; projRefresh.textContent="↻ 刷新"; });
       return;
     }
+    const retry=e.target.closest('[data-post-retry]');
+    if(retry){
+      try{const p=findPost(decodeURIComponent(location.hash.slice(4)));
+        if(p){p._failed=false;loadPostBody(p);render();}
+      }catch(e){}
+      return;
+    }
     const font=e.target.closest('[data-font]');
     if(font){
       const n=Math.max(14,Math.min(22,applyReadingSize()+Number(font.dataset.font)));
@@ -3338,6 +3419,7 @@ function initUI(){
       if(location.hash.startsWith("#/p/") || location.hash==="#/archive" || location.hash==="#/topics" || location.hash==="#/projects" || location.hash==="#/about"){
         location.hash="#/";
       }else render();
+      if(state.q.trim())fillSearchText();
     }, 180);
   });
   $("#clearQ").onclick = () => {
@@ -3361,40 +3443,40 @@ function initUI(){
   });
 }
 
-/* ---------- 启动：先渲染缓存（秒开），再静默同步 ---------- */
+/* ---------- 启动：缓存和本地文章目录优先，不等待外部项目或高亮脚本 ---------- */
 (async function init(){
   initUI();
-  await loadConfig();
-  /* 首页精选项目与「项目」页用的仓库列表：与文章索引并行加载，
-     排在渲染器 CDN 之前，避免外部脚本变慢时项目数据迟迟不到位。 */
-  loadProjects();
-  const c = readCache();
+  initCopyrightGuard();
+  const c=readCache();
   if(c){
-    cfg.branch = c.branch || cfg.branch;
-    state.posts = hydrate(c);
-    state.syncedAt = c.ts;
-    state.loading = false;
-    state.offline = false;
-    state.hasList = true;
-    state.generated = c.generated || "";
+    state.posts=hydrate(c);
+    state.syncedAt=c.ts;
+    state.loading=false;state.hasList=true;
+    state.generated=c.generated||"";
     render();
   }
-  initCopyrightGuard();
-  // 首屏索引同步不受外部 Markdown 高亮 CDN 影响。
-  const renderersPending = ensureRenderers();
-  await refresh(false);
-  await renderersPending;   // renderers 是同一引用，高亮就绪后自动生效
-  if(location.hash.startsWith("#/p/")) render();
-  onScroll();
-  /* 每 5 分钟从站点自己的索引同步一次；包括删除最后一篇文章的情况。 */
-  setInterval(() => { if(!document.hidden) refresh(false); }, 5 * 60 * 1000);
-  startProjectTimer();
-  document.addEventListener("visibilitychange", () => {
-    if(!document.hidden && Date.now() - state.syncedAt > 60000) refresh(false);
-    // 从后台切回来时，若项目数据已经过期就顺手更新一次
-    if(!document.hidden && projectCfg().enabled && Date.now() - state.reposSyncedAt > projectCfg().refreshMinutes * 60000){
-      loadProjects(true);
+  const configPromise=loadConfig();
+  const renderersPending=ensureRenderers();
+  // 默认路径先取索引；与 config.json 并行，免得弱网下串行等待配置。
+  const firstSync=refresh(false);
+  await Promise.allSettled([configPromise,firstSync]);
+  if(cfg.blogDir!==DEFAULT_CFG.blogDir)await refresh(false);
+  loadProjects();
+  // Markdown 渲染器加载成功后只刷新当前 Markdown 阅读页，不动原样 HTML 的 iframe。
+  renderersPending.then(()=>{
+    if(location.hash.startsWith("#/p/")){
+      try{const p=findPost(decodeURIComponent(location.hash.slice(4)));
+        if(p&&!p.isHtml&&p.body)render();
+      }catch(e){}
     }
+  });
+  onScroll();
+  setInterval(()=>{if(!document.hidden)refresh(false);},5*60*1000);
+  startProjectTimer();
+  window.addEventListener("online",()=>refresh(false));
+  document.addEventListener("visibilitychange",()=>{
+    if(!document.hidden && Date.now()-state.syncedAt>60000)refresh(false);
+    if(!document.hidden && projectCfg().enabled && Date.now()-state.reposSyncedAt>projectCfg().refreshMinutes*60000)loadProjects(true);
   });
 })();
 </script>

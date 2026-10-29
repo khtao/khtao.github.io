@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='utf-8'?>
+<rss version="2.0">
+  <channel>
+    <title>Khtao</title>
+    <link>https://khtao.github.io/</link>
+    <description>一个用文字对抗遗忘的地方。</description>
+    <language>zh-CN</language>
+    <generator>Khtao static index</generator>
+    <item>
+      <title>中国50个一生必去的地方</title>
+      <link>https://khtao.github.io/#/p/%23U4e2d%23U56fd50%23U4e2a%23U4e00%23U751f%23U5fc5%23U53bb%23U7684%23U5730%23U65b9.html</link>
+      <description>中国50个一生必去的地方。</description>
+      <guid isPermaLink="false">https://khtao.github.io/#/p/%23U4e2d%23U56fd50%23U4e2a%23U4e00%23U751f%23U5fc5%23U53bb%23U7684%23U5730%23U65b9.html</guid>
+      <pubDate>Sun, 25 Oct 2026 00:00:00 GMT</pubDate>
+      <category>旅游</category>
+      <category>生活</category>
+    </item>
+    <item>
+      <title>郴 州 · 自 驾</title>
+      <link>https://khtao.github.io/#/p/%23U90f4%23U5dde%23U4e2d%23U79cb%23U81ea%23U9a7e3%23U59292%23U665a%23U65b9%23U6848.html</link>
+      <description>在南昌、岳阳、泉州、常德等方案逐个被排除后，郴州是唯一同时满足"两人车程都在4小时内 + 全程不爬山 + 有山有水有古城"的目的地。</description>
+      <guid isPermaLink="false">https://khtao.github.io/#/p/%23U90f4%23U5dde%23U4e2d%23U79cb%23U81ea%23U9a7e3%23U59292%23U665a%23U65b9%23U6848.html</guid>
+      <category>景区</category>
+      <category>自驾</category>
+      <category>门票</category>
+      <category>酒店</category>
+    </item>
+    <item>
+      <title>从零部署博客：让 GitHub 自动变成你的个人网站</title>
+      <link>https://khtao.github.io/#/p/%23U4ece%23U96f6%23U90e8%23U7f72GitHub%23U535a%23U5ba2.md</link>
+      <description>想拥有一个真正属于自己的博客，却不想为了写一篇文章先学会一套复杂的前端构建流程？这篇教程带你从零部署博客：不用购买服务器，基本不需要写前端代码；以后只要把 Markdown 放进 blog/，GitHub Actions 就能帮助你发布。</description>
+      <guid isPermaLink="false">https://khtao.github.io/#/p/%23U4ece%23U96f6%23U90e8%23U7f72GitHub%23U535a%23U5ba2.md</guid>
+      <category>GitHub Pages</category>
+      <category>Markdown</category>
+    </item>
+  </channel>
+</rss>
