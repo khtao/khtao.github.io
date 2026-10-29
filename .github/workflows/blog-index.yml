@@ -14,8 +14,7 @@ on:
   # 定时刷新 projects.json：仓库改名、改描述、Star 变化都会跟上来。
   # 注意：GitHub 不保证 cron 准点，高峰期可能延后；访客端还有一层自动刷新兜底。
   schedule:
-    - cron: '17 * * * *'
-
+  - cron: '19 3 * * *' 
 # Publish the site and its freshly generated manifest in the SAME deployment.
 # No GitHub API calls in the visitor browser; no bot commit or race condition.
 permissions:
