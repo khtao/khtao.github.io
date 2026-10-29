@@ -62,6 +62,10 @@ jobs:
         # 排在 build_index 之前：两者都写进 blog/，一起随产物发布。
         # 没有 Pillow 时输出空清单，站点退化为「加载后收敛」，不阻塞构建。
         run: python3 scripts/image_sizes.py
+      - name: Stage offscreen HTML pictures before parsing
+        # Prevent iframe from requesting every picture before JS takes control.
+        # The page still works as a standalone HTML document.
+        run: python3 scripts/prepare_html_lazy.py
       - name: Build index from article files and git history
         run: |
           mkdir -p blog
@@ -96,6 +100,8 @@ jobs:
           fi
           test -f _site/index.html
           test -f _site/blog/index.json
+          test -f _site/blog/search-index.json
+          python3 -m json.tool _site/blog/search-index.json > /dev/null
           python3 -m json.tool _site/blog/index.json > /dev/null
           python3 - <<'PYXML'
           import xml.etree.ElementTree as ET
