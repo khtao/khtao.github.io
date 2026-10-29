@@ -14,7 +14,8 @@ on:
   # 定时刷新 projects.json：仓库改名、改描述、Star 变化都会跟上来。
   # 注意：GitHub 不保证 cron 准点，高峰期可能延后；访客端还有一层自动刷新兜底。
   schedule:
-  - cron: '19 3 * * *' 
+    - cron: '17 * * * *'
+
 # Publish the site and its freshly generated manifest in the SAME deployment.
 # No GitHub API calls in the visitor browser; no bot commit or race condition.
 permissions:
@@ -37,6 +38,13 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+      # A GitHub web upload can replace an existing path before Actions starts.
+      # Fail closed so that a changed old URL is never deployed silently.
+      - name: Guard against uploaded image overwrites
+        if: github.event_name == 'push'
+        env:
+          BASE_SHA: ${{ github.event.before }}
+        run: python3 scripts/check_image_overwrites.py --base "$BASE_SHA"
       - name: Install image tooling
         # 图片优化依赖 Pillow。ubuntu-24.04 的系统 python3 受 PEP 668 约束，
         # 裸 pip install 会被拒绝，所以依次尝试 pip(--break-system-packages) 与 apt。

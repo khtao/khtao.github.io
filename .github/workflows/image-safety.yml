@@ -1,0 +1,21 @@
+name: Protect existing blog images
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  protect-image-assets:
+    name: Protect image assets
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reject replaced image paths
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: python3 scripts/check_image_overwrites.py --base "$BASE_SHA"
