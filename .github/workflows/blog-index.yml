@@ -57,6 +57,11 @@ jobs:
         run: python3 scripts/extract_inline_images.py
       - name: Optimize images (WebP twins + recompress)
         run: python3 scripts/optimize_images.py
+      - name: Measure image intrinsic sizes (for instant iframe height)
+        # 排在 optimize 之后：图片可能被重压缩，尺寸以最终文件为准。
+        # 排在 build_index 之前：两者都写进 blog/，一起随产物发布。
+        # 没有 Pillow 时输出空清单，站点退化为「加载后收敛」，不阻塞构建。
+        run: python3 scripts/image_sizes.py
       - name: Build index from article files and git history
         run: |
           mkdir -p blog
