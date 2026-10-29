@@ -127,6 +127,22 @@ def scan(root: Path, blogdir: str, images_subdir: str = 'images') -> dict:
         print(f'No image directory at {folder} - nothing to optimize.')
         return {'skipped': 'no-directory', 'files': 0}
 
+    # Two different source formats with the same basename (photo.jpg and
+    # photo.png) would otherwise write the same photo.webp, losing one image.
+    # Fail *before* changing any files, including the original sources.
+    webp_outputs = {}
+    for source in sorted(folder.rglob('*')):
+        if not source.is_file() or source.suffix.lower() not in RASTER:
+            continue
+        target = source.with_suffix('.webp')
+        older = webp_outputs.setdefault(target, source)
+        if older != source:
+            raise ValueError(
+                f'WebP 文件名冲突：{older.relative_to(folder)} 和 '
+                f'{source.relative_to(folder)} 都会生成 '
+                f'{target.relative_to(folder)}。请用 import_images.py 重新命名上传。'
+            )
+
     manifest = load_manifest(folder)
     stats = {'files': 0, 'compressed': 0, 'webp': 0, 'bytesBefore': 0,
              'bytesAfter': 0, 'webpBytes': 0, 'skipped': 0}

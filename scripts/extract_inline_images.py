@@ -21,8 +21,8 @@ article HTML shrinks by ~99%.
 
 Idempotent & non-destructive
 ----------------------------
-* File names are `sha256(content)[:12]`, so re-running never duplicates bytes
-  and re-extracting the same photo always lands on the same file.
+* File names use a SHA-256 prefix; an existing matching file is reused only
+  after comparing the actual bytes. A prefix collision extends the digest.
 * The rewrite is content-addressed: running it twice is a no-op because the
   second run finds no `data:` URI left.
 * Sources are only rewritten when something actually changed, so a plain
@@ -95,14 +95,25 @@ def process_file(path: Path, out_dir: Path, base: Path) -> tuple[int, int]:
         raw = decode(m.group('data'))
         if raw is None or len(raw) < MIN_BYTES:
             return m.group(0)          # 不认识或太小，原样保留
-        digest = hashlib.sha256(raw).hexdigest()[:12]
+        digest = hashlib.sha256(raw).hexdigest()
         ext = sniff_ext(raw, m.group('fmt'))
-        rel = f'{rel_dir}/{digest}{ext}'
-        target = out_dir / f'{digest}{ext}'
-        if not target.exists():
-            out_dir.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(raw)
-        seen[digest] = ext
+        out_dir.mkdir(parents=True, exist_ok=True)
+        for chars in (12, 16, 24, 32, 64):
+            basename = f'{digest[:chars]}{ext}'
+            target = out_dir / basename
+            try:
+                # Atomic create: NEVER overwrite an existing (possibly edited)
+                # image even if its truncated hash happens to match.
+                with target.open('xb') as f:
+                    f.write(raw)
+                break
+            except FileExistsError:
+                if target.read_bytes() == raw:
+                    break  # the identical photo has already been extracted
+        else:
+            raise RuntimeError(f'Cannot find collision-free filename for {path}')
+        rel = f'{rel_dir}/{basename}'
+        seen[basename] = ext
         removed += len(m.group('data'))
         return f'{m.group("prefix")}{rel}{m.group("suffix") or ""}'
 
