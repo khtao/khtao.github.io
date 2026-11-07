@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Microsoft Rewards 页面解析 · 三项积分与任务列表</title>
+<style>
+  :root{
+    --bg:#f7f7f5; --card:#fff; --fg:#20272f; --sub:#6b7686; --line:#dfe4ea;
+    --brand:#2f6feb; --ink:#111827; --ok:#0f8a5f; --warn:#b45309;
+    --code:#111827; --code-fg:#dbe3ee; --r:10px;
+    --paper:#fcfbf8; --paper2:#f1f2ef; --slate:#3c566e; --slate-soft:#8fa2b3;
+    --rule:#d9dcd6; --copper:#a98a5f;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font:14.5px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+  a{color:var(--brand);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:880px;margin:0 auto;padding:0 18px 64px}
+
+  /* 顶部：浅纸色文档抬头。低对比柔光 + 细网格 + 线稿水印，克制但不单调 */
+  .hero{
+    position:relative;overflow:hidden;margin-bottom:22px;
+    padding:40px 0 32px;
+    background:
+      radial-gradient(1100px 320px at 86% -30%, rgba(60,86,110,.085), transparent 72%),
+      linear-gradient(180deg,var(--paper) 0%,var(--paper2) 100%);
+    border-bottom:1px solid var(--rule);
+  }
+  .hero::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background-image:linear-gradient(rgba(60,86,110,.05) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(60,86,110,.05) 1px,transparent 1px);
+    background-size:28px 28px;
+    -webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.55),transparent 68%);
+    mask-image:linear-gradient(90deg,rgba(0,0,0,.55),transparent 68%);
+  }
+  .hero::after{
+    content:"";position:absolute;left:0;right:0;bottom:0;height:2px;
+    background:linear-gradient(90deg,var(--copper) 0%,rgba(169,138,95,.25) 28%,transparent 70%);
+    opacity:.55;
+  }
+  .hero .wrap{position:relative;padding-bottom:0}
+  .hero-mark{position:absolute;right:8px;top:-6px;width:210px;height:210px;
+             color:var(--slate);opacity:.13;pointer-events:none}
+  .kicker{display:flex;align-items:center;gap:9px;font:10.5px/1.4 var(--mono);
+          letter-spacing:.16em;color:var(--slate);margin:0 0 15px;text-transform:uppercase}
+  .kicker::before{content:"";width:24px;height:1px;background:var(--copper);flex:0 0 auto}
+  h1{font-size:25px;line-height:1.5;margin:0 0 10px;font-weight:600;letter-spacing:.005em;color:#1b2733}
+  h1 span{display:block;font-weight:450;color:var(--slate);font-size:20px;letter-spacing:.02em;margin-top:2px}
+  .lead{margin:0;font-size:13.5px;color:var(--sub);max-width:640px}
+  .hero-meta{display:flex;flex-wrap:wrap;gap:0;margin-top:24px;padding-top:14px;
+             border-top:1px solid rgba(60,86,110,.16)}
+  .hero-meta .kv{display:flex;flex-direction:column;gap:3px;padding:0 20px;
+                 border-right:1px solid rgba(60,86,110,.16)}
+  .hero-meta .kv:first-child{padding-left:0}
+  .hero-meta .kv:last-child{border-right:0}
+  .hero-meta .k{font:9.5px/1.3 var(--mono);letter-spacing:.13em;color:#9aa5ad;text-transform:uppercase}
+  .hero-meta .v{font:11.5px/1.4 var(--mono);color:var(--slate);white-space:nowrap}
+
+  nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px;font:11.5px var(--mono)}
+  nav.toc a{border:1px solid var(--line);border-radius:4px;padding:5px 10px;color:var(--sub);background:var(--card)}
+  nav.toc a:hover{border-color:var(--brand);color:var(--brand);text-decoration:none}
+  section{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px 18px;margin:0 0 16px;
+          box-shadow:0 1px 2px rgba(28,40,52,.03),0 10px 26px -20px rgba(28,40,52,.30)}
+  h2{font-size:16px;margin:0 0 5px;font-weight:650;color:var(--ink)}
+  .h2sub{color:var(--sub);font-size:12.5px;margin:0 0 15px;font-family:var(--mono)}
+  p{margin:0 0 10px}
+  ul,ol{padding-left:20px;margin:0 0 11px}
+  li{margin:4px 0}
+  b,strong{font-weight:650}
+  code:not(pre code){background:#f1f3f6;border:1px solid var(--line);padding:1px 5px;border-radius:4px;
+                     font:12px var(--mono);color:#334155}
+  .fig{background:#fcfcfd;border:1px solid var(--line);border-radius:8px;padding:12px;margin:6px 0 14px}
+  .fig svg{width:100%;height:auto;display:block}
+  .figcap{font:11px var(--mono);color:var(--sub);text-align:left;margin-top:7px;padding-left:2px}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:13px 0 0}
+  .mini{background:var(--card);border:1px solid var(--line);border-radius:7px;padding:11px}
+  .mini b{display:block;font-size:13px;margin-bottom:3px;color:var(--ink)}
+  .mini span{font-size:12px;color:var(--sub);line-height:1.6;display:block}
+  .note{background:#f7f8fa;border-left:2px solid var(--brand);padding:10px 13px;border-radius:0 5px 5px 0;
+        font-size:13px;color:var(--sub);margin:12px 0}
+  .note.warn{background:#fdf8f2;border-left-color:var(--warn)}
+  .note b{color:var(--fg)}
+  pre{background:var(--code);color:var(--code-fg);border-radius:7px;padding:13px;overflow:auto;
+      font:12px/1.65 var(--mono);margin:0}
+  pre code{background:none;color:inherit;padding:0;border:0;font:inherit}
+
+  /* 按钮：方角、墨色主按钮，不用渐变 */
+  button{font:12.5px var(--mono);cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--fg);
+         border-radius:5px;padding:8px 13px;transition:border-color .15s,background .15s,color .15s,opacity .15s}
+  button:hover{border-color:var(--brand);color:var(--brand)}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:600}
+  button.primary:hover{background:#334155;color:#fff;border-color:#334155}
+  button:disabled{opacity:.6;cursor:default}
+  .btnrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:11px 0}
+  .hint{font:11.5px/1.6 var(--mono);color:var(--sub)}
+
+  /* 结果区与运行动画 */
+  .result{position:relative;background:var(--card);border:1px solid var(--line);border-radius:8px;
+          padding:15px;margin:13px 0 16px;overflow:hidden}
+  .result-body{transition:opacity .2s,filter .2s}
+  .result .scan{position:absolute;top:0;left:0;right:0;height:2px;display:none;
+                background:linear-gradient(90deg,transparent,var(--brand),transparent);transform:translateX(-100%)}
+  .result.is-refreshing .scan{display:block;animation:sweep .6s linear infinite}
+  .result.is-refreshing .result-body{opacity:.28;filter:grayscale(.5)}
+  @keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+  @keyframes numIn{from{opacity:.2;transform:translateY(-3px)}to{opacity:1;transform:none}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .spinner{display:none;width:11px;height:11px;border:2px solid currentColor;border-right-color:transparent;
+           border-radius:50%;vertical-align:-2px;margin-right:6px;animation:spin .7s linear infinite}
+  button.is-running .spinner{display:inline-block}
+  button.is-running{opacity:.8;cursor:progress}
+  button.is-done{border-color:var(--ok);color:var(--ok)}
+  button.is-done.primary{background:#153f30;border-color:#153f30;color:#fff}
+  .stagger{animation:rise .34s cubic-bezier(.2,.7,.3,1) both}
+  .run-status{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font:11px var(--mono);color:var(--sub);
+              border-bottom:1px solid var(--line);padding-bottom:9px;margin-bottom:12px}
+  .run-status .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 1.6s ease-in-out;flex:0 0 auto}
+  .run-status .ok{color:var(--ok);font-weight:700}
+  .run-status .kv{color:var(--sub)}
+
+  .points3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:13px}
+  .pcard{background:var(--card);border:1px solid var(--line);border-radius:7px;padding:10px}
+  .pcard span{display:block;font:11px var(--mono);color:var(--sub)}
+  .pcard strong{display:block;font:600 21px/1.35 var(--mono);font-variant-numeric:tabular-nums;
+                letter-spacing:-.02em;color:var(--ink);animation:numIn .42s ease both}
+  .sum{font-size:13px;margin:0 0 11px}
+  .group{margin:9px 0}
+  .group h4{font:11.5px var(--mono);margin:0 0 6px;display:flex;justify-content:space-between;color:var(--sub)}
+  .task{display:flex;gap:9px;align-items:flex-start;border:1px solid var(--line);border-radius:6px;
+        padding:6px 10px;margin:4px 0;font-size:12.5px;background:#fff}
+  .badge{flex:0 0 auto;background:#e7f5ee;color:var(--ok);border:1px solid #cfe9dc;border-radius:4px;
+         padding:0 6px;font:700 11px var(--mono)}
+  .task .name{font-weight:600}
+  .task .desc{display:block;color:var(--sub);font-size:11px}
+  .task .state{margin-left:auto;color:var(--ok);font:11px var(--mono);white-space:nowrap}
+  .task.pending .badge{background:#fdf3e3;color:var(--warn);border-color:#f2ddba}
+  .task.pending .state{color:var(--warn)}
+  .logs{background:var(--code);color:var(--code-fg);border:1px solid #1f2937;border-radius:6px;padding:9px 12px;
+        font:11px/1.75 var(--mono);white-space:pre-wrap;margin-top:11px}
+  .ways{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .way{border:1px solid var(--line);border-radius:8px;padding:14px;background:var(--card)}
+  .way h3{font-size:13px;margin:0 0 6px;display:flex;align-items:center;gap:8px;color:var(--ink)}
+  .num{display:inline-flex;width:20px;height:20px;border-radius:4px;background:var(--ink);color:#fff;
+       align-items:center;justify-content:center;font:11px var(--mono);flex:0 0 auto}
+  .way p{font-size:12px;color:var(--sub);margin:0 0 9px}
+  .steps{font:11.5px/1.7 var(--mono);color:var(--sub);padding-left:18px;margin:0 0 10px}
+  .steps li{margin:3px 0}
+  details{margin-top:12px;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+  summary{cursor:pointer;padding:10px 13px;font:12px var(--mono);font-weight:600;background:#f7f8fa;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:'+ ';color:var(--brand)}
+  details[open] summary::before{content:'- '}
+  details>div{padding:0}
+  details pre{border-radius:0;max-height:420px}
+  footer{text-align:center;color:var(--sub);font:11px var(--mono);padding:14px 0}
+
+  @media(max-width:640px){.three,.ways,.points3{grid-template-columns:1fr}h1{font-size:20px}h1 span{font-size:17px}
+    section{padding:17px 14px}.pcard strong{font-size:18px}
+    .hero{padding:30px 0 26px}.hero-mark{display:none}.hero-meta .kv{padding:0 13px}}
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <svg class="hero-mark" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true">
+    <circle cx="78" cy="78" r="50"/><circle cx="78" cy="78" r="34" opacity=".6"/>
+    <path d="M114 114 L166 166" stroke-width="2"/><circle cx="78" cy="78" r="6" opacity=".8"/>
+    <path d="M18 152 H60 M18 162 H48 M18 172 H56" opacity=".7"/>
+    <path d="M140 40 H182 M150 52 H182 M158 64 H182" opacity=".5"/>
+    <path d="M30 30 V46 M22 38 H38" opacity=".6"/>
+  </svg>
+  <p class="kicker">Reference / rewards-page-reader · v0.1</p>
+  <h1>Microsoft Rewards 页面解析<span>三项积分与今日任务列表</span></h1>
+  <p class="lead">记录 /dashboard 与 /earn 的 HTML 结构，以及把页面已显示的积分与任务转换为结构化数据的匹配规则。附一份离线可运行示例与同一套解析函数。</p>
+  <div class="hero-meta">
+    <div class="kv"><span class="k">scope</span><span class="v">read-only</span></div>
+    <div class="kv"><span class="k">source</span><span class="v">/dashboard · /earn</span></div>
+    <div class="kv"><span class="k">runtime</span><span class="v">browser / offline</span></div>
+    <div class="kv"><span class="k">status</span><span class="v">reference</span></div>
+  </div>
+</div></header>
+
+<div class="wrap">
+<nav class="toc">
+  <a href="#s1">01 数据流向</a><a href="#s2">02 积分卡结构</a><a href="#s3">03 任务卡筛选</a>
+  <a href="#s4">04 运行示例</a><a href="#s5">05 参考实现</a><a href="#s6">06 限制与条款</a>
+</nav>
+
+<!-- ① ------------------------------------------------------------------ -->
+<section id="s1"><h2>01 / 数据流向</h2>
+  <p class="h2sub">两个页面 → 一套解析函数 → 三个数字 + 一张任务表。</p>
+  <div class="fig">
+    <svg viewBox="0 0 820 250" role="img" aria-label="数据流向示意图">
+      <defs>
+        <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#9aa8c4"/></marker>
+      </defs>
+      <!-- 两个页面 -->
+      <g>
+        <rect x="14" y="42" width="176" height="66" rx="12" fill="#fff" stroke="#dbe4f5"/>
+        <rect x="28" y="56" width="16" height="16" rx="4" fill="#e8efff"/>
+        <text x="53" y="69" font-size="12" font-weight="700" fill="#16213a">/dashboard</text>
+        <text x="28" y="92" font-size="10.5" fill="#5d6b86">可用积分 · 可领取</text>
+        <rect x="14" y="128" width="176" height="66" rx="12" fill="#fff" stroke="#dbe4f5"/>
+        <rect x="28" y="142" width="16" height="16" rx="4" fill="#e8efff"/>
+        <text x="53" y="155" font-size="12" font-weight="700" fill="#16213a">/earn</text>
+        <text x="28" y="178" font-size="10.5" fill="#5d6b86">今日积分 · 任务卡</text>
+      </g>
+      <path d="M196 75 C235 75 245 110 278 122" stroke="#9aa8c4" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+      <path d="M196 161 C235 161 245 132 278 128" stroke="#9aa8c4" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+      <!-- 解析器 -->
+      <rect x="286" y="62" width="242" height="126" rx="10" fill="#1f2933"/>
+      <text x="407" y="90" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">解 析 器</text>
+      <text x="407" y="115" font-size="11" fill="#e8ecff" text-anchor="middle">解码 RSC → 标签配对数值</text>
+      <text x="407" y="136" font-size="11" fill="#e8ecff" text-anchor="middle">绿色徽章筛任务 → 两页去重</text>
+      <text x="407" y="157" font-size="11" fill="#e8ecff" text-anchor="middle">补一条「今日 Bing 搜索」</text>
+      <path d="M534 125 L590 125" stroke="#9aa8c4" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+      <!-- 输出 -->
+      <rect x="598" y="30" width="206" height="80" rx="12" fill="#fff" stroke="#dbe4f5"/>
+      <text x="616" y="52" font-size="11" fill="#5d6b86">三个数字</text>
+      <text x="616" y="82" font-size="17" font-weight="700" fill="#111827" font-family="monospace">19,925 · 100 · 0</text>
+      <rect x="598" y="126" width="206" height="80" rx="12" fill="#fff" stroke="#dbe4f5"/>
+      <text x="616" y="148" font-size="11" fill="#5d6b86">今日任务</text>
+      <text x="616" y="172" font-size="12.5" font-weight="700" fill="#0f8a5f">搜索 60 · 每日活动 30 · 日常任务 20</text>
+      <text x="616" y="192" font-size="10.5" fill="#5d6b86">共 8 项 / 110 分 / 100%</text>
+      <text x="410" y="228" font-size="10.5" fill="#8996ad" text-anchor="middle">同一套函数可跑在：浏览器扩展 · 页面控制台 · 离线保存的 HTML</text>
+    </svg>
+    <div class="figcap">图 1　数据只来自页面本身，不来自任何私有接口</div>
+  </div>
+  <div class="three">
+    <div class="mini"><b>🌐 两个地址</b><span><code>/dashboard</code> 出余额，<code>/earn</code> 出今日积分和任务卡。</span></div>
+    <div class="mini"><b>🧩 两种形态</b><span>可见 DOM，和脚本里转义过的 RSC 数据。先解码，一套正则通吃。</span></div>
+    <div class="mini"><b>🔒 一个前提</b><span>必须已登录。普通网页因 CORS 读不到，见第 ④ 节。</span></div>
+  </div>
+</section>
+
+<!-- ② ------------------------------------------------------------------ -->
+<section id="s2"><h2>02 / 积分卡结构：标签 → 相邻数值</h2>
+  <p class="h2sub">不猜字段、不用任务合计倒推，只认页面上那张积分卡。</p>
+  <div class="fig">
+    <svg viewBox="0 0 820 216" role="img" aria-label="积分卡结构解剖图">
+      <rect x="18" y="26" width="270" height="150" rx="14" fill="#fff" stroke="#dbe4f5"/>
+      <text x="40" y="58" font-size="11.5" fill="#5d6b86">text-labelControl</text>
+      <text x="40" y="80" font-size="13" font-weight="700" fill="#16213a">今日积分</text>
+      <line x1="40" y1="92" x2="266" y2="92" stroke="#eef2f9"/>
+      <text x="40" y="118" font-size="26" font-weight="800" fill="#2563eb">100</text>
+      <text x="40" y="145" font-size="11" fill="#5d6b86">text-pageHeader</text>
+      <path d="M296 100 L352 100" stroke="#9aa8c4" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+      <rect x="360" y="26" width="442" height="68" rx="11" fill="#f4f7ff" stroke="#dbe4f5"/>
+      <text x="378" y="48" font-size="11" font-weight="700" fill="#334155">形态 A · 可见 DOM</text>
+      <text x="378" y="72" font-size="11" fill="#334155" font-family="monospace">&lt;p class="text-labelControl"&gt;今日积分&lt;/p&gt; … &lt;p class="text-pageHeader"&gt;100&lt;/p&gt;</text>
+      <rect x="360" y="106" width="442" height="70" rx="11" fill="#faf5ff" stroke="#e9ddff"/>
+      <text x="378" y="128" font-size="11" font-weight="700" fill="#334155">形态 B · RSC 转义数据</text>
+      <text x="378" y="152" font-size="11" fill="#334155" font-family="monospace">\"className\":\"text-labelControl\",\"children\":\"可用积分\" … \"children\":\"19,925\"</text>
+    </svg>
+    <div class="figcap">图 2　把 <code>\"</code> 还原成引号后，两种形态用同一套配对规则</div>
+  </div>
+  <ul>
+    <li>标签表：<b>可用积分 / Available</b>、<b>今日积分 / Points earned today</b>、<b>可领取 / Claimable</b> → 三个键。</li>
+    <li>取标签后面 1500 字符内的第一个数，允许千分位；两页各解一次，<b>谁有值用谁</b>。</li>
+    <li>都取不到才退回 <code>balance</code> 之类字段；再不行显示 <code>—</code>，<b>绝不写假的 0</b>。</li>
+  </ul>
+  <div class="note"><b>为什么不用任务合计去算今日积分？</b> 任务里有一周才做一次的项目，今日积分还可能含额外奖励分。实测任务 110 分、今日积分 100 分，两者本来就不必相等。</div>
+</section>
+
+<!-- ③ ------------------------------------------------------------------ -->
+<section id="s3"><h2>03 / 任务卡筛选</h2>
+  <p class="h2sub">有徽章 = 有积分的任务；没有、或放错版块 = 一律丢掉。</p>
+  <div class="fig">
+    <svg viewBox="0 0 820 246" role="img" aria-label="任务卡筛选示意图">
+      <!-- 保留的卡 -->
+      <rect x="18" y="24" width="300" height="92" rx="13" fill="#fff" stroke="#bfe6d3" stroke-width="2"/>
+      <rect x="272" y="38" width="34" height="24" rx="12" fill="#dcfce7"/>
+      <text x="289" y="55" font-size="12" font-weight="800" fill="#0f8a5f" text-anchor="middle">✓10</text>
+      <text x="38" y="55" font-size="13" font-weight="700" fill="#16213a">罗马温和历史漫步</text>
+      <text x="38" y="78" font-size="11" fill="#5d6b86">在宜人气温中漫步历史景点</text>
+      <text x="38" y="101" font-size="11" font-weight="700" fill="#0f8a5f">已完成 · 每日活动</text>
+      <!-- 两个丢弃的卡 -->
+      <rect x="18" y="136" width="300" height="46" rx="11" fill="#f8fafc" stroke="#e4eaf4" stroke-dasharray="5 4"/>
+      <text x="38" y="164" font-size="11.5" fill="#94a3b8"><tspan text-decoration="line-through">免费专属壁纸</tspan>　无绿色徽章 → 推广卡</text>
+      <rect x="18" y="192" width="300" height="46" rx="11" fill="#f8fafc" stroke="#e4eaf4" stroke-dasharray="5 4"/>
+      <text x="38" y="220" font-size="11.5" fill="#94a3b8"><tspan text-decoration="line-through">十一月购物优惠… 50 分</tspan>　在「任务」区 → 周/月任务</text>
+      <path d="M330 116 L390 116" stroke="#9aa8c4" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+      <!-- 规则链 -->
+      <rect x="398" y="24" width="404" height="214" rx="14" fill="#f7faff" stroke="#dbe4f5"/>
+      <text x="418" y="50" font-size="12" font-weight="800" fill="#334155">四步筛选</text>
+      <circle cx="426" cy="78" r="10" fill="#e8efff"/><text x="426" y="82" font-size="10" font-weight="700" fill="#334155" text-anchor="middle">1</text>
+      <text x="446" y="82" font-size="11.5" fill="#334155">必须有 <tspan font-family="monospace">bg-statusSuccessRewardsBg</tspan> + 数字 &gt; 0</text>
+      <circle cx="426" cy="112" r="10" fill="#e8efff"/><text x="426" y="116" font-size="10" font-weight="700" fill="#334155" text-anchor="middle">2</text>
+      <text x="446" y="116" font-size="11.5" fill="#334155">看前面最近的 <tspan font-family="monospace">&lt;h2&gt;</tspan>：只留「每日活动 / 日常任务」</text>
+      <circle cx="426" cy="146" r="10" fill="#e8efff"/><text x="426" y="150" font-size="10" font-weight="700" fill="#334155" text-anchor="middle">3</text>
+      <text x="446" y="150" font-size="11.5" fill="#334155">RSC 的 <tspan font-family="monospace">dailySetItems</tspan> 补出每日活动 3 张 ×10</text>
+      <circle cx="426" cy="180" r="10" fill="#e8efff"/><text x="426" y="184" font-size="10" font-weight="700" fill="#334155" text-anchor="middle">4</text>
+      <text x="446" y="184" font-size="11.5" fill="#334155">两页按「标题+描述+积分+分组」去重</text>
+      <text x="418" y="216" font-size="11.5" font-weight="700" fill="#0f8a5f">→ 最前面补一条「今日 Bing 搜索 60/60」</text>
+    </svg>
+    <div class="figcap">图 3　两个同名「你是否知道答案？」描述不同，都保留；8 项合计 110 分</div>
+  </div>
+</section>
+
+<!-- ④ ------------------------------------------------------------------ -->
+<section id="s4"><h2>04 / 运行示例</h2>
+  <p class="h2sub">示例 1 使用内置快照离线运行；示例 2 输出可在已登录页面 Console 中手动执行的抓取脚本。</p>
+
+  <div class="result" id="result">
+    <div class="scan"></div>
+    <div class="result-body" id="result-body"><p class="hint">[ init ] 等待首次运行…</p></div>
+  </div>
+
+  <div class="ways">
+    <div class="way">
+      <h3><span class="num">1</span> 内置示例（离线）</h3>
+      <p>页面内置一份按真实结构裁剪并匿名化的快照。加载时自动执行一次，可重复运行。</p>
+      <div class="btnrow">
+        <button id="run-sample" class="primary"><span class="spinner"></span><span class="btn-label">运行示例</span></button>
+      </div>
+      <div class="hint">不联网、不上传，纯浏览器本地计算。</div>
+    </div>
+    <div class="way">
+      <h3><span class="num">2</span> 实时抓取（真机）</h3>
+      <p>普通网页会被 CORS 拦住；要在<strong>自己已登录的 Rewards 页面</strong>里手动运行。脚本会抓取 <code>/dashboard</code> 与 <code>/earn</code> 并调用同一套解析函数。</p>
+      <ol class="steps">
+        <li>登录 <code>rewards.bing.com</code>，打开任意 Rewards 页面</li>
+        <li>F12 → Console，粘贴下面复制的脚本，回车</li>
+        <li>看 <code>console.table</code> 输出的三个数字与任务表</li>
+      </ol>
+      <div class="btnrow">
+        <button id="copy-live" class="primary">复制抓取脚本</button>
+        <button id="demo-live"><span class="spinner"></span><span class="btn-label">演示调用时序</span></button>
+      </div>
+      <div class="hint">演示使用内置快照模拟两次页面返回，不发起网络请求。</div>
+    </div>
+  </div>
+
+  <div class="note"><b>放在扩展里也一样</b>：<code>host_permissions</code> 加 <code>https://rewards.bing.com/*</code>，在 background 里 <code>fetch(url, { credentials: 'include', cache: 'no-store' })</code>，把 HTML 交给同一个 <code>buildReport()</code> 即可。单次手动触发即可，不要循环或定时调用。</div>
+  <details id="manifest-details">
+    <summary>附：最小 manifest.json（MV3）</summary>
+    <div><pre><code>{
+  "manifest_version": 3,
+  "name": "Rewards Page Reader (example)",
+  "version": "0.1",
+  "permissions": ["storage"],
+  "host_permissions": ["https://rewards.bing.com/*"]
+}</code></pre></div>
+  </details>
+</section>
+
+<!-- ⑤ ------------------------------------------------------------------ -->
+<section id="s5"><h2>05 / 参考实现</h2>
+  <p class="h2sub">第 04 节执行的就是下面这份，零依赖、可直接复制。</p>
+  <div class="btnrow"><button id="copy-core">复制源码</button><span class="hint" id="core-size"></span></div>
+  <details>
+    <summary>展开 / 收起 buildReport 等解析函数</summary>
+    <div><pre id="code-view"><code>加载中…</code></pre></div>
+  </details>
+</section>
+
+<!-- ⑥ ------------------------------------------------------------------ -->
+<section id="s6"><h2>06 / 限制与条款</h2>
+  <ul>
+    <li><b>只读，不操作</b>：这里只解释怎么读页面上已经显示的信息，不包含自动搜索、模拟点击或完成任务的实现。</li>
+    <li><b>积分合计 ≠ 今日积分</b>：周任务、额外奖励分都会让两者不同，别互相当校验。</li>
+    <li><b>class 名会改版</b>：<code>text-labelControl</code>、<code>bg-statusSuccessRewardsBg</code> 是样式类，站点改版就可能失效；失败时宁可显示「—」，不要猜数字。</li>
+    <li><b>未登录会跳到公开 About 页</b>：识别到就直接提示登录，别把公开页当积分面板解析。</li>
+  </ul>
+  <div class="note warn"><b>条款提醒</b>　请自行阅读并遵守 Microsoft Rewards 的服务条款：奖励搜索通常要求本人出于真实目的手动完成。任何自动化搜索、批量请求或模拟点击都可能不符合条款，并可能导致积分作废或账户受限。本文与示例代码不含此类功能，也不提供相关实现指导；使用前请以官方最新条款为准。</div>
+</section>
+
+<footer>单文件 · 离线可运行 · 示例数据已匿名化 · 仅用于理解页面结构</footer>
+</div>
+
+<!-- ============ 核心代码：既展示又真正执行 ============ -->
+<script id="core-code" type="text/plain">
+/* ============================================================
+ * Microsoft Rewards 页面解析（零依赖 · 只读）
+ * 输入：/dashboard、/earn 两个页面的 HTML 源码
+ * 输出：三项积分 + 今日任务分组 + 解析日志
+ * ============================================================ */
+const POINT_LABELS = {
+  available: ['可用积分', '可用点数', 'Available points', 'Available'],
+  today:     ['今日积分', '今日已赚取', '今日赚取', 'Points earned today', "Today's points"],
+  claimable: ['可领取', '可领取积分', '待领取积分', 'Points to claim', 'Claimable']
+};
+const SECTION_LABEL = { search:'搜索', daily:'每日活动', promo:'日常任务' };
+
+/* RSC payload 里的 \" / \\" 还原成普通引号 */
+const decodePayload = html => String(html || '')
+  .replace(/\\\\"/g, '"').replace(/\\"/g, '"');
+
+function numFrom(text) {
+  const m = String(text || '').match(/-?[\d,\.\s]+\d|-?\d+/);
+  if (!m) return null;
+  const n = parseInt(m[0].replace(/[^\d-]/g, ''), 10);
+  return Number.isFinite(n) ? n : null;
+}
+function pickNumber(clean, patterns) {
+  for (const re of patterns) {
+    const m = clean.match(re);
+    if (!m) continue;
+    const n = numFrom(m[1]);
+    if (n !== null) return n;
+  }
+  return null;
+}
+
+/* 积分卡：标签 → 相邻数值（DOM 与 RSC 两种形态） */
+function cardsPoints(html) {
+  const clean = decodePayload(html), out = {};
+  const put = (label, value) => {
+    const n = numFrom(value);
+    if (n === null) return;
+    const text = String(label || '').trim();
+    for (const [key, names] of Object.entries(POINT_LABELS)) {
+      if (names.some(x => text === x || text.indexOf(x) >= 0)) {
+        if (!Number.isFinite(out[key])) out[key] = n;
+        return;
+      }
+    }
+  };
+  const domRe = /<p[^>]*text-labelControl[^>]*>\s*([^<]{1,30}?)\s*<\/p>[\s\S]{0,1500}?<p[^>]*text-pageHeader[^>]*>\s*([^<]{1,30}?)\s*<\/p>/g;
+  for (const m of clean.matchAll(domRe)) put(m[1], m[2]);
+  const rscRe = /"className":"text-labelControl","children":"([^"]{1,30})"[\s\S]{0,2000}?"className":"text-pageHeader","children":"([^"]{1,30})"/g;
+  for (const m of clean.matchAll(rscRe)) put(m[1], m[2]);
+  return out;
+}
+
+/* 卡片值优先，字段兜底；绝不用任务合计推算 */
+function parsePointsTrio(html) {
+  const clean = decodePayload(html), cards = cardsPoints(html);
+  const field = pats => pickNumber(clean, pats);
+  return {
+    available: Number.isFinite(cards.available) ? cards.available : field([
+      /"(?:availablePoints|balance|pointsBalance)"\s*:\s*"?(\d+)"?/i]),
+    today: Number.isFinite(cards.today) ? cards.today : field([
+      /"(?:pointsEarnedToday|todayPoints|pointsToday|earnedToday)"\s*:\s*"?(\d+)"?/i]),
+    claimable: Number.isFinite(cards.claimable) ? cards.claimable : field([
+      /"(?:claimablePoints|pointsToClaim|claimable)"\s*:\s*"?(\d+)"?/i])
+  };
+}
+function mergeTrio(a, b) {
+  const out = {};
+  for (const key of ['available', 'today', 'claimable']) {
+    const av = a && a[key], bv = b && b[key];
+    out[key] = Number.isFinite(av) ? av : (Number.isFinite(bv) ? bv : null);
+  }
+  return out;
+}
+
+/* 未登录 / 公开 About 页识别 */
+function isSignInPage(html) {
+  const t = String(html || '');
+  if (/登录到 Microsoft 帐户需要启用 JavaScript/.test(t)) return true;
+  if (/使用你的 Microsoft 帐户/.test(t) && /创建帐户|忘记用户名/.test(t)) return true;
+  if (/Sign in to your Microsoft account/i.test(t) && /Create (?:an? )?account|No account\?/i.test(t)) return true;
+  if (/About\s*[–\-—]\s*Microsoft Rewards/i.test(t) && /\bSign in\b/i.test(t)) return true;
+  if (/Gift cards for the win/i.test(t) && /\bSign in\b/i.test(t)) return true;
+  return false;
+}
+
+function cleanText(s) {
+  return String(s || '').replace(/<[^>]+>/g, ' ')
+    .replace(/\\u0026|&amp;/gi, '&').replace(/&nbsp;|&#160;/gi, ' ')
+    .replace(/\\n|\\r/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160);
+}
+const stripTags = s => cleanText(String(s || '').replace(/<[^>]+>/g, ' '));
+
+/* 卡片前面最近的 <h2> 决定分组；「任务 / 升级活动 / 连续打卡」区排除 */
+function sectionBeforeHeading(html, index) {
+  const heads = [...html.slice(0, index).matchAll(/<h2[^>]*>([\s\S]{1,80}?)<\/h2>/g)];
+  const near = heads.length ? stripTags(heads[heads.length - 1][1]) : '';
+  if (/日常任务|每日任务|Daily tasks|More activities/i.test(near)) return 'promo';
+  if (/每日活动|Daily activities|Daily set/i.test(near)) return 'daily';
+  return 'other';
+}
+
+/* 按方括号深度切出 "dailySetItems":[...] 里的一级对象 */
+function jsonArrayObjects(clean, key) {
+  const at = clean.indexOf('"' + key + '"');
+  if (at < 0) return [];
+  const open = clean.indexOf('[', at);
+  if (open < 0) return [];
+  let depth = 0, end = -1;
+  for (let i = open; i < clean.length && i < open + 200000; i++) {
+    if (clean[i] === '[') depth++;
+    else if (clean[i] === ']' && --depth === 0) { end = i; break; }
+  }
+  if (end < 0) return [];
+  const objs = [];
+  let level = 0, from = -1;
+  for (let i = open + 1; i < end; i++) {
+    const ch = clean[i];
+    if (ch === '{') { if (level++ === 0) from = i; }
+    else if (ch === '}' && level > 0 && --level === 0) objs.push(clean.slice(from, i + 1));
+  }
+  return objs;
+}
+
+/* RSC：每日活动 3 张 ×10 */
+function structuredItemsFrom(html) {
+  const clean = decodePayload(html), out = [], seen = new Set();
+  for (const obj of jsonArrayObjects(clean, 'dailySetItems')) {
+    const str = re => { const m = obj.match(re); return m ? m[1] : null; };
+    const title = cleanText(str(/"title"\s*:\s*"([^"]*)"/i));
+    const points = Number(str(/"points"\s*:\s*"?(\d+)"?/i)) || 0;
+    if (!title || !(points > 0)) continue;
+    const desc = cleanText(str(/"description"\s*:\s*"([^"]*)"/i));
+    const completed = /"isCompleted"\s*:\s*true/i.test(obj);
+    const key = title + '|' + desc + '|' + points;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ name: title, description: desc, section: 'daily', points,
+      earned: completed ? points : 0, completed,
+      url: str(/"(?:destination|url|href)"\s*:\s*"([^"]*)"/i) || '', source: 'rsc' });
+  }
+  return out;
+}
+
+/* 可见 DOM：只认带绿色数字徽章的 <a> 卡片 */
+function visibleCardsFrom(html) {
+  const out = [];
+  let noBadge = 0, otherSeen = 0;
+  for (const m of html.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/g)) {
+    const c = m[0];
+    const badge = /bg-statusSuccessRewardsBg[\s\S]{0,500}?<p class="text-metadata text-fgCtrlOnImage">\s*(\d+)\s*<\/p>/.exec(c);
+    if (!badge) { noBadge++; continue; }
+    const points = parseInt(badge[1], 10);
+    if (!(points > 0)) { noBadge++; continue; }
+    const section = sectionBeforeHeading(html, m.index);
+    if (section === 'other') { otherSeen++; continue; }
+    const titleM = /<p class="line-clamp-3 text-globalBody2Strong">([^<]*)<\/p>/.exec(c);
+    const name = cleanText(titleM && titleM[1]);
+    if (!name) continue;
+    const descM = /<p class="line-clamp-3 text-fgCtrlNeutralSecondaryRest">([^<]*)<\/p>/.exec(c);
+    const completed = /已完成|已领取|Completed|Claimed/i.test(c);
+    out.push({ name, description: cleanText(descM && descM[1]), section, points,
+      earned: completed ? points : 0, completed, source: 'dom' });
+  }
+  return { items: out, noBadge, otherSeen };
+}
+
+function cardsFromRewardsHtml(html) {
+  const r = visibleCardsFrom(html), out = [], seen = new Set();
+  for (const item of [...structuredItemsFrom(html), ...r.items]) {
+    if (!SECTION_LABEL[item.section]) continue;
+    const key = item.name + '|' + item.description + '|' + item.points + '|' + item.section;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(item);
+  }
+  return { items: out.filter(x => x.points > 0 && x.name),
+    stats: { noBadge: r.noBadge, otherSeen: r.otherSeen, domCards: r.items.length } };
+}
+
+/* 今日 Bing 搜索进度计数器 */
+function parseSearchCounter(html) {
+  const clean = decodePayload(html);
+  const block = clean.match(/"pointsCounters"\s*:\s*\{[\s\S]{0,600}?"(?:pc|pcSearch|combined|combinedSearch|search)"\s*:\s*\{([^{}]*)\}/);
+  if (!block) return null;
+  const max = block[1].match(/"max"\s*:\s*(\d+)/);
+  const progress = block[1].match(/"progress"\s*:\s*(\d+)/);
+  return max && progress ? { max:+max[1], progress:+progress[1] } : null;
+}
+
+/* ---------- 组装一次完整的读取结果 ---------- */
+function buildReport(dashHtml, earnHtml) {
+  const logs = [];
+  const dash = { ok: !!dashHtml, html: String(dashHtml || '') };
+  const earn = { ok: !!earnHtml, html: String(earnHtml || '') };
+  if (dash.ok && earn.ok && isSignInPage(dash.html) && isSignInPage(earn.html)) {
+    return { signedOut: true, logs: ['识别为登录页 / 公开 About 页：不写假的 0 分'] };
+  }
+  const trio = mergeTrio(dash.ok ? parsePointsTrio(dash.html) : null,
+                         earn.ok ? parsePointsTrio(earn.html) : null);
+  logs.push('三项积分：卡片「标签→数值」解析 /dashboard + /earn → 合并取值');
+
+  const seen = new Set(), items = [];
+  let rsc = 0, dom = 0;
+  for (const page of [dash, earn]) {
+    if (!page.ok) continue;
+    const { items: list, stats } = cardsFromRewardsHtml(page.html);
+    rsc += list.filter(x => x.source === 'rsc').length;
+    dom += list.filter(x => x.source === 'dom').length;
+    logs.push((page === dash ? '/dashboard' : '/earn') + '：徽章卡 ' + stats.domCards +
+      ' 张，无徽章推广卡 ' + stats.noBadge + ' 张，其它版块卡 ' + stats.otherSeen + ' 张');
+    for (const it of list) {
+      const key = it.name + '|' + it.description + '|' + it.points + '|' + it.section;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      items.push(it);
+    }
+  }
+  logs.push('RSC dailySetItems 命中 ' + rsc + ' 张（两页相加、去重前）；可见 DOM 徽章卡命中 ' + dom + ' 张');
+  logs.push('两页去重后保留 ' + items.length + ' 张有积分任务卡');
+
+  const counter = (earn.ok && parseSearchCounter(earn.html)) ||
+                  (dash.ok && parseSearchCounter(dash.html)) || { max: 60, progress: 60 };
+  logs.push('搜索进度 pointsCounters ' + counter.progress + '/' + counter.max +
+    (counter.progress >= counter.max ? '（已满）' : ''));
+  const all = [{ name:'今日 Bing 搜索', description:'', section:'search',
+    points:counter.max, earned:counter.progress,
+    completed:counter.progress >= counter.max, source:'counter' },
+    ...items.filter(i => i.section !== 'search')];
+
+  const groups = ['search', 'daily', 'promo'].map(key => {
+    const list = all.filter(i => i.section === key);
+    return { key, label: SECTION_LABEL[key], items: list,
+      earned: list.reduce((n, i) => n + i.earned, 0),
+      total: list.reduce((n, i) => n + i.points, 0) };
+  }).filter(g => g.items.length);
+
+  const total = all.reduce((n, i) => n + i.points, 0);
+  const earned = all.reduce((n, i) => n + i.earned, 0);
+  logs.push('任务合计 ' + earned + ' / ' + total + ' 分（与「今日积分」不必相等：周任务 / 额外奖励分）');
+  return { points: trio, groups, total, earned,
+    percent: total ? Math.round(earned / total * 100) : 0, logs };
+}
+</script>
+
+<script>
+/* ---------------- 示例快照（真实结构裁剪、匿名化） ---------------- */
+const SAMPLE_DASH = "<!DOCTYPE html>\n<html lang=\"zh-CN\"><head><title>首页 – Microsoft Rewards（示例快照）</title></head><body>\n<script type=\"application/json\">{\\\"props\\\":{\\\"pageProps\\\":{\n\\\"className\\\":\\\"text-labelControl\\\",\\\"children\\\":\\\"可用积分\\\"},{\\\"className\\\":\\\"text-pageHeader\\\",\\\"children\\\":\\\"19,925\\\"},\n\\\"className\\\":\\\"text-labelControl\\\",\\\"children\\\":\\\"可领取\\\"},{\\\"className\\\":\\\"text-pageHeader\\\",\\\"children\\\":\\\"0\\\"},\n\"dailySetItems\":[\n{\"date\":\"11/07/2026\",\"title\":\"罗马温和历史漫步\",\"description\":\"在宜人气温中漫步历史景点\",\"points\":10,\"isCompleted\":true,\"destination\":\"https://www.bing.com/search?q=rome\"},\n{\"date\":\"11/07/2026\",\"title\":\"布里斯班河阳光温暖\",\"description\":\"温暖的日子与户外用餐\",\"points\":10,\"isCompleted\":true,\"destination\":\"https://www.bing.com/search?q=brisbane\"},\n{\"date\":\"11/07/2026\",\"title\":\"不死水母\",\"description\":\"探索不死水母非凡长寿背后的秘密\",\"points\":10,\"isCompleted\":true,\"destination\":\"https://www.bing.com/search?q=jellyfish\"}\n],\n\"pointsCounters\":{\"pcSearch\":{\"max\":60,\"progress\":60}}\n}}}<\/script>\n</body></html>";
+const SAMPLE_EARN = "<!DOCTYPE html>\n<html lang=\"zh-CN\"><head><title>积分赚取 – Microsoft Rewards（示例快照）</title></head><body>\n<div class=\"points-card\">\n  <p class=\"text-labelControl text-fgCtrlNeutralSecondaryRest\">今日积分</p>\n  <div class=\"spacer\"></div>\n  <p class=\"pii text-pageHeader\">100</p>\n</div>\n<h2>连续打卡任务</h2>\n<h2>升级活动</h2>\n<h2>任务</h2>\n<a href=\"https://www.bing.com/search?q=task\" class=\"rounded-cornerCardDefault\"><div class=\"absolute right-2 top-2 bg-statusSuccessRewardsBg rounded-full\"><p class=\"text-metadata text-fgCtrlOnImage\">50</p></div><p class=\"line-clamp-3 text-globalBody2Strong\">十一月购物优惠、旅行省钱与季节精选指南</p><p class=\"line-clamp-3 text-fgCtrlNeutralSecondaryRest\">月度 punchcard</p><span>已完成</span></a>\n<h2>日常任务</h2>\n<a href=\"https://www.bing.com/search?q=task\" class=\"rounded-cornerCardDefault\"><div class=\"absolute right-2 top-2 bg-statusSuccessRewardsBg rounded-full\"><p class=\"text-metadata text-fgCtrlOnImage\">5</p></div><p class=\"line-clamp-3 text-globalBody2Strong\">你是否知道答案？</p><p class=\"line-clamp-3 text-fgCtrlNeutralSecondaryRest\">通过这些小问题挑战自己</p><span>已完成</span></a>\n<a href=\"https://www.bing.com/search?q=task\" class=\"rounded-cornerCardDefault\"><div class=\"absolute right-2 top-2 bg-statusSuccessRewardsBg rounded-full\"><p class=\"text-metadata text-fgCtrlOnImage\">5</p></div><p class=\"line-clamp-3 text-globalBody2Strong\">完成此拼图</p><p class=\"line-clamp-3 text-fgCtrlNeutralSecondaryRest\">排列图块以显示图像</p><span>已完成</span></a>\n<a href=\"https://www.bing.com/search?q=task\" class=\"rounded-cornerCardDefault\"><div class=\"absolute right-2 top-2 bg-statusSuccessRewardsBg rounded-full\"><p class=\"text-metadata text-fgCtrlOnImage\">5</p></div><p class=\"line-clamp-3 text-globalBody2Strong\">周中拼图</p><p class=\"line-clamp-3 text-fgCtrlNeutralSecondaryRest\">你是否能够完成这个拼图？</p><span>已完成</span></a>\n<a href=\"https://www.bing.com/search?q=task\" class=\"rounded-cornerCardDefault\"><div class=\"absolute right-2 top-2 bg-statusSuccessRewardsBg rounded-full\"><p class=\"text-metadata text-fgCtrlOnImage\">5</p></div><p class=\"line-clamp-3 text-globalBody2Strong\">你是否知道答案？</p><p class=\"line-clamp-3 text-fgCtrlNeutralSecondaryRest\">测试你对这些主题的知识</p><span>已完成</span></a>\n<a href=\"https://www.bing.com/rewards\" class=\"rounded-cornerCardDefault\">\n  <p class=\"line-clamp-3 text-globalBody2Strong\">免费专属壁纸</p>\n  <p class=\"line-clamp-3 text-fgCtrlNeutralSecondaryRest\">本周全新上线</p>\n</a>\n</body></html>";
+
+/* 「展示的源码」就是「正在执行的源码」 */
+const coreCode = document.getElementById('core-code').textContent;
+const api = new Function(coreCode + '\nreturn { buildReport };')();
+const $ = id => document.getElementById(id);
+const fmt = v => Number.isFinite(v) ? v.toLocaleString('zh-CN') : '—';
+const codeView = document.querySelector('#code-view code');
+codeView.textContent = coreCode.trim();
+$('core-size').textContent = '共 ' + coreCode.trim().split('\n').length + ' 行';
+
+const REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+const wait = ms => new Promise(r => setTimeout(r, REDUCED ? 0 : ms));
+let seq = 0;
+
+function setRunning(buttons, on, done) {
+  for (const btn of buttons) {
+    const label = btn.querySelector('.btn-label');
+    if (!label) continue;
+    if (!btn.dataset.label) btn.dataset.label = label.textContent;
+    btn.classList.toggle('is-running', !!on);
+    btn.classList.toggle('is-done', !!done && !on);
+    btn.disabled = !!on;
+    label.textContent = on ? '运行中…' : (done ? '已运行 ✓' : btn.dataset.label);
+    if (!on && done) {
+      clearTimeout(btn._reset);
+      btn._reset = setTimeout(() => {
+        btn.classList.remove('is-done');
+        label.textContent = btn.dataset.label;
+      }, 1500);
+    }
+  }
+}
+
+function render(report, extraLogs, meta) {
+  const box = $('result');
+  const body = $('result-body');
+  body.textContent = '';
+  const t = (tag, cls, text) => {
+    const el = document.createElement(tag);
+    if (cls) el.className = cls;
+    if (text != null) el.textContent = text;
+    return el;
+  };
+  let i = 0;
+  const stagger = el => { el.classList.add('stagger'); el.style.animationDelay = (i++ * 42) + 'ms'; return el; };
+
+  // 运行标记：明确表示本次已经执行
+  const status = t('div', 'run-status');
+  status.appendChild(t('span', 'dot'));
+  status.appendChild(t('span', 'ok', '已运行'));
+  status.appendChild(t('span', 'kv', 'seq=' + String(++seq).padStart(2, '0')));
+  status.appendChild(t('span', 'kv', 'source=' + (meta && meta.source || 'builtin/snapshot')));
+  status.appendChild(t('span', 'kv', 'elapsed=' + (meta && meta.ms != null ? meta.ms.toFixed(1) + 'ms' : '—')));
+  body.appendChild(stagger(status));
+
+  if (report.signedOut) {
+    const p = t('p', null, '检测到登录页 / 公开 About 页：请先登录 Microsoft Rewards，本次不写假的 0 分。');
+    p.style.color = 'var(--warn)';
+    body.appendChild(stagger(p));
+  } else {
+    const grid = t('div', 'points3');
+    for (const [label, value] of [['可用积分', report.points.available],
+                                  ['今日积分', report.points.today],
+                                  ['可领取', report.points.claimable]]) {
+      const c = t('div', 'pcard');
+      c.appendChild(t('span', null, label));
+      c.appendChild(t('strong', null, fmt(value)));
+      grid.appendChild(c);
+    }
+    body.appendChild(stagger(grid));
+
+    const sum = t('p', 'sum');
+    const b = t('strong', null, '今日任务 ' + report.percent + '%（' + report.earned + ' / ' + report.total + ' 分）');
+    sum.appendChild(b);
+    sum.appendChild(document.createTextNode(' · 共 ' + report.groups.reduce((n, g) => n + g.items.length, 0) + ' 项'));
+    body.appendChild(stagger(sum));
+
+    for (const g of report.groups) {
+      const wrap = t('div', 'group');
+      const head = t('h4');
+      head.append(t('span', null, g.label), t('span', null, g.earned + ' / ' + g.total + ' 分'));
+      wrap.appendChild(head);
+      let k = 0;
+      for (const it of g.items) {
+        const row = t('div', 'task' + (it.completed ? '' : ' pending'));
+        row.classList.add('stagger');
+        row.style.animationDelay = (70 + k++ * 38) + 'ms';
+        const badge = t('span', 'badge', (it.completed ? '✓' : '') + it.points);
+        const main = t('div');
+        main.appendChild(t('span', 'name', it.name));
+        if (it.description) main.appendChild(t('span', 'desc', it.description));
+        row.append(badge, main, t('span', 'state', it.completed ? '已完成' : '待完成'));
+        wrap.appendChild(row);
+      }
+      body.appendChild(stagger(wrap));
+    }
+  }
+  const log = t('div', 'logs');
+  log.textContent = (extraLogs || []).concat(report.logs).join('\n');
+  body.appendChild(stagger(log));
+  box.dataset.state = 'done';
+}
+
+/* 运行一次：按钮进入 running → 结果区刷新扫光 → 重建列表（逐项淡入）→ 标记已运行 */
+async function runSample(extraLogs, opts) {
+  opts = opts || {};
+  const buttons = opts.buttons || [$('run-sample')];
+  const box = $('result');
+  setRunning(buttons, true, false);
+  box.classList.add('is-refreshing');
+  box.dataset.state = 'running';
+  await wait(300);
+  try {
+    const t0 = performance.now();
+    const report = api.buildReport(SAMPLE_DASH, SAMPLE_EARN);
+    render(report, extraLogs, {
+      ms: performance.now() - t0,
+      source: opts.source || 'builtin/snapshot'
+    });
+  } catch (e) {
+    $('result-body').textContent = '解析出错：' + e.message;
+  }
+  box.classList.remove('is-refreshing');
+  setRunning(buttons, false, true);
+}
+
+/* ① 内置示例：加载时自动运行一次，带同样的入场动画 */
+runSample(null, { source: 'builtin/snapshot (auto)' });
+$('run-sample').addEventListener('click', () => runSample());
+
+/* ② 实时抓取：复制可直接粘贴到 DevTools Console 的完整脚本 */
+const LIVE_SNIPPET = `
+/* ---- 在已登录的 rewards.bing.com 页面 Console 里手动运行一次 ---- */
+(async () => {
+  const get = async p => (await fetch(p, {
+    credentials: 'include', cache: 'no-store'
+  })).text();
+  const [dash, earn] = await Promise.all([get('/dashboard'), get('/earn')]);
+  const report = buildReport(dash, earn);
+  if (report.signedOut) { console.warn('请先登录 Microsoft Rewards'); return report; }
+  console.table({
+    '可用积分': report.points.available,
+    '今日积分': report.points.today,
+    '可领取': report.points.claimable
+  });
+  console.table(report.groups.flatMap(g => g.items.map(i => ({
+    分组: g.label, 任务: i.name, 积分: i.points,
+    状态: i.completed ? '已完成' : '待完成'
+  }))));
+  return report;
+})();
+`;
+async function copyText(text, btn, okText) {
+  try { await navigator.clipboard.writeText(text); btn.textContent = okText; }
+  catch { btn.textContent = '请手动选中复制'; }
+  setTimeout(() => { btn.textContent = btn.dataset.original; }, 1800);
+}
+document.querySelectorAll('#copy-live, #copy-core').forEach(b => { b.dataset.original = b.textContent; });
+$('copy-live').addEventListener('click', e =>
+  copyText(coreCode + '\n' + LIVE_SNIPPET, e.currentTarget, '已复制 ✓'));
+$('copy-core').addEventListener('click', e =>
+  copyText(coreCode.trim(), e.currentTarget, '已复制 ✓'));
+
+/* 「演示调用时序」：用内置快照模拟两次返回，按钮与列表共用同一套运行动画 */
+$('demo-live').addEventListener('click', async () => {
+  const demo = $('demo-live');
+  const run = $('run-sample');
+  const box = $('result');
+  const buttons = [demo, run];
+  setRunning(buttons, true, false);
+  box.classList.add('is-refreshing');
+  const pre = ['[offline demo] 使用内置快照模拟两次页面返回，不发起任何网络请求'];
+  const body = $('result-body');
+  const show = lines => {
+    body.textContent = '';
+    const d = document.createElement('div');
+    d.className = 'logs stagger';
+    d.textContent = lines.join('\n');
+    body.appendChild(d);
+  };
+  show(pre.concat('[0.0s] GET /dashboard  …'));
+  await wait(320);
+  show(pre.concat('[0.0s] GET /dashboard  → 200，HTML 快照',
+                  '[0.3s] GET /earn       …'));
+  await wait(340);
+  show(pre.concat('[0.0s] GET /dashboard  → 200，HTML 快照',
+                  '[0.3s] GET /earn       → 200，HTML 快照',
+                  '[0.7s] buildReport(dash, earn) 解析中…'));
+  await wait(280);
+  // 复用 runSample 的刷新 → 重建 → 已运行反馈
+  await runSample(pre.concat('[0.0s] GET /dashboard  → 200，HTML 快照',
+                             '[0.3s] GET /earn       → 200，HTML 快照',
+                             '[0.7s] 输出到结果面板 ✓（离线演示结束）',
+                             '──────── 以下是解析日志 ────────'),
+                  { buttons, source: 'offline/demo' });
+});
+</script>
+</body></html>
