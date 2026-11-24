@@ -8,6 +8,13 @@ name: Build and deploy blog
 #   上传后自检，让"绿勾但没 artifact"当场变红、不再靠猜。
 #   另：旧版 upload-pages-artifact 默认丢弃点文件，会把精心 touch 出来的
 #   .nojekyll 悄悄丢掉，这里用 include-hidden-files: true 补回。
+#
+# 第二次修复（图片"刷新闪一下就裂"）：
+#   部署恢复正常后第一次全量发布，前端无条件把 xxx.jpg 换成 xxx.webp，
+#   但 optimize_images.py 在 Pillow 缺失时会静默跳过（workflow 也允许"按原图发布"），
+#   产物里根本没有 .webp。浏览器先画出原图，随即被 JS 换成 404 地址。
+#   现在构建期生成 blog/webp-manifest.json，前端只换清单里确实存在的 .webp；
+#   清单为空时全程走原图，绝不把已显示的图赌成一个可能 404 的地址。
 
 on:
   push:
@@ -72,8 +79,11 @@ jobs:
           elif sudo apt-get update -qq && sudo apt-get install -y -qq python3-pil 2>/dev/null; then
             echo "Pillow 已通过 apt 安装"
           else
-            echo "::warning::Pillow 不可用，本次按原图发布（不影响站点正常访问）"
+            echo "::warning::Pillow 不可用，本次按原图发布（webp-manifest.json 将为空清单）"
           fi
+          # 把最终结果打到日志里：排查"图片闪一下就裂"时，第一眼就该看到这行。
+          python3 -c "import PIL; print('Pillow:', PIL.__version__)" 2>/dev/null \
+            || echo "::warning::Pillow 最终不可用：optimize_images.py 会跳过，本次无 .webp"
       - name: Extract inline base64 images out of articles
         # 必须排在 build_index 之前：它会改写文章源码，之后算出的 sha 才是最终内容的。
         run: python3 scripts/extract_inline_images.py
@@ -132,6 +142,34 @@ jobs:
           ET.parse("_site/feed.xml")
           ET.parse("_site/sitemap.xml")
           PYXML
+          # WebP 清单：登记「本次产物里真实存在」的 .webp，前端据此换源。
+          # 这是"刷新闪一下就裂"的根治点 —— 构建端允许没有 webp，前端就不能
+          # 假定一定有 webp。清单为空时前端全程用原图，图片稳定且体积仍是压缩过的。
+          python3 - <<'PYWEBP'
+          import json
+          from pathlib import Path
+          root = Path("_site")
+          img = root / "blog" / "images"
+          raster_ext = {".jpg", ".jpeg", ".png"}
+          if img.is_dir():
+              rasters = sorted(p for p in img.rglob("*")
+                               if p.is_file() and p.suffix.lower() in raster_ext)
+              webps = sorted(p for p in img.rglob("*.webp") if p.is_file())
+          else:
+              rasters, webps = [], []
+          files = sorted(p.relative_to(root).as_posix() for p in webps)
+          (root / "blog" / "webp-manifest.json").write_text(
+              json.dumps({"count": len(files), "files": files},
+                         ensure_ascii=False) + "\n", encoding="utf-8")
+          print(f"webp-manifest: {len(rasters)} raster / {len(files)} webp")
+          if rasters and not webps:
+              print("::warning::本次没有生成任何 .webp，前端将全程使用原图（属预期降级，图片不会裂）")
+          elif rasters:
+              missing = [p.relative_to(root).as_posix() for p in rasters
+                         if not p.with_suffix(".webp").is_file()]
+              if missing:
+                  print(f"::warning::{len(missing)} 张图缺 .webp 孪生文件，前端会自动留在原图")
+          PYWEBP
           # 上传前最后一眼：目录非空、大小合理，避免"绿勾 + 空包"。
           echo "---- _site 产物概览 ----"
           find _site -type f | wc -l
