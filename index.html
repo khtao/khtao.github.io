@@ -2704,9 +2704,13 @@ function rewriteAssets(root){
         if(target){ el.setAttribute(attr, "#/p/" + encodeURIComponent(target.name)); return; }
       }
       el.setAttribute(attr, urls[0]);
-      if(el.tagName === "IMG" || el.tagName === "SOURCE"){
+      // 用 addEventListener，绝不占用 el.onerror 属性：正文图片的 WebP
+      // 兜底也挂在 error 上，属性赋值会互相覆盖，容易把回退链掐断。
+      // assetURLs 目前只返回 1 个地址，这个备用链本来就是空转的，
+      // 与其留下一个会打架的 handler，不如只在真的有镜像时注册。
+      if((el.tagName === "IMG" || el.tagName === "SOURCE") && urls.length > 1){
         let k = 0;
-        el.onerror = () => { k++; if(k < urls.length) el.setAttribute(attr, urls[k]); };
+        el.addEventListener("error", () => { k++; if(k < urls.length) el.setAttribute(attr, urls[k]); });
       }
     });
   });
@@ -2967,19 +2971,46 @@ function webpSupported(){
    记下目录后同目录图片不再尝试，否则每张图都要多付一次 404 往返。 */
 const webpFailedDirs = new Set();
 const dirOf = src => String(src).replace(/[^/]*$/, "");
+
+/* ---------- 关键修复：WebP 不再是"盲换 + 等 404 兜底" ----------
+   旧逻辑无条件把 xxx.jpg 改成 xxx.webp，赌构建期一定生成了孪生文件；
+   但 optimize_images.py 在缺 Pillow 时会静默跳过，workflow 也明确允许
+   "按原图发布"。于是浏览器先按正确的 jpg 把图画出来（刷新那一瞬间的正常显示），
+   紧接着 JS 把 src 换成不存在的 .webp —— 闪一下就裂。
+   现在改为构建期产出的 blog/webp-manifest.json 驱动：只换清单里确实存在的
+   .webp。清单没到 / 文件不存在，一律留在原图，绝不拿已显示的图去赌。 */
+let WEBP_READY = null;                 // null=清单未就绪；Set=本次产物里真实存在的 webp
+let webpManifestPromise = null;
+function webpKey(u){
+  return String(u).split(/[?#]/)[0].replace(/^\.\//, "").replace(/^\//, "");
+}
+function loadWebpManifest(){
+  if(webpManifestPromise) return webpManifestPromise;
+  // 文件名固定，必须绕过缓存：否则新部署删掉某张 .webp 后，浏览器还拿着
+  // 旧清单去换源，等于又制造一次 404。文件只有几百字节，no-store 的代价可忽略。
+  webpManifestPromise = fetch("./blog/webp-manifest.json", {cache:"no-store"})
+    .then(r => r.ok ? r.json() : null)
+    .then(j => { WEBP_READY = new Set(((j && j.files) || []).map(webpKey)); })
+    .catch(() => { WEBP_READY = new Set(); });   // 清单缺失 = 全部走原图，安全
+  return webpManifestPromise;
+}
 function mediaSrc(src){
   if(!/\.(jpe?g|png)$/i.test(src) || !webpSupported()) return src;
   if(webpFailedDirs.has(dirOf(src))) return src;
-  return src.replace(/\.(jpe?g|png)$/i, ".webp");
+  if(!WEBP_READY){ loadWebpManifest(); return src; }   // 首篇保持原图，绝不闪裂
+  const next = src.replace(/\.(jpe?g|png)$/i, ".webp");
+  return WEBP_READY.has(webpKey(next)) ? next : src;
 }
-/* 换上 WebP 后的兜底：404 就退回原图，并记住这个目录 */
+/* 换上 WebP 后的兜底：任何失败都退回原图，并记住这个目录。
+   不再限定 cur 必须以 .webp 结尾 —— src 可能被别的重写逻辑改坏，
+   那种情况同样该回到 data-origsrc，而不是留在坏地址上。 */
 function guardWebp(img){
   const orig = img.getAttribute("data-origsrc");
   if(!orig) return;
   img.addEventListener("error", function onerr(){
     const cur = img.getAttribute("src") || "";
-    if(!/\.webp$/i.test(cur)) return;          // 原图也失败就不折腾了
     img.removeEventListener("error", onerr);
+    if(cur === orig) return;              // 原图自己也失败，别来回折腾
     webpFailedDirs.add(dirOf(orig));
     img.setAttribute("src", orig);
   });
