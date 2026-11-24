@@ -1,5 +1,14 @@
 name: Build and deploy blog
 
+# 修复记录（2026-11）：
+#   deploy-pages 报 "Found 0 artifact(s) / No artifacts named github-pages" 时，
+#   上传步骤其实是绿的。原因是上传端与部署端跨了 artifact 后端代际，且 token
+#   缺少 actions: read，部署端列当前 run 的 artifacts 拿到空列表。
+#   本次把 Pages 相关 action 统一升到同一代（v5/v6/v7），补齐权限，并加一道
+#   上传后自检，让"绿勾但没 artifact"当场变红、不再靠猜。
+#   另：旧版 upload-pages-artifact 默认丢弃点文件，会把精心 touch 出来的
+#   .nojekyll 悄悄丢掉，这里用 include-hidden-files: true 补回。
+
 on:
   push:
     branches: [main]
@@ -10,7 +19,8 @@ on:
       - 'scripts/**'
       - 'assets/**'
       - '.github/workflows/blog-index.yml'
-  workflow_dispatch:
+  # 写成空映射而不是裸键，避免部分 YAML linter 报 empty mapping value。
+  workflow_dispatch: {}
   # 定时刷新 projects.json：仓库改名、改描述、Star 变化都会跟上来。
   # 注意：GitHub 不保证 cron 准点，高峰期可能延后；访客端还有一层自动刷新兜底。
   schedule:
@@ -22,6 +32,11 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  # deploy-pages 需要读取「当前 run 的 artifact 列表」才能定位 github-pages。
+  # v5 改用 artifact client 后多数情况不再强制，但显式给上可以排除一类
+  # 「权限不足 → 列表为空 → 报 No artifacts named github-pages」的隐性故障，
+  # 下面的上传后自检步骤也依赖它。
+  actions: read
 
 concurrency:
   group: pages
@@ -35,7 +50,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout full git history
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       # A GitHub web upload can replace an existing path before Actions starts.
@@ -91,6 +106,8 @@ jobs:
           mkdir -p _site
           cp index.html config.json feed.xml sitemap.xml robots.txt _site/
           # Always create .nojekyll: GitHub web uploads may omit hidden files.
+          # 光 touch 还不够 —— upload-pages-artifact v4+ 默认排除点文件，
+          # 必须配 include-hidden-files: true 才能真正发布出去（见下面上传步骤）。
           touch _site/.nojekyll
           cp -R blog _site/blog
           # 本地化的渲染器（marked / highlight.js）：index.html 靠它们摆脱境外 CDN
@@ -115,12 +132,43 @@ jobs:
           ET.parse("_site/feed.xml")
           ET.parse("_site/sitemap.xml")
           PYXML
+          # 上传前最后一眼：目录非空、大小合理，避免"绿勾 + 空包"。
+          echo "---- _site 产物概览 ----"
+          find _site -type f | wc -l
+          du -sh _site
+          test -s _site/index.html
       - name: Configure Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
       - name: Upload website and fresh index in one artifact
-        uses: actions/upload-pages-artifact@v3
+        # v5 内部走 upload-artifact@v7，与 deploy-pages@v5 使用同一套 artifact 后端。
+        # artifact 名两端都用默认值 github-pages，不显式改名以保证严格对齐。
+        uses: actions/upload-pages-artifact@v5
         with:
           path: _site
+          include-hidden-files: true   # 保住 .nojekyll / .well-known 等点文件
+      - name: Verify Pages artifact is visible in this run
+        # deploy-pages 只会查「当前 run」的 artifacts。上传接口是最终一致的，
+        # 所以这里做几次短暂重试：查得到才放行部署，查不到立刻红并给出可操作信息，
+        # 不再让失败推迟到 deploy-pages 里变成一句误导性的 githubstatus 提示。
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts"
+          for i in 1 2 3 4 5 6; do
+            names="$(gh api "$url" --jq '.artifacts[]?.name' 2>/dev/null || true)"
+            if printf '%s\n' "$names" | grep -qx 'github-pages'; then
+              echo "已确认当前 run 的 artifacts："
+              printf '%s\n' "$names"
+              exit 0
+            fi
+            echo "第 $i 次检查：github-pages 尚未可见，等待 5s…"
+            sleep 5
+          done
+          echo "::error::上传步骤已结束，但当前 run ($GITHUB_RUN_ID) 里查不到 github-pages artifact。"
+          echo "::error::请检查上传步骤日志与 actions: read 权限，不要反复重跑 deploy-pages。"
+          exit 1
       - name: Publish GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
