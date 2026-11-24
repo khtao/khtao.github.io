@@ -2982,7 +2982,12 @@ const dirOf = src => String(src).replace(/[^/]*$/, "");
 let WEBP_READY = null;                 // null=清单未就绪；Set=本次产物里真实存在的 webp
 let webpManifestPromise = null;
 function webpKey(u){
-  return String(u).split(/[?#]/)[0].replace(/^\.\//, "").replace(/^\//, "");
+  let k = String(u).split(/[?#]/)[0].replace(/^\.\//, "").replace(/^\//, "");
+  // 运行时 src 经过 localRepoUrl 的 encodeURIComponent，中文目录会变成
+  // %E8%87%AA...；而清单里登记的是原始 UTF-8 路径。不解码就永远匹配不上，
+  // 中文目录下的图片会一直留在原图（日后若只保留 .webp 就会直接裂）。
+  try{ k = decodeURIComponent(k); }catch(e){}
+  return k;
 }
 function loadWebpManifest(){
   if(webpManifestPromise) return webpManifestPromise;
@@ -3031,7 +3036,14 @@ function tuneImage(img, eager){
 /* 文章正文/封面：前几张立即加载，其余懒加载 */
 function tuneBodyImages(scope, eagerCount){
   if(!scope) return;
-  scope.querySelectorAll("img").forEach((img, i) => tuneImage(img, i < (eagerCount || 0)));
+  scope.querySelectorAll("img").forEach((img, i) => {
+    // .md table 被设成 display:block + overflow-x:auto：三张图横排时，
+    // 靠右的单元格落在横向滚动区外，浏览器会把它判成"视口外"，
+    // loading="lazy" 于是永远不触发 —— 刷新时靠缓存闪一下，随后空白。
+    // 表格内图片一律 eager，它们本来就少，不值得为省流量赌这个判定。
+    const inTable = !!img.closest("table");
+    tuneImage(img, inTable || i < (eagerCount || 0));
+  });
 }
 
 /* ---------- iframe 内的图片：必须由父页面来驱动 ----------
