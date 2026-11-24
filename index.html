@@ -1257,7 +1257,22 @@ async function loadConfig(){
   if(projNav) projNav.hidden = !projectCfg().enabled;
 }
 function localRepoUrl(path){
-  const encoded = String(path).split("/").map(encodeURIComponent).join("/");
+  /* 根因修复：中文路径被"双重编码"。
+     marked 的 cleanUrl 会先对 href 做 encodeURI，于是中文目录变成
+     %E8%87%AA...；这里若再直接 encodeURIComponent，百分号会被编成 %25，
+     最终 URL 成 %25E8%2587%25AA... —— 服务器解一次码得到的仍是
+     字符串 "%E8%87%AA..."，找不到对应文件，图片 404。
+     降级解析器 mdFallback 不做 encodeURI（中文原样进来），所以冷启动那
+     一瞬间图片是好的；marked 就绪后整页重绘，就全裂了。
+     修法：每段先 decodeURIComponent 归一化到"原始字符"，再编码一次。
+     这样无论上游给的是原始中文、还是已 encodeURI 过的 %XX，输出都唯一。
+     ASCII 路径完全不受影响；文件名真含字面 % 时 decode 失败会保留原串，
+     随后的 encodeURIComponent 仍会把它正确编成 %25。 */
+  const encoded = String(path).split("/").map(seg => {
+    let raw = seg;
+    try{ raw = decodeURIComponent(seg); }catch(e){}
+    return encodeURIComponent(raw);
+  }).join("/");
   return "./" + encoded;
 }
 async function fetchList(){
