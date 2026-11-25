@@ -20,7 +20,7 @@ GitHub 的名字源自 Git，后者是一个分布式版本控制系统，帮助
 
 GitHub 的 API 让你能够通过 API 调用请求各种信息。要知道 API 调用是什么样的，请在浏览器的地址栏中输入如下地址并按回车键：
 
-```text
+```python
 https://api.github.com/search/repositories?
 q=language:python+sort:stars
 ```
@@ -31,7 +31,7 @@ repositories 后面的问号指出需要传递一个参数。参数 q 表示查�
 
 下面显示了响应的前几行。
 
-```text
+```python
 {
  ❶
  "total_count": 8961993,
@@ -55,13 +55,13 @@ repositories 后面的问号指出需要传递一个参数。参数 q 表示查�
 
 Requests 包让 Python 程序能够轻松地向网站请求信息并检查返回的响应。要安装 Requests，可使用 pip：
 
-```text
+```python
 $ python -m pip install requests
 ```
 
 如果你在运行程序或启动终端会话时使用的是命令 python3，请使用下面的命令来安装 Requests 包：
 
-```text
+```python
 $ python3 -m pip install requests
 ```
 
@@ -102,7 +102,7 @@ print(response_dict.keys())
 
 最后，打印 response_dict 中的键。输出如下：
 
-```text
+```python
 Status code: 200
 dict_keys(['total_count', 'incomplete_results', 'items'])
 ```
@@ -115,7 +115,7 @@ dict_keys(['total_count', 'incomplete_results', 'items'])
 
 **python_repos.py**
 
-```text
+```python
 import requests
 # 执行 API 调用并存储响应
 --snip--
@@ -158,7 +158,7 @@ for key in sorted(repo_dict.keys()):
 
 输出让我们对实际包含的数据有更清晰的认识：
 
-```text
+```python
 Status code: 200
 ❶
 Total repositories: 248
@@ -185,7 +185,7 @@ GitHub 的 API 返回有关仓库的大量信息：repo_dict 包含 78 个键（
 
 **python_repos.py**
 
-```text
+```python
 --snip--
 ```
 
@@ -212,7 +212,7 @@ print(f"Description: {repo_dict['description']}")
 
 输出类似于下面这样：
 
-```text
+```python
 Status code: 200
 Total repositories: 248
 Complete results: True
@@ -235,7 +235,7 @@ Description: A collective list of free APIs
 
 **python_repos.py**
 
-```text
+```python
 --snip--
 ```
 
@@ -257,7 +257,7 @@ for repo_dict in repo_dicts:
 
 首先，打印一条说明性消息（见❶）。然后，遍历 repo_dicts 中的所有字典（见❷）。在这个循环中，打印每个项目的名称、所有者、星数、在 GitHub 上的 URL 以及描述：
 
-```text
+```python
 Status code: 200
 Total repositories: 248
 Complete results: True
@@ -291,7 +291,7 @@ Application Security
 
 大多数 API 存在速率限制，即在特定时间内可执行的请求数存在限制。要获悉是否接近了 GitHub 的限制，请在浏览器中输入 https://api.github.com/rate_limit，你将看到类似于下面的响应：
 
-```text
+```python
 {
   "resources": {
     --snip--
@@ -370,7 +370,7 @@ Plotly 提供了众多定制图形以及设置其样式的方式，可在确定�
 
 **python_repos_visual.py**
 
-```text
+```python
 --snip--
 # 可视化
 title = "Most-Starred Python Projects on GitHub"
@@ -394,7 +394,7 @@ fig.show()
 
 **python_repos_visual.py**
 
-```text
+```python
 --snip--
 ```
 
@@ -437,13 +437,13 @@ Plotly 允许在文本元素中使用 HTML，这让你能够轻松地在图形�
 
 **python_repos_visual.py**
 
-```text
+```python
 --snip--
 ```
 
 > # 处理有关仓库的信息
 
-```text
+```python
 repo_dicts = response_dict['items']
 ❶
 repo_links, stars, hover_texts = [], [], []
@@ -477,7 +477,7 @@ fig.show()
 
 我们将条形改为更深的蓝色并且是半透明的：
 
-```text
+```python
 --snip--
 fig.update_layout(title_font_size=28, xaxis_title_font_size=20,
         yaxis_title_font_size=20)
@@ -501,7 +501,7 @@ fig.show()
 
 下面的 API 调用返回本书编写期间 Hacker News 上最热门文章的信息：
 
-```text
+```python
 https://hacker-news.firebaseio.com/v0/item/31353677.json
 ```
 
@@ -531,7 +531,7 @@ print(response_string)
 
 输出是一个字典，其中包含有关 ID 为 31353677 的文章的信息：
 
-```text
+```python
 {
     "by": "sohkamyung",
    ❶
@@ -557,7 +557,7 @@ print(response_string)
 
 下面的 URL 返回一个列表，其中包含 Hacker News 上当前排名靠前的文章的 ID：
 
-```text
+```python
 https://hacker-news.firebaseio.com/v0/topstories.json
 ```
 
@@ -593,7 +593,7 @@ for submission_id in submission_ids[:5]:
 
 > # 对于每篇文章，都创建一个字典
 
-```text
+```python
      # ❺
      submission_dict = {
           'title': response_dict['title'],
@@ -623,7 +623,7 @@ Hacker News 上的文章是根据总体得分排名的，而总体得分取决�
 
 对列表排序后遍历它（见❽），并打印每篇热门文章的三项信息：标题、链接和评论数。
 
-```text
+```python
 Status code: 200
 id: 31390506    status: 200
 id: 31389893    status: 200

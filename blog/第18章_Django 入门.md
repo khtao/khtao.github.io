@@ -26,7 +26,7 @@ Django 能够响应网页请求，还让你能够更轻松地读写数据库、�
 
 为项目新建一个目录，将其命名为 learning_log，再在终端中切换到这个目录，并执行如下命令创建一个虚拟环境：
 
-```text
+```python
 learning_log$ python -m venv ll_env
 learning_log$
 ```
@@ -37,7 +37,7 @@ learning_log$
 
 现在需要使用下面的命令激活虚拟环境：
 
-```text
+```python
 learning_log$ source ll_env/bin/activate
 (ll_env)learning_log$
 ```
@@ -46,7 +46,7 @@ learning_log$ source ll_env/bin/activate
 
 > **注意**：如果你使用的是 Windows 系统，请使用命令 ll_env\Scripts\activate（不包含 source）来激活这个虚拟环境。如果你使用的是 PowerShell，可能需要将 Activate 的首字母大写。要停止使用虚拟环境，可执行命令 deactivate：
 
-```text
+```python
 (ll_env)learning_log$ deactivate
 learning_log$
 ```
@@ -57,7 +57,7 @@ learning_log$
 
 激活虚拟环境后，执行如下命令来更新 pip 并安装 Django：
 
-```text
+```python
 (ll_env)learning_log$ pip install --upgrade pip
 (ll_env)learning_log$ pip install django
 Collecting django
@@ -77,7 +77,7 @@ pip 从各种地方下载资源，因此升级频繁。有鉴于此，每当你�
 
 在虚拟环境依然处于活动状态的情况下（ll_env 包含在括号内），执行如下命令新建一个项目：
 
-```text
+```python
 ❶
 (ll_env)learning_log$ django-admin startproject ll_project .
 ❷
@@ -100,7 +100,7 @@ __init__.py asgi.py settings.py urls.py wsgi.py
 
 Django 将大部分与项目相关的信息存储在数据库中，因此需要创建一个供 Django 使用的数据库。为了给项目“学习笔记”创建数据库，要在虚拟环境处于活动状态的情况下执行下面的命令：
 
-```text
+```python
 (ll_env)learning_log$ python manage.py migrate
 ❶
 Operations to perform:
@@ -125,7 +125,7 @@ db.sqlite3 ll_env ll_project manage.py
 
 下面来核实 Django 正确地创建了项目。为此，可使用命令 runserver 查看项目的状态：
 
-```text
+```python
 (ll_env)learning_log$ python manage.py runserver
 Watching for file changes with StatReloader
 Performing system checks...
@@ -166,7 +166,7 @@ Django 项目（project）由一系列应用程序组成，它们协同工作让
 
 当前，在前面打开的终端窗口中应该还运行着 runserver。请再打开一个终端窗口（或标签页），并切换到 manage.py 所在的目录。激活虚拟环境，然后执行命令 startapp：
 
-```text
+```python
   learning_log$ source ll_env/bin/activate
   (ll_env)learning_log$ python manage.py startapp learning_logs
  ❶
@@ -226,7 +226,7 @@ class Topic(models.Model):
 
 **settings.py**
 
-```text
+```python
 --snip--
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -241,7 +241,7 @@ INSTALLED_APPS = [
 
 请将 INSTALLED_APPS 修改成下面这样，将前面的应用程序添加到这个列表中：
 
-```text
+```python
 --snip--
 INSTALLED_APPS = [
     # 我的应用程序
@@ -257,7 +257,7 @@ INSTALLED_APPS = [
 
 接下来，需要让 Django 修改数据库，使其能够存储与模型 Topic 相关的信息。为此，在终端窗口中执行如下命令：
 
-```text
+```python
 (ll_env)learning_log$ python manage.py makemigrations
 learning_logs
 Migrations for 'learning_logs':
@@ -270,7 +270,7 @@ Migrations for 'learning_logs':
 
 下面应用这种迁移，让 Django 替我们修改数据库：
 
-```text
+```python
 (ll_env)learning_log$ python manage.py migrate
 Operations to perform:
   Apply all migrations: admin, auth, contenttypes, learning_logs,
@@ -293,7 +293,7 @@ Django 允许创建具备所有权限的用户，即超级用户（superuser）�
 
 要在 Django 中创建超级用户，请执行下面的命令并按提示做：
 
-```text
+```python
 (ll_env)learning_log$ python manage.py createsuperuser
 ❶
 Username (leave blank to use 'eric'): ll_admin
@@ -342,7 +342,7 @@ admin.site.register(Topic)
 
 **models.py**
 
-```text
+```python
 from django.db import models
 class Topic(models.Model):
     --snip--
@@ -381,7 +381,7 @@ __str__() 方法告诉 Django 在呈现条目时应显示哪些信息。条目�
 
 请使用如下命令迁移数据库并查看输出：
 
-```text
+```python
   (ll_env)learning_log$ python manage.py makemigrations
 learning_logs
   Migrations for 'learning_logs':
@@ -432,7 +432,7 @@ One of the most important concepts in climbing is to keep your weight on your fe
 
 输入一些数据后，就可以通过交互式终端会话以编程的方式查看这些数据了。这种交互式环境称为 Django shell，是测试项目和排除故障的理想之地。下面是一个交互式 shell 会话的示例：
 
-```text
+```python
 (ll_env)learning_log$ python manage.py shell
 ❶
 >>> from learning_logs.models import Topic
@@ -444,7 +444,7 @@ One of the most important concepts in climbing is to keep your weight on your fe
 
 可以像遍历列表一样遍历查询集。下面演示了如何查看分配给每个主题对象的 ID：
 
-```text
+```python
 >>> topics = Topic.objects.all()
 >>> for topic in topics:
 ...     print(topic.id, topic)
@@ -457,7 +457,7 @@ One of the most important concepts in climbing is to keep your weight on your fe
 
 知道主题对象的 ID 后，就可以使用 Topic.objects.get() 方法获取该对象并查看其属性了。下面来看看主题 Chess 的属性 text 和 date_added 的值：
 
-```text
+```python
 >>> t = Topic.objects.get(id=1)
 >>> t.text
 'Chess'
@@ -468,7 +468,7 @@ datetime.datetime(2022, 5, 20, 3, 33, 36, 928759,
 
 还可以查看与主题相关联的条目。前面给模型 Entry 定义了属性 topic。这是一个 ForeignKey，将条目与主题关联起来。利用这种关联，Django 能够获取与特定主题相关联的所有条目，如下所示：
 
-```text
+```python
  ❶
  >>> t.entry_set.all()
   <QuerySet [<Entry: The opening is the first part of the game,
@@ -599,7 +599,7 @@ def index(request):
 
 **index.html**
 
-```text
+```python
 <p>Learning Log</p>
 <p>Learning Log helps you keep track of your learning, for any
 topic you're
@@ -616,7 +616,7 @@ interested in.</p>
 
 > **注意**：可能出现如下错误消息：
 
-```text
+```python
 ModuleNotFoundError: No module named 'learning_logs.urls'
 ```
 
@@ -658,7 +658,7 @@ ModuleNotFoundError: No module named 'learning_logs.urls'
 
 在简单的 HTML 页面中，链接是使用锚标签 <a> 定义的：
 
-```text
+```python
 <a href="link_url">link text</a>
 ```
 
@@ -700,7 +700,7 @@ ModuleNotFoundError: No module named 'learning_logs.urls'
 
 **learning_logs/urls.py**
 
-```text
+```python
 """为 learning_logs 定义 URL 模式"""
 --snip--
 urlpatterns = [
@@ -710,7 +710,7 @@ urlpatterns = [
 
 > # 显示所有主题的页面
 
-```text
+```python
     path('topics/', views.topics, name='topics'),
 ]
 ```
@@ -723,7 +723,7 @@ topics() 函数需要从数据库中获取一些数据，并将其交给给模�
 
 **views.py**
 
-```text
+```python
   from django.shortcuts import render
  ❶
  from .models import Topic
@@ -816,7 +816,7 @@ context)
 
 **learning_logs/urls.py**
 
-```text
+```python
 --snip--
 urlpatterns = [
     --snip--
@@ -824,7 +824,7 @@ urlpatterns = [
 
 > # 特定主题的详细页面
 
-```text
+```python
     path('topics/<int:topic_id>/', views.topic, name='topic'),
 ]
 ```
@@ -837,7 +837,7 @@ urlpatterns = [
 
 **views.py**
 
-```text
+```python
   --snip--
  ❶
  def topic(request, topic_id):
@@ -891,7 +891,7 @@ context)
 
 **topics.html**
 
-```text
+```python
 --snip--
     {% for topic in topics %}
       <li>
