@@ -23,7 +23,7 @@ print(message)
 
 input() 函数接受一个参数，即要向用户显示的提示（prompt），让用户知道该输入什么样的信息。在这个示例中，当 Python 运行第一行代码时，用户将看到提示“Tell me something, and I will repeat it back to you:”。程序等待用户输入，并在用户按回车键后继续运行。用户的输入被赋给变量 message，接下来的 print(message) 将输入呈现给用户：
 
-```python
+```text
 Tell me something, and I will repeat it back to you: Hello
 everyone!
 Hello everyone!
@@ -44,7 +44,7 @@ print(f"\nHello, {name}!")
 
 通过在提示末尾（这里是冒号后面）添加一个空格，可将提示与用户输入分开，让用户清楚地知道其输入始于何处，如下所示：
 
-```python
+```text
 Please enter your name: Eric
 Hello, Eric!
 ```
@@ -64,7 +64,7 @@ print(f"\nHello, {name}!")
 
 最终的提示占两行，且问号后面有一个空格，这也是为了使其更加清晰：
 
-```python
+```text
 If you share your name, we can personalize the messages you see.
 What is your first name? Eric
 Hello, Eric!
@@ -74,7 +74,7 @@ Hello, Eric!
 
 在使用 input() 函数时，Python 会将用户输入解读为字符串。请看下面让用户输入年龄的解释器会话：
 
-```python
+```pycon
 >>> age = input("How old are you? ")
 How old are you? 21
 >>> age
@@ -83,7 +83,7 @@ How old are you? 21
 
 用户输入的是数 21，但当我们请求 Python 提供变量 age 的值时，它返回的是 '21'——用户输入的数值的字符串表示。我们怎么知道 Python 将输入解读成了字符串呢？因为这个数是用引号引起来的。如果只想打印输入，这一点儿问题都没有；但如果试图将输入作为数来使用，就会引发错误：
 
-```python
+```pycon
   >>> age = input("How old are you? ")
   How old are you? 21
  ❶
@@ -99,7 +99,7 @@ How old are you? 21
 
 为了解决这个问题，可使用函数 int() 将输入的字符串转换为数值，确保能够成功地执行比较操作：
 
-```python
+```pycon
 >>> age = input("How old are you? ")
 How old are you? 21
 ❶
@@ -127,7 +127,7 @@ else:
 
 在这个程序中，为何可以将 height 与 48 进行比较呢？因为在比较前，height = int(height) 将输入转换成了数值表示。如果输入的数大于或等于 48，就指出用户满足身高条件：
 
-```python
+```text
 How tall are you, in inches? 71
 You're tall enough to ride!
 ```
@@ -138,7 +138,7 @@ You're tall enough to ride!
 
 在处理数值信息时，求模运算符（%）是个很有用的工具，它将两个数相除并返回余数：
 
-```python
+```pycon
 >>> 4 % 3
 1
 >>> 5 % 3
@@ -166,7 +166,7 @@ else:
 
 偶数都能被 2 整除。如果对一个数和 2 执行求模运算的结果为 0，即 number % 2 == 0，那么这个数就是偶数；否则是奇数。
 
-```python
+```text
 Enter a number, and I'll tell you if it's even or odd: 42
 The number 42 is even.
 ```
@@ -209,7 +209,7 @@ while current_number <= 5:
 
 只要满足条件 current_number <= 5，Python 就接着运行这个循环。因为 1 小于 5，所以 Python 打印 1 并将 current_number 加 1，使其为 2；因为 2 小于 5，所以 Python 打印 2 并将 current_number 加 1，使其为 3；依此类推。一旦 current_number 大于 5，循环就将停止，整个程序也将结束：
 
-```python
+```text
 1
 2
 3
@@ -238,7 +238,7 @@ while message != 'quit':
 
 当首次遇到这个循环时，message 是一个空字符串，因此 Python 进入这个循环。在执行到代码行 message = input(prompt) 时，Python 显示提示消息，并等待用户输入。不管用户输入是什么，都会被赋给变量 message 并打印出来。接下来，Python 重新检查 while 语句中的条件。只要用户输入的不是单词 'quit'，Python 就会再次显示提示消息并等待用户输入。等到用户终于输入 'quit' 后，Python 停止执行 while 循环，整个程序也到此结束：
 
-```python
+```text
 Tell me something, and I will repeat it back to you:
 Enter 'quit' to end the program. Hello everyone!
 Hello everyone!
@@ -264,7 +264,7 @@ while message != 'quit':
 
 现在，程序在显示消息前将做简单的检查，仅在消息不是退出值时才打印它：
 
-```python
+```text
 Tell me something, and I will repeat it back to you:
 Enter 'quit' to end the program. Hello everyone!
 Hello everyone!
@@ -326,7 +326,7 @@ while True:
 
 以 while True 打头的循环将不断运行（见❶），直到遇到 break 语句。这个程序中的循环不断地让用户输入他到过的城市的名字，直到用户输入 'quit' 为止。在用户输入 'quit' 后，将执行 break 语句，导致 Python 退出循环：
 
-```python
+```text
 Please enter the name of a city you have visited:
 (Enter 'quit' when you are finished.) New York
 I'd love to go to New York!
@@ -357,7 +357,7 @@ while current_number < 10:
 
 首先将 current_number 设置为 0，由于它小于 10，Python 进入 while 循环。进入循环后，以步长为 1 的方式往上数（见❶），因此 current_number 为 1。接下来，if 语句检查 current_number 与 2 的求模运算结果。如果结果为 0（意味着 current_number 可被 2 整除），就执行 continue 语句，让 Python 忽略余下的代码，并返回循环的开头。如果当前的数不能被 2 整除，就执行循环中余下的代码，将这个数打印出来：
 
-```python
+```text
 1
 3
 5
@@ -380,9 +380,9 @@ while x <= 5:
 
 如果像下面这样不小心遗漏了代码行 x += 1，这个循环将没完没了地运行：
 
-> # 这个循环将没完没了地运行！
-
 ```python
+# 这个循环将没完没了地运行！
+
 x = 1
 while x <= 5:
     print(x)
@@ -390,7 +390,7 @@ while x <= 5:
 
 在这里，x 的初始值为 1，但根本不会变。因此条件测试 x <= 5 始终为 True，导致 while 循环没完没了地打印 1，如下所示：
 
-```python
+```text
 1
 1
 1
@@ -441,29 +441,25 @@ for 循环是一种遍历列表的有效方式，但不应该在 for 循环中�
 
 **confirmed_users.py**
 
-> # 首先，创建一个待验证用户列表 # 和一个用于存储已验证用户的空列表
-
 ```python
+# 首先，创建一个待验证用户列表 # 和一个用于存储已验证用户的空列表
+
 # ❶
 unconfirmed_users = ['alice', 'brian', 'candace']
 confirmed_users = []
-```
 
-> # 验证每个用户，直到没有未验证用户为止 # 将每个经过验证的用户都移到已验证用户列表中
+# 验证每个用户，直到没有未验证用户为止 # 将每个经过验证的用户都移到已验证用户列表中
 
-```python
 # ❷
 while unconfirmed_users:
- # ❸
- current_user = unconfirmed_users.pop()
-  print(f"Verifying user: {current_user.title()}")
- # ❹
- confirmed_users.append(current_user)
-```
+    # ❸
+    current_user = unconfirmed_users.pop()
+    print(f"Verifying user: {current_user.title()}")
+    # ❹
+    confirmed_users.append(current_user)
 
-> # 显示所有的已验证用户
+# 显示所有的已验证用户
 
-```python
 print("\nThe following users have been confirmed:")
 for confirmed_user in confirmed_users:
     print(confirmed_user.title())
@@ -473,7 +469,7 @@ for confirmed_user in confirmed_users:
 
 为了模拟用户验证过程，我们打印一条验证消息并将用户加入已验证用户列表。未验证用户列表越来越短，而已验证用户列表越来越长。未验证用户列表为空后结束循环，再打印已验证用户列表：
 
-```python
+```text
 Verifying user: Candace
 Verifying user: Brian
 Verifying user: Alice
@@ -501,7 +497,7 @@ print(pets)
 
 首先创建一个列表，其中包含多个值为 'cat' 的元素。打印这个列表后，Python 进入 while 循环，因为它发现 'cat' 在列表中至少出现了一次。进入这个循环后，Python 删除第一个 'cat' 并返回 while 代码行，然后发现 'cat' 还在列表中，因此再次进入循环。它不断删除 'cat'，直到在列表中不再包含这个值，然后退出循环并再次打印列表：
 
-```python
+```text
 ['dog', 'cat', 'dog', 'goldfish', 'cat', 'rabbit', 'cat']
 ['dog', 'dog', 'goldfish', 'rabbit']
 ```
@@ -514,37 +510,30 @@ print(pets)
 
 ```python
 responses = {}
-```
 
-> # 设置一个标志，指出调查是否继续
+# 设置一个标志，指出调查是否继续
 
-```python
 polling_active = True
 while polling_active:
-```
+    pass
 
-> # 提示输入被调查者的名字和回答
+    # 提示输入被调查者的名字和回答
 
-```python
 # ❶
 name = input("\nWhat is your name? ")
 response = input("Which mountain would you like to climb someday? ")
 # 将回答存储在字典中
 responses[name] = response
-```
 
-> # 看看是否还有人要参与调查
+# 看看是否还有人要参与调查
 
-```python
 # ❸
 repeat = input("Would you like to let another person respond? (yes/no) ")
 if repeat == 'no':
     polling_active = False
-```
 
-> # 调查结束，显示结果
+    # 调查结束，显示结果
 
-```python
 print("\n--- Poll Results ---")
 # ❹
 for name, response in responses.items():
@@ -557,7 +546,7 @@ for name, response in responses.items():
 
 如果运行这个程序，并输入一些名字和回答，输出将类似于下面这样：
 
-```python
+```text
 What is your name? Eric
 Which mountain would you like to climb someday? Denali
 Would you like to let another person respond? (yes/no) yes
